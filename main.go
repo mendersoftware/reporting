@@ -25,6 +25,7 @@ import (
 
 	"github.com/mendersoftware/reporting/app/indexer"
 	"github.com/mendersoftware/reporting/app/server"
+	"github.com/mendersoftware/reporting/client/elasticsearch"
 	dconfig "github.com/mendersoftware/reporting/config"
 )
 
@@ -60,6 +61,13 @@ func doMain(args []string) {
 				Name:   "indexer",
 				Usage:  "Run the indexer process",
 				Action: cmdIndexer,
+				Flags: []cli.Flag{
+					&cli.Int64Flag{
+						Name:  "devices",
+						Usage: "Number of devices to index",
+						Value: 1000,
+					},
+				},
 			},
 		},
 	}
@@ -90,9 +98,29 @@ func doMain(args []string) {
 }
 
 func cmdServer(args *cli.Context) error {
-	return server.InitAndRun(config.Config)
+	esClient, err := getElasticsearchClient(args)
+	if err != nil {
+		return err
+	}
+	return server.InitAndRun(config.Config, esClient)
 }
 
 func cmdIndexer(args *cli.Context) error {
-	return indexer.InitAndRun(config.Config)
+	esClient, err := getElasticsearchClient(args)
+	if err != nil {
+		return err
+	}
+	devices := args.Int64("devices")
+	return indexer.InitAndRun(config.Config, esClient, devices)
+}
+
+func getElasticsearchClient(args *cli.Context) (elasticsearch.Client, error) {
+	addresses := config.Config.GetStringSlice(dconfig.SettingElasticsearchAddresses)
+	client, err := elasticsearch.NewClient(
+		elasticsearch.WithServerAddresses(addresses),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return client, nil
 }

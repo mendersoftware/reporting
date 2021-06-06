@@ -23,15 +23,25 @@ import (
 
 	"golang.org/x/sys/unix"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mendersoftware/go-lib-micro/config"
 	"github.com/mendersoftware/go-lib-micro/log"
 
 	api "github.com/mendersoftware/reporting/api/http"
+	"github.com/mendersoftware/reporting/client/elasticsearch"
 	dconfig "github.com/mendersoftware/reporting/config"
 )
 
+func init() {
+	if mode := os.Getenv(gin.EnvGinMode); mode != "" {
+		gin.SetMode(mode)
+	} else {
+		gin.SetMode(gin.ReleaseMode)
+	}
+}
+
 // InitAndRun initializes the server and runs it
-func InitAndRun(conf config.Reader) error {
+func InitAndRun(conf config.Reader, esClient elasticsearch.Client) error {
 	ctx := context.Background()
 
 	log.Setup(conf.GetBool(dconfig.SettingDebugLog))

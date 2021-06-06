@@ -8,4 +8,4 @@
 # Defauls to: "elasticsearch:9200"
 # Overwrite with environment variable: REPORTING_ELASTICSEARCH_ADDRESSES
 
-# elasticsearch_addresses: "localhost:9200"
+# elasticsearch_addresses: "http://localhost:9200"

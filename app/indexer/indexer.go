@@ -15,11 +15,37 @@
 package indexer
 
 import (
+	"context"
+
 	"github.com/mendersoftware/go-lib-micro/config"
+	"github.com/mendersoftware/reporting/client/elasticsearch"
+	"github.com/mendersoftware/reporting/model"
 )
 
-// InitAndRun initializes the indexer and runs it
-func InitAndRun(conf config.Reader) error {
+const batchSize = 200
 
+// InitAndRun initializes the indexer and runs it
+func InitAndRun(conf config.Reader, esClient elasticsearch.Client, devices int64) error {
+	ctx := context.Background()
+
+	devicesToIndex := make([]*model.Device, 0, batchSize)
+
+	for i := int64(1); i <= devices; i++ {
+		device := model.RandomDevice()
+		devicesToIndex = append(devicesToIndex, device)
+		if len(devicesToIndex) == batchSize {
+			err := esClient.BulkIndexDevices(ctx, devicesToIndex)
+			if err != nil {
+				return err
+			}
+			devicesToIndex = devicesToIndex[:0]
+		}
+	}
+	if len(devicesToIndex) > 0 {
+		err := esClient.BulkIndexDevices(ctx, devicesToIndex)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
