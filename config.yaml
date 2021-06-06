@@ -1,0 +1,11 @@
+# API server listen address
+# Defauls to: ":8080" which will listen on all avalable interfaces.
+# Overwrite with environment variable: REPORTING_LISTEN
+
+# listen: :8080
+
+# List of elasticsearch addresses
+# Defauls to: "elasticsearch:9200"
+# Overwrite with environment variable: REPORTING_ELASTICSEARCH_ADDRESSES
+
+# elasticsearch_addresses: "localhost:9200"
