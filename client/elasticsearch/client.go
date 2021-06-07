@@ -28,12 +28,93 @@ import (
 )
 
 const (
-	indexDevices = "devices"
+	indexDevices         = "devices"
+	indexDevicesTemplate = `{
+	"index_patterns": ["devices-*"],
+	"priority": 1,
+	"template": {
+		"settings": {
+			"number_of_shards": 1,
+			"number_of_replicas": 1
+		},
+		"mappings": {
+			"_source": {
+				"enabled": true
+			},
+			"properties": {
+				"id": {
+					"type": "keyword"
+				},
+				"tenantID": {
+					"type": "keyword"
+				},
+				"name": {
+					"type": "keyword"
+				},
+				"groupName": {
+					"type": "keyword"
+				},
+				"status": {
+					"type": "keyword"
+				},
+				"customAttributes": {
+					"type": "nested",
+					"properties": {
+						"name": {
+							"type": "keyword"
+						},
+						"string": {
+							"type": "keyword"
+						},
+						"numeric": {
+							"type": "double"
+						}
+					}
+				},
+				"identityAttributes": {
+					"type": "nested",
+					"properties": {
+						"name": {
+							"type": "keyword"
+						},
+						"string": {
+							"type": "keyword"
+						},
+						"numeric": {
+							"type": "double"
+						}
+					}
+				},
+				"inventoryAttributes": {
+					"type": "nested",
+					"properties": {
+						"name": {
+							"type": "keyword"
+						},
+						"string": {
+							"type": "keyword"
+						},
+						"numeric": {
+							"type": "double"
+						}
+					}
+				},
+				"createdAt": {
+					"type": "date"
+				},
+				"updatedAt": {
+					"type": "date"
+				}
+			}
+		}
+	}
+}`
 )
 
 type Client interface {
 	IndexDevice(ctx context.Context, device *model.Device) error
 	BulkIndexDevices(ctx context.Context, devices []*model.Device) error
+	Migrate(ctx context.Context) error
 }
 
 type ElasticsearchClient struct {
@@ -123,6 +204,25 @@ func (e *ElasticsearchClient) BulkIndexDevices(ctx context.Context, devices []*m
 		return errors.Wrap(err, "failed to bulk index")
 	}
 	defer res.Body.Close()
+
+	return nil
+}
+
+func (e *ElasticsearchClient) Migrate(ctx context.Context) error {
+	req := esapi.IndicesPutIndexTemplateRequest{
+		Name: indexDevices,
+		Body: strings.NewReader(indexDevicesTemplate),
+	}
+
+	res, err := req.Do(ctx, e.client)
+	if err != nil {
+		return errors.Wrap(err, "failed to put the index template")
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != 200 {
+		return errors.New("failed to set up the index template")
+	}
 
 	return nil
 }
