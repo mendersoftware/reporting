@@ -18,14 +18,14 @@ import (
 	"context"
 
 	"github.com/mendersoftware/go-lib-micro/config"
-	"github.com/mendersoftware/reporting/client/elasticsearch"
 	"github.com/mendersoftware/reporting/model"
+	"github.com/mendersoftware/reporting/store"
 )
 
 const batchSize = 200
 
 // InitAndRun initializes the indexer and runs it
-func InitAndRun(conf config.Reader, esClient elasticsearch.Client, devices int64) error {
+func InitAndRun(conf config.Reader, store store.Store, devices int64) error {
 	ctx := context.Background()
 
 	devicesToIndex := make([]*model.Device, 0, batchSize)
@@ -34,7 +34,7 @@ func InitAndRun(conf config.Reader, esClient elasticsearch.Client, devices int64
 		device := model.RandomDevice()
 		devicesToIndex = append(devicesToIndex, device)
 		if len(devicesToIndex) == batchSize {
-			err := esClient.BulkIndexDevices(ctx, devicesToIndex)
+			err := store.BulkIndexDevices(ctx, devicesToIndex)
 			if err != nil {
 				return err
 			}
@@ -42,7 +42,7 @@ func InitAndRun(conf config.Reader, esClient elasticsearch.Client, devices int64
 		}
 	}
 	if len(devicesToIndex) > 0 {
-		err := esClient.BulkIndexDevices(ctx, devicesToIndex)
+		err := store.BulkIndexDevices(ctx, devicesToIndex)
 		if err != nil {
 			return err
 		}

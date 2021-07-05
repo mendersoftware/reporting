@@ -26,8 +26,8 @@ import (
 
 	"github.com/mendersoftware/reporting/app/indexer"
 	"github.com/mendersoftware/reporting/app/server"
-	"github.com/mendersoftware/reporting/client/elasticsearch"
 	dconfig "github.com/mendersoftware/reporting/config"
+	"github.com/mendersoftware/reporting/store"
 )
 
 func main() {
@@ -108,52 +108,52 @@ func doMain(args []string) {
 }
 
 func cmdServer(args *cli.Context) error {
-	esClient, err := getElasticsearchClient(args)
+	store, err := getStore(args)
 	if err != nil {
 		return err
 	}
 	if args.Bool("automigrate") {
 		ctx := context.Background()
-		err := esClient.Migrate(ctx)
+		err := store.Migrate(ctx)
 		if err != nil {
 			return err
 		}
 	}
-	return server.InitAndRun(config.Config, esClient)
+	return server.InitAndRun(config.Config, store)
 }
 
 func cmdIndexer(args *cli.Context) error {
-	esClient, err := getElasticsearchClient(args)
+	store, err := getStore(args)
 	if err != nil {
 		return err
 	}
 	if args.Bool("automigrate") {
 		ctx := context.Background()
-		err := esClient.Migrate(ctx)
+		err := store.Migrate(ctx)
 		if err != nil {
 			return err
 		}
 	}
 	devices := args.Int64("devices")
-	return indexer.InitAndRun(config.Config, esClient, devices)
+	return indexer.InitAndRun(config.Config, store, devices)
 }
 
 func cmdMigrate(args *cli.Context) error {
-	esClient, err := getElasticsearchClient(args)
+	store, err := getStore(args)
 	if err != nil {
 		return err
 	}
 	ctx := context.Background()
-	return esClient.Migrate(ctx)
+	return store.Migrate(ctx)
 }
 
-func getElasticsearchClient(args *cli.Context) (elasticsearch.Client, error) {
+func getStore(args *cli.Context) (store.Store, error) {
 	addresses := config.Config.GetStringSlice(dconfig.SettingElasticsearchAddresses)
-	client, err := elasticsearch.NewClient(
-		elasticsearch.WithServerAddresses(addresses),
+	store, err := store.NewStore(
+		store.WithServerAddresses(addresses),
 	)
 	if err != nil {
 		return nil, err
 	}
-	return client, nil
+	return store, nil
 }
