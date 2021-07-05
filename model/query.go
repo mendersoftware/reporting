@@ -61,6 +61,7 @@ type Query interface {
 	MustNot(condition interface{}) Query
 	WithSort(sort interface{}) Query
 	WithPage(page, per_page int) Query
+	With(parts map[string]interface{}) Query
 
 	MarshalJSON() ([]byte, error)
 }
@@ -77,12 +78,15 @@ type query struct {
 	sort    []interface{}
 	from    int
 	size    int
+
+	extra map[string]interface{}
 }
 
 func NewQuery() Query {
 	return &query{
-		from: (defaultPage - 1) * defaultPerPage,
-		size: defaultPerPage,
+		from:  (defaultPage - 1) * defaultPerPage,
+		size:  defaultPerPage,
+		extra: make(map[string]interface{}),
 	}
 }
 
@@ -104,6 +108,18 @@ func (q *query) WithSort(condition interface{}) Query {
 func (q *query) WithPage(page, perPage int) Query {
 	q.from = (page - 1) * perPage
 	q.size = perPage
+	return q
+}
+
+func (q *query) With(parts map[string]interface{}) Query {
+	if len(parts) == 0 {
+		return q
+	}
+
+	for k, v := range parts {
+		q.extra[k] = v
+	}
+
 	return q
 }
 
@@ -130,6 +146,12 @@ func (q *query) MarshalJSON() ([]byte, error) {
 
 	qjson["from"] = q.from
 	qjson["size"] = q.size
+
+	if len(q.extra) > 0 {
+		for k, v := range q.extra {
+			qjson[k] = v
+		}
+	}
 
 	return json.Marshal(qjson)
 }
@@ -429,6 +451,37 @@ func (s *sort) AddTo(q Query) Query {
 	return q
 }
 
+//
+type sel struct {
+	attrs []SelectAttribute
+}
+
+func NewSelect(attrs []SelectAttribute) *sel {
+	return &sel{
+		attrs: attrs,
+	}
+}
+
+func (s *sel) AddTo(q Query) Query {
+	fields := []string{}
+
+	for _, a := range s.attrs {
+		fields = append(fields,
+			ToAttr(a.Scope, a.Attribute, TypeStr),
+			ToAttr(a.Scope, a.Attribute, TypeNum),
+		)
+	}
+
+	//always include a device id
+	fields = append(fields, "id")
+
+	return q.With(map[string]interface{}{
+		"fields":  fields,
+		"_source": false,
+	})
+
+}
+
 func BuildQuery(parms SearchParams) (Query, error) {
 	query := NewQuery()
 
@@ -445,7 +498,12 @@ func BuildQuery(parms SearchParams) (Query, error) {
 		query = sort.AddTo(query)
 	}
 
-	query.WithPage(parms.Page, parms.PerPage)
+	query = query.WithPage(parms.Page, parms.PerPage)
+
+	if len(parms.Attributes) > 0 {
+		sel := NewSelect(parms.Attributes)
+		query = sel.AddTo(query)
+	}
 
 	return query, nil
 }

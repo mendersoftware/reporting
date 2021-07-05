@@ -105,13 +105,31 @@ func (a *app) storeToInventoryDev(storeRes interface{}) (*model.InvDevice, error
 		return nil, errors.New("can't process individual hit")
 	}
 
+	// if query has a 'fields' clause, use 'fields' instead of '_source'
 	sourceM, ok := resM["_source"].(map[string]interface{})
 	if !ok {
-		return nil, errors.New("can't process hit's '_source'")
+		sourceM, ok = resM["fields"].(map[string]interface{})
+		if !ok {
+			return nil, errors.New("can't process hit's '_source' nor 'fields'")
+		}
+	}
+
+	// if query has a 'fields' clause, all results will be arrays incl. device id, so extract it
+	id, ok := sourceM["id"].(string)
+	if !ok {
+		idarr, ok := sourceM["id"].([]interface{})
+		if !ok {
+			return nil, errors.New("can't parse device id as neither single value nor array")
+		}
+
+		id, ok = idarr[0].(string)
+		if !ok {
+			return nil, errors.New("can't parse device id as neither single value nor array")
+		}
 	}
 
 	ret := &model.InvDevice{
-		ID: model.DeviceID(sourceM["id"].(string)),
+		ID: model.DeviceID(id),
 	}
 
 	attrs := []model.InvDeviceAttribute{}
