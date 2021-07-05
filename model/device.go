@@ -15,6 +15,7 @@
 package model
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"time"
@@ -139,24 +140,32 @@ func (a *Device) SetUpdatedAt(val time.Time) *Device {
 type DeviceInventory []*InventoryAttribute
 
 type InventoryAttribute struct {
-	Name    *string  `json:"name,omitempty"`
-	String  []string `json:"string,omitempty"`
-	Numeric *float64 `json:"numeric,omitempty"`
+	Scope   string
+	Name    string
+	String  []string
+	Numeric []float64
 }
 
-func NewInventoryAttribute() *InventoryAttribute {
-	return &InventoryAttribute{}
+func (a *InventoryAttribute) IsStr() bool {
+	return a.String != nil
+}
+
+func (a *InventoryAttribute) IsNum() bool {
+	return a.Numeric != nil
+}
+
+func NewInventoryAttribute(s string) *InventoryAttribute {
+	return &InventoryAttribute{
+		Scope: s,
+	}
 }
 
 func (a *InventoryAttribute) GetName() string {
-	if a.Name != nil {
-		return *a.Name
-	}
-	return ""
+	return a.Name
 }
 
 func (a *InventoryAttribute) SetName(val string) *InventoryAttribute {
-	a.Name = &val
+	a.Name = val
 	return a
 }
 
@@ -169,6 +178,7 @@ func (a *InventoryAttribute) GetString() string {
 
 func (a *InventoryAttribute) SetString(val string) *InventoryAttribute {
 	a.String = []string{val}
+	a.Numeric = nil
 	return a
 }
 
@@ -178,18 +188,26 @@ func (a *InventoryAttribute) GetStrings() []string {
 
 func (a *InventoryAttribute) SetStrings(val []string) *InventoryAttribute {
 	a.String = val
+	a.Numeric = nil
 	return a
 }
 
 func (a *InventoryAttribute) GetNumeric() float64 {
-	if a.Numeric != nil {
-		return *a.Numeric
+	if len(a.Numeric) > 0 {
+		return a.Numeric[0]
 	}
 	return float64(0)
 }
 
 func (a *InventoryAttribute) SetNumeric(val float64) *InventoryAttribute {
-	a.Numeric = &val
+	a.Numeric = []float64{val}
+	a.String = nil
+	return a
+}
+
+func (a *InventoryAttribute) SetNumerics(val []float64) *InventoryAttribute {
+	a.Numeric = val
+	a.String = nil
 	return a
 }
 
@@ -217,39 +235,155 @@ func RandomDevice() *Device {
 	device.SetGroupName(fmt.Sprintf("group-%02d", groupId))
 
 	device.CustomAttributes = DeviceInventory{
-		NewInventoryAttribute().SetName(attrTag).SetString(fmt.Sprintf("value-%02d", rand.Intn(100))),
+		NewInventoryAttribute(scopeCustom).
+			SetName(attrTag).
+			SetString(fmt.Sprintf("value-%02d", rand.Intn(100))),
 	}
 
 	macAddress := randomMacAddress()
 
 	device.IdentityAttributes = DeviceInventory{
-		NewInventoryAttribute().SetName(attrMacAddress).SetString(macAddress),
-		NewInventoryAttribute().SetName(attrSerialNo).SetString(fmt.Sprintf("%012d", rand.Intn(999999999999))),
+		NewInventoryAttribute(scopeIdentity).
+			SetName(attrMacAddress).
+			SetString(macAddress),
+
+		NewInventoryAttribute(scopeIdentity).
+			SetName(attrSerialNo).
+			SetString(fmt.Sprintf("%012d", rand.Intn(999999999999))),
 	}
 
 	device.InventoryAttributes = DeviceInventory{
-		NewInventoryAttribute().SetName(attrMacAddress).SetString(macAddress),
-		NewInventoryAttribute().SetName("artifact_name").SetString("system-M1"),
-		NewInventoryAttribute().SetName("device_type").SetString("dm1"),
-		NewInventoryAttribute().SetName("hostname").SetString("Ambarella"),
-		NewInventoryAttribute().SetName("ipv4_bcm0").SetString("192.168.42.1/24"),
-		NewInventoryAttribute().SetName("ipv4_usb0").SetString("10.0.1.2/8"),
-		NewInventoryAttribute().SetName("ipv4_wlan0").SetString("192.168.1.111/24"),
-		NewInventoryAttribute().SetName("kernel").SetString("Linux version 4.14.181 (charles-chang@rdsuper) (gcc version 8.2.1 20180802 (Linaro GCC 8.2-2018.08~dev)) #1 SMP PREEMPT Fri Mar 12 13:21:16 CST 2021"),
-		NewInventoryAttribute().SetName("mac_bcm0").SetString(macAddress),
-		NewInventoryAttribute().SetName("mac_usb0").SetString(macAddress),
-		NewInventoryAttribute().SetName("mac_wlan0").SetString(macAddress),
-		NewInventoryAttribute().SetName("mem_total_kB").SetNumeric(1020664),
-		NewInventoryAttribute().SetName("group_id").SetNumeric(float64(groupId)),
-		NewInventoryAttribute().SetName("mender_bootloader_integration").SetString("unknown"),
-		NewInventoryAttribute().SetName("mender_client_version").SetString("7cb96ca"),
-		NewInventoryAttribute().SetName("network_interfaces").SetStrings([]string{"bcm0", "usb0", "wlan0"}),
-		NewInventoryAttribute().SetName("os").SetString("Ambarella Flexible Linux CV25 (2.5.7) DMS (0.0.0.21B)"),
-		NewInventoryAttribute().SetName("rootfs_type").SetString("ext4"),
-		NewInventoryAttribute().SetName("rootfs_type").SetString("ext4"),
-		NewInventoryAttribute().SetName("rootfs-image.checksum").SetString("dbc44ce5bd57f0c909dfb15a1efd9fd5d4e426c0fa95f18ea2876e1b8a08818f"),
-		NewInventoryAttribute().SetName("rootfs-image.version").SetString("system-M1"),
+		NewInventoryAttribute(scopeInventory).
+			SetName(attrMacAddress).
+			SetString(macAddress),
+
+		NewInventoryAttribute(scopeInventory).
+			SetName("artifact_name").
+			SetString("system-M1"),
+
+		NewInventoryAttribute(scopeInventory).
+			SetName("device_type").
+			SetString("dm1"),
+
+		NewInventoryAttribute(scopeInventory).
+			SetName("hostname").
+			SetString("Ambarella"),
+
+		NewInventoryAttribute(scopeInventory).
+			SetName("ipv4_bcm0").
+			SetString("192.168.42.1/24"),
+
+		NewInventoryAttribute(scopeInventory).
+			SetName("ipv4_usb0").
+			SetString("10.0.1.2/8"),
+
+		NewInventoryAttribute(scopeInventory).
+			SetName("ipv4_wlan0").
+			SetString("192.168.1.111/24"),
+
+		NewInventoryAttribute(scopeInventory).
+			SetName("kernel").
+			SetString("Linux version 4.14.181 (charles-chang@rdsuper) (gcc version 8.2.1 20180802 (Linaro GCC 8.2-2018.08~dev)) #1 SMP PREEMPT Fri Mar 12 13:21:16 CST 2021"),
+
+		NewInventoryAttribute(scopeInventory).
+			SetName("mac_bcm0").
+			SetString(macAddress),
+
+		NewInventoryAttribute(scopeInventory).
+			SetName("mac_usb0").
+			SetString(macAddress),
+
+		NewInventoryAttribute(scopeInventory).
+			SetName("mac_wlan0").
+			SetString(macAddress),
+
+		NewInventoryAttribute(scopeInventory).
+			SetName("mem_total_kB").
+			SetNumeric(1020664),
+
+		NewInventoryAttribute(scopeInventory).
+			SetName("group_id").
+			SetNumeric(float64(groupId)),
+
+		NewInventoryAttribute(scopeInventory).
+			SetName("mender_bootloader_integration").
+			SetString("unknown"),
+
+		NewInventoryAttribute(scopeInventory).
+			SetName("mender_client_version").
+			SetString("7cb96ca"),
+
+		NewInventoryAttribute(scopeInventory).
+			SetName("network_interfaces").
+			SetStrings([]string{"bcm0", "usb0", "wlan0"}),
+
+		NewInventoryAttribute(scopeInventory).
+			SetName("os").
+			SetString("Ambarella Flexible Linux CV25 (2.5.7) DMS (0.0.0.21B)"),
+
+		NewInventoryAttribute(scopeInventory).
+			SetName("rootfs_type").
+			SetString("ext4"),
+
+		NewInventoryAttribute(scopeInventory).
+			SetName("rootfs_type").
+			SetString("ext4"),
+
+		NewInventoryAttribute(scopeInventory).
+			SetName("rootfs-image.checksum").
+			SetString("dbc44ce5bd57f0c909dfb15a1efd9fd5d4e426c0fa95f18ea2876e1b8a08818f"),
+
+		NewInventoryAttribute(scopeInventory).
+			SetName("rootfs-image.version").SetString("system-M1"),
 	}
 
 	return device
+}
+
+func (d *Device) MarshalJSON() ([]byte, error) {
+	// TODO: smarter encoding, without explicit rewrites?
+	m := make(map[string]interface{})
+	m["id"] = d.ID
+	m["tenantID"] = d.TenantID
+	m["name"] = d.Name
+	m["groupName"] = d.GroupName
+	m["status"] = d.Status
+	m["createdAt"] = d.CreatedAt
+	m["updatedAt"] = d.UpdatedAt
+
+	for _, a := range d.CustomAttributes {
+		name, val := a.Map()
+		m[name] = val
+	}
+
+	for _, a := range d.IdentityAttributes {
+		name, val := a.Map()
+		m[name] = val
+	}
+
+	for _, a := range d.InventoryAttributes {
+		name, val := a.Map()
+		m[name] = val
+	}
+
+	return json.Marshal(m)
+}
+
+func (a *InventoryAttribute) Map() (string, interface{}) {
+	var val interface{}
+	var typ Type
+
+	if a.IsStr() {
+		typ = TypeStr
+		val = a.String
+	}
+
+	if a.IsNum() {
+		typ = TypeNum
+		val = a.Numeric
+	}
+
+	name := ToAttr(a.Scope, a.Name, typ)
+
+	return name, val
 }
