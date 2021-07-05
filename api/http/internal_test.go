@@ -23,7 +23,7 @@ import (
 )
 
 func TestStatus(t *testing.T) {
-	router := NewRouter()
+	router := NewRouter(nil)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest(http.MethodGet, URIInternal+URILiveliness, nil)

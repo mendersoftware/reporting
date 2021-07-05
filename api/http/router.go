@@ -47,9 +47,10 @@ func NewRouter(reporting reporting.App) *gin.Engine {
 	router.Use(routerLogger(l))
 	router.Use(gin.Recovery())
 
-	internal := NewInternalController()
+	internal := NewInternalController(reporting)
 	internalAPI := router.Group(URIInternal)
 	internalAPI.GET(URILiveliness, internal.Alive)
+	internalAPI.POST(URIInventorySearchInternal, internal.Search)
 
 	mgmt := NewManagementController(reporting)
 	mgmtAPI := router.Group(URIManagement)
