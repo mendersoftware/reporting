@@ -41,6 +41,14 @@ func (app *app) InventorySearchDevices(ctx context.Context, searchParams *model.
 		return nil, 0, err
 	}
 
+	if len(searchParams.DeviceIDs) > 0 {
+		query = query.Must(model.M{
+			"terms": model.M{
+				"id": searchParams.DeviceIDs,
+			},
+		})
+	}
+
 	esRes, err := app.store.Search(ctx, query)
 
 	if err != nil {
