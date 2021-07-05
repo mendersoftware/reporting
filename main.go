@@ -68,6 +68,11 @@ func doMain(args []string) {
 						Usage: "Number of devices to index",
 						Value: 1000,
 					},
+					&cli.StringFlag{
+						Name:  "tenant_id",
+						Usage: "Destination tenant ID",
+						Value: "test-tenant",
+					},
 					&cli.BoolFlag{
 						Name:  "automigrate",
 						Usage: "Run database migrations before starting.",
@@ -135,7 +140,8 @@ func cmdIndexer(args *cli.Context) error {
 		}
 	}
 	devices := args.Int64("devices")
-	return indexer.InitAndRun(config.Config, store, devices)
+	tid := args.String("tenant_id")
+	return indexer.InitAndRun(config.Config, store, devices, tid)
 }
 
 func cmdMigrate(args *cli.Context) error {

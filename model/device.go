@@ -218,11 +218,11 @@ func randomMacAddress() string {
 	return fmt.Sprintf("%02x:%02x:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5])
 }
 
-func RandomDevice() *Device {
+func RandomDevice(tid string) *Device {
 	id := uuid.New().String()
 	device := NewDevice(id)
 	device.SetName("device-" + id)
-	device.SetTenantID(fmt.Sprintf("tenant%d", rand.Intn(2)+1))
+	device.SetTenantID(tid)
 	device.SetCreatedAt(time.Now().UTC()).SetUpdatedAt(time.Now().UTC())
 
 	if rand.Intn(10) > 7 {
