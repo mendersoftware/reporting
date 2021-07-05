@@ -12,9 +12,10 @@
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
 
-package elasticsearch
+package store
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"strings"
@@ -22,122 +23,35 @@ import (
 	es "github.com/elastic/go-elasticsearch/v7"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/elastic/go-elasticsearch/v7/esutil"
+	"github.com/mendersoftware/go-lib-micro/identity"
 	"github.com/pkg/errors"
 
 	"github.com/mendersoftware/reporting/model"
 )
 
-const (
-	indexDevices         = "devices"
-	indexDevicesTemplate = `{
-	"index_patterns": ["devices-*"],
-	"priority": 1,
-	"template": {
-		"settings": {
-			"number_of_shards": 1,
-			"number_of_replicas": 1
-		},
-		"mappings": {
-			"_source": {
-				"enabled": true
-			},
-			"properties": {
-				"id": {
-					"type": "keyword"
-				},
-				"tenantID": {
-					"type": "keyword"
-				},
-				"name": {
-					"type": "keyword"
-				},
-				"groupName": {
-					"type": "keyword"
-				},
-				"status": {
-					"type": "keyword"
-				},
-				"customAttributes": {
-					"type": "nested",
-					"properties": {
-						"name": {
-							"type": "keyword"
-						},
-						"string": {
-							"type": "keyword"
-						},
-						"numeric": {
-							"type": "double"
-						}
-					}
-				},
-				"identityAttributes": {
-					"type": "nested",
-					"properties": {
-						"name": {
-							"type": "keyword"
-						},
-						"string": {
-							"type": "keyword"
-						},
-						"numeric": {
-							"type": "double"
-						}
-					}
-				},
-				"inventoryAttributes": {
-					"type": "nested",
-					"properties": {
-						"name": {
-							"type": "keyword"
-						},
-						"string": {
-							"type": "keyword"
-						},
-						"numeric": {
-							"type": "double"
-						}
-					}
-				},
-				"createdAt": {
-					"type": "date"
-				},
-				"updatedAt": {
-					"type": "date"
-				}
-			}
-		}
-	}
-}`
-)
-
-type Client interface {
+type Store interface {
 	IndexDevice(ctx context.Context, device *model.Device) error
 	BulkIndexDevices(ctx context.Context, devices []*model.Device) error
+
+	Search(ctx context.Context, query interface{}) (model.M, error)
 	Migrate(ctx context.Context) error
 }
 
-type ElasticsearchClient struct {
+type StoreOption func(*store)
+
+type store struct {
 	addresses []string
 	client    *es.Client
 }
 
-type ElasticsearchClientOption func(*ElasticsearchClient)
-
-func WithServerAddresses(addresses []string) ElasticsearchClientOption {
-	return func(c *ElasticsearchClient) {
-		c.addresses = addresses
-	}
-}
-
-func NewClient(opts ...ElasticsearchClientOption) (Client, error) {
-	client := &ElasticsearchClient{}
+func NewStore(opts ...StoreOption) (Store, error) {
+	store := &store{}
 	for _, opt := range opts {
-		opt(client)
+		opt(store)
 	}
 
 	cfg := es.Config{
-		Addresses: client.addresses,
+		Addresses: store.addresses,
 	}
 	esClient, err := es.NewClient(cfg)
 	if err != nil {
@@ -149,18 +63,18 @@ func NewClient(opts ...ElasticsearchClientOption) (Client, error) {
 		return nil, errors.Wrap(err, "unable to connect to Elasticsearch")
 	}
 
-	client.client = esClient
-	return client, nil
+	store.client = esClient
+	return store, nil
 }
 
-func (e *ElasticsearchClient) IndexDevice(ctx context.Context, device *model.Device) error {
+func (s *store) IndexDevice(ctx context.Context, device *model.Device) error {
 	req := esapi.IndexRequest{
 		Index:      indexDevices + "-" + device.GetTenantID(),
 		DocumentID: device.GetID(),
 		Body:       esutil.NewJSONReader(device),
 	}
 
-	res, err := req.Do(ctx, e.client)
+	res, err := req.Do(ctx, s.client)
 	if err != nil {
 		return errors.Wrap(err, "failed to index")
 	}
@@ -178,7 +92,7 @@ type bulkActionIndex struct {
 	Index string `json:"_index"`
 }
 
-func (e *ElasticsearchClient) BulkIndexDevices(ctx context.Context, devices []*model.Device) error {
+func (s *store) BulkIndexDevices(ctx context.Context, devices []*model.Device) error {
 	data := ""
 	for _, device := range devices {
 		actionJSON, err := json.Marshal(bulkAction{
@@ -195,11 +109,12 @@ func (e *ElasticsearchClient) BulkIndexDevices(ctx context.Context, devices []*m
 			return err
 		}
 		data += string(actionJSON) + "\n" + string(deviceJSON) + "\n"
+
 	}
 	req := esapi.BulkRequest{
 		Body: strings.NewReader(data),
 	}
-	res, err := req.Do(ctx, e.client)
+	res, err := req.Do(ctx, s.client)
 	if err != nil {
 		return errors.Wrap(err, "failed to bulk index")
 	}
@@ -208,13 +123,13 @@ func (e *ElasticsearchClient) BulkIndexDevices(ctx context.Context, devices []*m
 	return nil
 }
 
-func (e *ElasticsearchClient) Migrate(ctx context.Context) error {
+func (s *store) Migrate(ctx context.Context) error {
 	req := esapi.IndicesPutIndexTemplateRequest{
 		Name: indexDevices,
 		Body: strings.NewReader(indexDevicesTemplate),
 	}
 
-	res, err := req.Do(ctx, e.client)
+	res, err := req.Do(ctx, s.client)
 	if err != nil {
 		return errors.Wrap(err, "failed to put the index template")
 	}
@@ -225,4 +140,42 @@ func (e *ElasticsearchClient) Migrate(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (s *store) Search(ctx context.Context, query interface{}) (model.M, error) {
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(query); err != nil {
+		return nil, err
+	}
+
+	id := identity.FromContext(ctx)
+
+	resp, err := s.client.Search(
+		s.client.Search.WithContext(ctx),
+		s.client.Search.WithIndex("devices-"+id.Tenant),
+		s.client.Search.WithBody(&buf),
+		s.client.Search.WithTrackTotalHits(true),
+	)
+	defer resp.Body.Close()
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.IsError() {
+		return nil, errors.New(resp.String())
+	}
+
+	var ret map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&ret); err != nil {
+		return nil, err
+	}
+
+	return ret, nil
+}
+
+func WithServerAddresses(addresses []string) StoreOption {
+	return func(s *store) {
+		s.addresses = addresses
+	}
 }
