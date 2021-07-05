@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -386,4 +387,32 @@ func (a *InventoryAttribute) Map() (string, interface{}) {
 	name := ToAttr(a.Scope, a.Name, typ)
 
 	return name, val
+}
+
+// maybeParseAttr decides if a given field is an attribute and parses
+// it's name + scope
+func MaybeParseAttr(field string) (string, string, error) {
+	scope := ""
+	name := ""
+
+	for _, s := range []string{scopeInventory, scopeIdentity, scopeCustom, scopeSystem} {
+		if strings.HasPrefix(field, s+"_") {
+			scope = s
+			break
+		}
+	}
+
+	if scope != "" {
+		for _, s := range []string{typeStr, typeNum} {
+			if strings.HasSuffix(field, "_"+s) {
+				// strip the prefix/suffix
+				start := strings.Index(field, "_")
+				end := strings.LastIndex(field, "_")
+
+				name = field[start+1 : end]
+			}
+		}
+	}
+
+	return scope, name, nil
 }
