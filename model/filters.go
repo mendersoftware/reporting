@@ -15,6 +15,8 @@
 package model
 
 import (
+	"fmt"
+
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 )
@@ -123,4 +125,36 @@ func (f FilterPredicate) Validate() error {
 		validation.Field(&f.Attribute, validation.Required),
 		validation.Field(&f.Type, validation.Required, validation.In(validSelectors...)),
 		validation.Field(&f.Value, validation.NotNil))
+}
+
+// ValueType returns actual type info of the value:
+// type, is_array, err
+func (f FilterPredicate) ValueType() (Type, bool, error) {
+	isArr := false
+	typ := TypeStr
+
+	switch f.Value.(type) {
+	case float64:
+		typ = TypeNum
+	case string:
+		break
+	case bool:
+		typ = TypeBool
+	case []interface{}:
+		isArr = true
+		ival := f.Value.([]interface{})
+		switch ival[0].(type) {
+		case float64:
+			typ = TypeNum
+		case string:
+			break
+		default:
+			return 0, false, errors.New(fmt.Sprintf("unknown attribute value type: %v %T", ival[0], ival[0]))
+		}
+	default:
+		return 0, false, errors.New(fmt.Sprintf("unknown attribute value type: %v %T", f.Value, f.Value))
+
+	}
+
+	return typ, isArr, nil
 }
