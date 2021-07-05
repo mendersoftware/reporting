@@ -51,6 +51,7 @@ func NewRouter(reporting reporting.App) *gin.Engine {
 	internalAPI := router.Group(URIInternal)
 	internalAPI.GET(URILiveliness, internal.Alive)
 	internalAPI.POST(URIInventorySearchInternal, internal.Search)
+	internalAPI.POST(URIReindexInternal, internal.Reindex)
 
 	mgmt := NewManagementController(reporting)
 	mgmtAPI := router.Group(URIManagement)

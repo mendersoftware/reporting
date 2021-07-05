@@ -21,8 +21,20 @@ import (
 	"github.com/mendersoftware/reporting/store"
 )
 
+const (
+	SvcInventory  = "inventory"
+	SvcDeviceauth = "deviceauth"
+)
+
+var (
+	knownServices = []string{SvcInventory, SvcDeviceauth}
+
+	ErrUnknownService = errors.New("unknown service name")
+)
+
 type App interface {
 	InventorySearchDevices(ctx context.Context, searchParams *model.SearchParams) (interface{}, int, error)
+	Reindex(ctx context.Context, tenantID, devID string, service string) error
 }
 
 type app struct {
@@ -155,4 +167,19 @@ func (a *app) storeToInventoryDev(storeRes interface{}) (*model.InvDevice, error
 	ret.Attributes = attrs
 
 	return ret, nil
+}
+
+func (app *app) Reindex(ctx context.Context, tenantID, devID string, service string) error {
+	found := false
+	for _, s := range knownServices {
+		if s == service {
+			found = true
+		}
+	}
+
+	if !found {
+		return ErrUnknownService
+	}
+
+	return nil
 }

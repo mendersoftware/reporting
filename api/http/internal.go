@@ -74,3 +74,34 @@ func (mc *InternalController) Search(c *gin.Context) {
 	c.Header(hdrTotalCount, strconv.Itoa(total))
 	c.JSON(http.StatusOK, res)
 }
+
+func (ic *InternalController) Reindex(c *gin.Context) {
+	tid := c.Param("tenant_id")
+	did := c.Param("device_id")
+
+	service := c.Query("service")
+
+	ctx := c.Request.Context()
+	ctx = identity.WithContext(ctx, &identity.Identity{Tenant: tid})
+
+	err := ic.reporting.Reindex(ctx, tid, did, service)
+
+	switch err {
+	case nil:
+		c.Status(http.StatusAccepted)
+	case reporting.ErrUnknownService:
+		if err != nil {
+			rest.RenderError(c,
+				http.StatusBadRequest,
+				err,
+			)
+			return
+		}
+	default:
+		rest.RenderError(c,
+			http.StatusInternalServerError,
+			err,
+		)
+		return
+	}
+}
