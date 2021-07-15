@@ -16,6 +16,9 @@ package reporting
 import (
 	"context"
 	"errors"
+	"time"
+
+	"github.com/mendersoftware/go-lib-micro/log"
 
 	"github.com/mendersoftware/reporting/client/inventory"
 	"github.com/mendersoftware/reporting/model"
@@ -173,6 +176,9 @@ func (a *app) storeToInventoryDev(storeRes interface{}) (*model.InvDevice, error
 }
 
 func (app *app) Reindex(ctx context.Context, tenantID, devID string, service string) error {
+	l := log.FromContext(ctx)
+	l.Debugf("triggered reindexing for device %v:%v", tenantID, devID)
+
 	found := false
 	for _, s := range knownServices {
 		if s == service {
@@ -182,6 +188,55 @@ func (app *app) Reindex(ctx context.Context, tenantID, devID string, service str
 
 	if !found {
 		return ErrUnknownService
+	}
+
+	l.Debug("getting inventory device")
+	devs, err := app.invClient.GetDevices(ctx, tenantID, []string{devID})
+	if err != nil {
+		return err
+	}
+	l.Debugf("got inventory device %v\n", devs)
+
+	l.Debugf("getting store device")
+	esdev, err := app.store.GetDevice(ctx, tenantID, devID)
+
+	if err != nil {
+		return err
+	}
+
+	now := time.Now().UTC()
+
+	if esdev == nil {
+		l.Debug("device not found in store, but it's ok, creating")
+		newdev, _ := model.NewDeviceFromInv(tenantID, &devs[0])
+		newdev.SetCreatedAt(now)
+		newdev.SetUpdatedAt(now)
+
+		err := app.store.IndexDevice(ctx, newdev)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	l.Debugf("got store device %v", esdev)
+
+	// GOTCHA here we could prepare a diff between the es device and inventory device but
+	// the logic is extremely complex
+	// instead prepare a 'new' device (based on the inventory device) as an update document
+	// worst case - noop from ES
+	update, err := model.NewDeviceFromInv(tenantID, &devs[0])
+	update.SetUpdatedAt(now)
+
+	if err != nil {
+		return err
+	}
+
+	l.Debugf("updating device %v", update)
+	err = app.store.UpdateDevice(ctx, tenantID, devID, update)
+	if err != nil {
+		return err
 	}
 
 	return nil

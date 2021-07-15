@@ -16,6 +16,7 @@ package model
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/rand"
 	"strings"
@@ -44,6 +45,7 @@ type Device struct {
 	CustomAttributes    DeviceInventory `json:"customAttributes,omitempty"`
 	IdentityAttributes  DeviceInventory `json:"identityAttributes,omitempty"`
 	InventoryAttributes DeviceInventory `json:"inventoryAttributes,omitempty"`
+	SystemAttributes    DeviceInventory `json:"systemAttributes,omitempty"`
 	CreatedAt           *time.Time      `json:"createdAt,omitempty"`
 	UpdatedAt           *time.Time      `json:"updatedAt,omitempty"`
 }
@@ -52,6 +54,86 @@ func NewDevice(id string) *Device {
 	return &Device{
 		ID: &id,
 	}
+}
+
+func NewDeviceFromInv(tenant string, invdev *InvDevice) (*Device, error) {
+	dev := NewDevice(string(invdev.ID))
+	dev.SetTenantID(tenant)
+
+	// rewrite attributes
+	// special treatment for some attributes which become fields as well
+	for _, invattr := range invdev.Attributes {
+		attr := NewInventoryAttribute(invattr.Scope)
+
+		attr.SetName(invattr.Name).
+			SetVal(invattr.Value)
+
+		if err := dev.AppendAttr(attr); err != nil {
+			return nil, err
+		}
+
+		dev.handleSpecialAttr(attr)
+	}
+
+	return dev, nil
+}
+
+// NewDeviceFromEsSource parses the ES '_source' into a new Device
+func NewDeviceFromEsSource(source map[string]interface{}) (*Device, error) {
+
+	// for simplicity, let any type assertions just panic
+	dev := NewDevice(source["id"].(string))
+	dev.SetTenantID(source["tenantID"].(string))
+
+	for k, v := range source {
+		s, n, err := MaybeParseAttr(k)
+
+		if err != nil {
+			return nil, err
+		}
+
+		if n != "" {
+			attr := NewInventoryAttribute(s).
+				SetName(n).
+				SetVal(v)
+
+			dev.handleSpecialAttr(attr)
+			dev.AppendAttr(attr)
+		}
+	}
+
+	return dev, nil
+}
+
+// setSpecialAttr detects if the attribute should be promoted to a Device field
+func (a *Device) handleSpecialAttr(attr *InventoryAttribute) {
+	if attr.Scope == scopeIdentity && attr.Name == AttrNameStatus {
+		a.SetStatus(attr.GetString())
+	}
+
+	if attr.Scope == scopeSystem && attr.Name == AttrNameGroup {
+		a.SetGroupName(attr.GetString())
+	}
+}
+
+func (a *Device) AppendAttr(attr *InventoryAttribute) error {
+	switch attr.Scope {
+	case scopeInventory:
+		a.InventoryAttributes = append(a.InventoryAttributes, attr)
+		return nil
+	case scopeIdentity:
+		a.IdentityAttributes = append(a.IdentityAttributes, attr)
+		return nil
+	case scopeSystem:
+		a.SystemAttributes = append(a.SystemAttributes, attr)
+		return nil
+	case scopeCustom:
+		a.CustomAttributes = append(a.CustomAttributes, attr)
+		return nil
+	default:
+		return errors.New("unknown attribute scope " + attr.Scope)
+	}
+
 }
 
 func (a *Device) GetID() string {
@@ -209,6 +291,35 @@ func (a *InventoryAttribute) SetNumeric(val float64) *InventoryAttribute {
 func (a *InventoryAttribute) SetNumerics(val []float64) *InventoryAttribute {
 	a.Numeric = val
 	a.String = nil
+	return a
+}
+
+// SetVal inspects the 'val' type and sets the correct subtype field
+// useful for translating from inventory attributes (interface{})
+func (a *InventoryAttribute) SetVal(val interface{}) *InventoryAttribute {
+	switch val.(type) {
+	case float64:
+		a.SetNumeric(val.(float64))
+	case string:
+		a.SetString(val.(string))
+	case []interface{}:
+		ival := val.([]interface{})
+		switch ival[0].(type) {
+		case float64:
+			nums := make([]float64, len(ival))
+			for i, v := range ival {
+				nums[i] = v.(float64)
+			}
+			a.SetNumerics(nums)
+		case string:
+			strs := make([]string, len(ival))
+			for i, v := range ival {
+				strs[i] = v.(string)
+			}
+			a.SetStrings(strs)
+		}
+	}
+
 	return a
 }
 
