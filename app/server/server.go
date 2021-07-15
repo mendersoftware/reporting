@@ -29,6 +29,7 @@ import (
 
 	api "github.com/mendersoftware/reporting/api/http"
 	"github.com/mendersoftware/reporting/app/reporting"
+	"github.com/mendersoftware/reporting/client/inventory"
 	dconfig "github.com/mendersoftware/reporting/config"
 	"github.com/mendersoftware/reporting/store"
 )
@@ -50,7 +51,12 @@ func InitAndRun(conf config.Reader, store store.Store) error {
 
 	var listen = conf.GetString(dconfig.SettingListen)
 
-	reporting := reporting.NewApp(store)
+	invClient := inventory.NewClient(
+		conf.GetString(dconfig.SettingInventoryAddr),
+		false,
+	)
+
+	reporting := reporting.NewApp(store, invClient)
 
 	var router = api.NewRouter(reporting)
 	srv := &http.Server{

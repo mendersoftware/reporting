@@ -17,6 +17,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/mendersoftware/reporting/client/inventory"
 	"github.com/mendersoftware/reporting/model"
 	"github.com/mendersoftware/reporting/store"
 )
@@ -38,12 +39,14 @@ type App interface {
 }
 
 type app struct {
-	store store.Store
+	store     store.Store
+	invClient inventory.Client
 }
 
-func NewApp(store store.Store) App {
+func NewApp(store store.Store, client inventory.Client) App {
 	return &app{
-		store: store,
+		store:     store,
+		invClient: client,
 	}
 }
 

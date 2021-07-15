@@ -29,6 +29,9 @@ const (
 	// SettingElasticsearchAddressesDefault is the default value for the elasticsearch addresses
 	SettingElasticsearchAddressesDefault = "http://localhost:9200"
 
+	SettingInventoryAddr        = "inventory_addr"
+	SettingInventoryAddrDefault = "http://mender-inventory:8080/"
+
 	// SettingDebugLog is the config key for the truning on the debug log
 	SettingDebugLog = "debug_log"
 	// SettingDebugLogDefault is the default value for the debug log enabling
@@ -41,5 +44,6 @@ var (
 		{Key: SettingListen, Value: SettingListenDefault},
 		{Key: SettingElasticsearchAddresses, Value: SettingElasticsearchAddressesDefault},
 		{Key: SettingDebugLog, Value: SettingDebugLogDefault},
+		{Key: SettingInventoryAddr, Value: SettingInventoryAddrDefault},
 	}
 )
