@@ -478,6 +478,11 @@ func (d *Device) MarshalJSON() ([]byte, error) {
 		m[name] = val
 	}
 
+	for _, a := range d.SystemAttributes {
+		name, val := a.Map()
+		m[name] = val
+	}
+
 	return json.Marshal(m)
 }
 
