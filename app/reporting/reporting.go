@@ -161,7 +161,7 @@ func (a *app) storeToInventoryDev(storeRes interface{}) (*model.InvDevice, error
 
 		if n != "" {
 			a := model.InvDeviceAttribute{
-				Name:  n,
+				Name:  model.Redot(n),
 				Scope: s,
 				Value: v,
 			}

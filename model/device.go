@@ -94,7 +94,7 @@ func NewDeviceFromEsSource(source map[string]interface{}) (*Device, error) {
 
 		if n != "" {
 			attr := NewInventoryAttribute(s).
-				SetName(n).
+				SetName(Redot(n)).
 				SetVal(v)
 
 			dev.handleSpecialAttr(attr)

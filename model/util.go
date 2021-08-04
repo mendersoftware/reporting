@@ -11,42 +11,27 @@
 //    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
-
 package model
 
-// common enum for some type introspections we'll need
-type Type int
-
-const (
-	TypeAny Type = iota
-	TypeStr
-	TypeNum
-	TypeBool
+import (
+	"strings"
 )
 
-// scope prefixes
 const (
-	scopeInventory = "inventory"
-	scopeIdentity  = "identity"
-	scopeCustom    = "custom"
-	scopeSystem    = "system"
-)
-
-// type enum/suffixes
-const (
-	typeStr = "str"
-	typeNum = "num"
+	runeDot = '\uFF0E'
 )
 
 var (
-	attrSuffixes = map[Type]string{
-		TypeStr: typeStr,
-		TypeNum: typeNum,
-	}
+	dedotter = strings.NewReplacer(".", string(runeDot))
+	redotter = strings.NewReplacer(string(runeDot), ".")
 )
 
-// toAttr composes the flat-style attribute name based on
-// scope, name, and type
-func ToAttr(scope, name string, typ Type) string {
-	return scope + "_" + Dedot(name) + "_" + attrSuffixes[typ]
+// Dedot replaces '.' in a name to make it digestible by ES
+func Dedot(name string) string {
+	return dedotter.Replace(name)
+}
+
+// Redot reverses dedotting
+func Redot(name string) string {
+	return redotter.Replace(name)
 }
