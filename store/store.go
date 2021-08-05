@@ -29,6 +29,7 @@ import (
 	"github.com/mendersoftware/go-lib-micro/log"
 	_ "github.com/mendersoftware/go-lib-micro/log"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 
 	"github.com/mendersoftware/reporting/model"
 )
@@ -149,9 +150,15 @@ func (s *store) Migrate(ctx context.Context) error {
 }
 
 func (s *store) Search(ctx context.Context, query interface{}) (model.M, error) {
+	l := log.FromContext(ctx)
+
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(query); err != nil {
 		return nil, err
+	}
+
+	if l.Logger.IsLevelEnabled(logrus.DebugLevel) {
+		l.Debugf("es query:\n%v\n", buf.String())
 	}
 
 	id := identity.FromContext(ctx)
