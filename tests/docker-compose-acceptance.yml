@@ -1,0 +1,23 @@
+version: '2.1'
+services:
+
+    acceptance:
+        image: mendersoftware/mender-test-containers:acceptance-testing
+        networks:
+            - mender
+        volumes:
+            - ".:/testing"
+        depends_on:
+            - mender-reporting
+
+    mender-reporting:
+      image: mendersoftware/reporting:prtest
+      networks:
+        mender:
+          aliases:
+            - mender-reporting
+      volumes:
+        - ".:/testing"
+
+networks:
+  mender: {}
