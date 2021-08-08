@@ -26,7 +26,7 @@ const (
 
 	// SettingElasticsearchAddresses is the config key for the elasticsearch addresses
 	SettingElasticsearchAddresses = "elasticsearch_addresses"
-	// SettingListenDefault is the default value for the elasticsearch addresses
+	// SettingElasticsearchAddressesDefault is the default value for the elasticsearch addresses
 	SettingElasticsearchAddressesDefault = "localhost:9200"
 
 	// SettingDebugLog is the config key for the truning on the debug log

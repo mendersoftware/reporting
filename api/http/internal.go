@@ -28,7 +28,7 @@ func NewInternalController() *InternalController {
 	return new(InternalController)
 }
 
-// Internal responds to GET /health/alive
+// Alive responds to GET /health/alive
 func (h InternalController) Alive(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
 }
