@@ -26,7 +26,7 @@ const (
 	URIInternal   = "/api/internal/v1/reporting"
 	URIManagement = "/api/management/v1/reporting"
 
-	URILiveliness = "/health/alive"
+	URILiveliness = "/alive"
 )
 
 // NewRouter returns the gin router
@@ -43,7 +43,7 @@ func NewRouter() *gin.Engine {
 
 	internal := NewInternalController()
 	internalAPI := router.Group(URIInternal)
-	internalAPI.GET(URILiveliness, internal.HealthAlive)
+	internalAPI.GET(URILiveliness, internal.Alive)
 
 	return router
 }

@@ -49,6 +49,12 @@ func doMain(args []string) {
 				Name:   "server",
 				Usage:  "Run the HTTP API server",
 				Action: cmdServer,
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:  "automigrate",
+						Usage: "Run database migrations before starting.",
+					},
+				},
 			},
 			{
 				Name:   "indexer",
