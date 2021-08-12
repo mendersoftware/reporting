@@ -45,9 +45,6 @@ type client struct {
 	urlBase string
 }
 
-type reqGetDevices struct {
-}
-
 func NewClient(urlBase string, skipVerify bool) *client {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: skipVerify},
@@ -117,9 +114,7 @@ func (c *client) GetDevices(ctx context.Context, tid string, deviceIDs []string)
 }
 
 func joinURL(base, url string) string {
-	if strings.HasPrefix(url, "/") {
-		url = url[1:]
-	}
+	url = strings.TrimPrefix(url, "/")
 	if !strings.HasSuffix(base, "/") {
 		base = base + "/"
 	}

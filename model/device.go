@@ -98,7 +98,9 @@ func NewDeviceFromEsSource(source map[string]interface{}) (*Device, error) {
 				SetVal(v)
 
 			dev.handleSpecialAttr(attr)
-			dev.AppendAttr(attr)
+			if err := dev.AppendAttr(attr); err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -297,23 +299,22 @@ func (a *InventoryAttribute) SetNumerics(val []float64) *InventoryAttribute {
 // SetVal inspects the 'val' type and sets the correct subtype field
 // useful for translating from inventory attributes (interface{})
 func (a *InventoryAttribute) SetVal(val interface{}) *InventoryAttribute {
-	switch val.(type) {
+	switch val := val.(type) {
 	case float64:
-		a.SetNumeric(val.(float64))
+		a.SetNumeric(val)
 	case string:
-		a.SetString(val.(string))
+		a.SetString(val)
 	case []interface{}:
-		ival := val.([]interface{})
-		switch ival[0].(type) {
+		switch val[0].(type) {
 		case float64:
-			nums := make([]float64, len(ival))
-			for i, v := range ival {
+			nums := make([]float64, len(val))
+			for i, v := range val {
 				nums[i] = v.(float64)
 			}
 			a.SetNumerics(nums)
 		case string:
-			strs := make([]string, len(ival))
-			for i, v := range ival {
+			strs := make([]string, len(val))
+			for i, v := range val {
 				strs[i] = v.(string)
 			}
 			a.SetStrings(strs)

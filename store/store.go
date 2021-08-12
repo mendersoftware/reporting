@@ -197,12 +197,12 @@ func (s *store) GetDevice(ctx context.Context, tenant, devid string) (*model.Dev
 	}
 
 	res, err := req.Do(ctx, s.client)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get device")
+	}
 	defer res.Body.Close()
 
-	switch {
-	case err != nil:
-		return nil, errors.Wrap(err, "failed to get device")
-	case res.IsError():
+	if res.IsError() {
 		if res.StatusCode == http.StatusNotFound {
 			return nil, nil
 		} else {
@@ -242,9 +242,12 @@ func (s *store) UpdateDevice(ctx context.Context, tenantID, deviceID string, upd
 	}
 
 	res, err := req.Do(ctx, s.client)
+	if err != nil {
+		return errors.Wrap(err, "failed to update device in ES")
+	}
+
 	defer res.Body.Close()
 
-	//DEBUG
 	var esbody map[string]interface{}
 	if err := json.NewDecoder(res.Body).Decode(&esbody); err != nil {
 		return err
