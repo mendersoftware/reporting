@@ -30,7 +30,7 @@ const (
 	URIManagement = "/api/management/v1/reporting"
 
 	URILiveliness              = "/alive"
-	URIInventorySearch         = "inventory/search"
+	URIInventorySearch         = "devices/search"
 	URIInventorySearchInternal = "inventory/tenants/:tenant_id/search"
 	URIReindexInternal         = "tenants/:tenant_id/devices/:device_id/reindex"
 )
