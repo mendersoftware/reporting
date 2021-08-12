@@ -18,6 +18,22 @@ services:
             - mender-reporting
       volumes:
         - ".:/testing"
+      depends_on:
+        - mender-elasticsearch
+      environment:
+        REPORTING_ELASTICSEARCH_ADDRESSES: "http://mender-elasticsearch:9200"
+
+    mender-elasticsearch:
+      image: elasticsearch:7.13.1
+      networks:
+        - mender
+      environment:
+        - "network.host=0.0.0.0"
+        - "discovery.type=single-node"
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      ports:
+        - 9200:9200
+        - 9300:9300
 
 networks:
   mender: {}
