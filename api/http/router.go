@@ -18,7 +18,10 @@ import (
 	"context"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mendersoftware/go-lib-micro/identity"
 	"github.com/mendersoftware/go-lib-micro/log"
+
+	"github.com/mendersoftware/reporting/app/reporting"
 )
 
 // API URL used by the HTTP router
@@ -26,11 +29,14 @@ const (
 	URIInternal   = "/api/internal/v1/reporting"
 	URIManagement = "/api/management/v1/reporting"
 
-	URILiveliness = "/alive"
+	URILiveliness              = "/alive"
+	URIInventorySearch         = "devices/search"
+	URIInventorySearchInternal = "inventory/tenants/:tenant_id/search"
+	URIReindexInternal         = "tenants/:tenant_id/devices/:device_id/reindex"
 )
 
 // NewRouter returns the gin router
-func NewRouter() *gin.Engine {
+func NewRouter(reporting reporting.App) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	gin.DisableConsoleColor()
 
@@ -41,9 +47,16 @@ func NewRouter() *gin.Engine {
 	router.Use(routerLogger(l))
 	router.Use(gin.Recovery())
 
-	internal := NewInternalController()
+	internal := NewInternalController(reporting)
 	internalAPI := router.Group(URIInternal)
 	internalAPI.GET(URILiveliness, internal.Alive)
+	internalAPI.POST(URIInventorySearchInternal, internal.Search)
+	internalAPI.POST(URIReindexInternal, internal.Reindex)
+
+	mgmt := NewManagementController(reporting)
+	mgmtAPI := router.Group(URIManagement)
+	mgmtAPI.Use(identity.Middleware())
+	mgmtAPI.POST(URIInventorySearch, mgmt.Search)
 
 	return router
 }
