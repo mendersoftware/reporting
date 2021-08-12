@@ -14,11 +14,23 @@
 package model
 
 import (
+	"encoding/json"
 	"time"
 )
 
 // 1:1 port of the inventory device
 // for inventory api compat
+const (
+	AttrScopeInventory = "inventory"
+	AttrScopeIdentity  = "identity"
+	AttrScopeSystem    = "system"
+
+	AttrNameID      = "id"
+	AttrNameGroup   = "group"
+	AttrNameStatus  = "status"
+	AttrNameUpdated = "updated_ts"
+	AttrNameCreated = "created_ts"
+)
 
 type DeviceID string
 type GroupName string
@@ -48,4 +60,18 @@ type InvDevice struct {
 
 	//device object revision
 	Revision uint `json:"-" bson:"revision,omitempty"`
+}
+
+func (d *DeviceAttributes) UnmarshalJSON(b []byte) error {
+	err := json.Unmarshal(b, (*[]InvDeviceAttribute)(d))
+	if err != nil {
+		return err
+	}
+	for i := range *d {
+		if (*d)[i].Scope == "" {
+			(*d)[i].Scope = AttrScopeInventory
+		}
+	}
+
+	return nil
 }

@@ -22,6 +22,8 @@ import (
 const (
 	defaultPage    = 0
 	defaultPerPage = 20
+
+	attrDeviceID = "id"
 )
 
 type ArrayOpts int
@@ -225,7 +227,11 @@ func NewFilter(fp FilterPredicate, arrOpts ArrayOpts, typeOpts Type) (*filter, e
 		}
 	}
 
-	attr := ToAttr(fp.Scope, fp.Attribute, typ)
+	// some special attributes translate to non-scoped, predefined fields
+	attr := parseSpecialAttr(fp.Attribute)
+	if attr == "" {
+		attr = ToAttr(fp.Scope, fp.Attribute, typ)
+	}
 
 	return &filter{
 		attr: attr,
@@ -506,4 +512,16 @@ func BuildQuery(parms SearchParams) (Query, error) {
 	}
 
 	return query, nil
+}
+
+// parseSpecialAttr detects attributes like `Device ID`, which
+// translate to plain flat fields (e.g. 'id'), and not
+// scoped attributes
+func parseSpecialAttr(attr string) string {
+	switch attr {
+	case attrDeviceID:
+		return "id"
+	default:
+		return ""
+	}
 }
