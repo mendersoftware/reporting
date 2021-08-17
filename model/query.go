@@ -488,6 +488,25 @@ func (s *sel) AddTo(q Query) Query {
 
 }
 
+//
+type devIDsFilter struct {
+	devIDs []string
+}
+
+func NewDevIDsFilter(ids []string) *devIDsFilter {
+	return &devIDsFilter{
+		devIDs: ids,
+	}
+}
+
+func (f *devIDsFilter) AddTo(q Query) Query {
+	return q.Must(M{
+		"terms": M{
+			attrDeviceID: f.devIDs,
+		},
+	})
+}
+
 func BuildQuery(parms SearchParams) (Query, error) {
 	query := NewQuery()
 
@@ -509,6 +528,11 @@ func BuildQuery(parms SearchParams) (Query, error) {
 	if len(parms.Attributes) > 0 {
 		sel := NewSelect(parms.Attributes)
 		query = sel.AddTo(query)
+	}
+
+	if len(parms.DeviceIDs) > 0 {
+		devs := NewDevIDsFilter(parms.DeviceIDs)
+		query = devs.AddTo(query)
 	}
 
 	return query, nil
