@@ -30,6 +30,9 @@ import (
 )
 
 const (
+	ParamPageDefault    = 1
+	ParamPerPageDefault = 20
+
 	hdrTotalCount = "X-Total-Count"
 )
 
@@ -44,15 +47,6 @@ func NewManagementController(r reporting.App) *ManagementController {
 }
 
 func (mc *ManagementController) Search(c *gin.Context) {
-	params, err := parseSearchParams(c)
-
-	if err != nil {
-		rest.RenderError(c,
-			http.StatusBadRequest,
-			errors.Wrap(err, "malformed request body"),
-		)
-		return
-	}
 
 	ctx := c.Request.Context()
 
@@ -61,6 +55,15 @@ func (mc *ManagementController) Search(c *gin.Context) {
 		rest.RenderError(c,
 			http.StatusUnauthorized,
 			errors.New("tenant claim not present in JWT"),
+		)
+		return
+	}
+
+	params, err := parseSearchParams(c)
+	if err != nil {
+		rest.RenderError(c,
+			http.StatusBadRequest,
+			errors.Wrap(err, "malformed request body"),
 		)
 		return
 	}
@@ -83,16 +86,11 @@ func (mc *ManagementController) Search(c *gin.Context) {
 func parseSearchParams(c *gin.Context) (*model.SearchParams, error) {
 	var searchParams model.SearchParams
 
+	searchParams.Page = ParamPageDefault
+	searchParams.PerPage = ParamPerPageDefault
 	err := c.ShouldBindJSON(&searchParams)
 	if err != nil {
 		return nil, err
-	}
-
-	if searchParams.Page < 1 {
-		searchParams.Page = 1
-	}
-	if searchParams.PerPage < 1 {
-		searchParams.PerPage = 20
 	}
 
 	if err := searchParams.Validate(); err != nil {

@@ -98,9 +98,10 @@ func (ic *InternalController) Reindex(c *gin.Context) {
 			return
 		}
 	default:
+		c.Error(err) //nolint:errcheck
 		rest.RenderError(c,
 			http.StatusInternalServerError,
-			err,
+			errors.New(http.StatusText(http.StatusInternalServerError)),
 		)
 		return
 	}

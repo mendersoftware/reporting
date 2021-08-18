@@ -17,11 +17,12 @@ package http
 import (
 	"bytes"
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
-	"strings"
 	"testing"
 	"time"
 
@@ -30,25 +31,25 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	"github.com/mendersoftware/reporting/app/reporting"
+	"github.com/mendersoftware/go-lib-micro/identity"
 	mapp "github.com/mendersoftware/reporting/app/reporting/mocks"
 	"github.com/mendersoftware/reporting/model"
 )
 
-var contextMatcher = mock.MatchedBy(func(_ context.Context) bool { return true })
-
-func TestStatus(t *testing.T) {
-	t.Parallel()
-	router := NewRouter(nil)
-
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest(http.MethodGet, URIInternal+URILiveliness, nil)
-	router.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusNoContent, w.Code)
+func GenerateJWT(id identity.Identity) string {
+	JWT := base64.RawURLEncoding.EncodeToString(
+		[]byte(`{"alg":"HS256","typ":"JWT"}`),
+	)
+	b, _ := json.Marshal(id)
+	JWT = JWT + "." + base64.RawURLEncoding.EncodeToString(b)
+	hash := hmac.New(sha256.New, []byte("hmac-sha256-secret"))
+	JWT = JWT + "." + base64.RawURLEncoding.EncodeToString(
+		hash.Sum([]byte(JWT)),
+	)
+	return JWT
 }
 
-func TestInternalSearch(t *testing.T) {
+func TestManagementSearch(t *testing.T) {
 	t.Parallel()
 	var newSearchParamMatcher = func(expected *model.SearchParams) interface{} {
 		return mock.MatchedBy(func(actual *model.SearchParams) bool {
@@ -67,9 +68,9 @@ func TestInternalSearch(t *testing.T) {
 	type testCase struct {
 		Name string
 
-		App      func(*testing.T, testCase) *mapp.App
-		TenantID string
-		Params   *model.SearchParams
+		App    func(*testing.T, testCase) *mapp.App
+		CTX    context.Context
+		Params interface{} // *model.SearchParams
 
 		Code     int
 		Response interface{}
@@ -82,11 +83,16 @@ func TestInternalSearch(t *testing.T) {
 
 			app.On("InventorySearchDevices",
 				contextMatcher,
-				newSearchParamMatcher(self.Params)).
+				newSearchParamMatcher(self.Params.(*model.SearchParams))).
 				Return(self.Response, 0, nil)
 			return app
 		},
-		TenantID: "123456789012345678901234",
+		CTX: identity.WithContext(context.Background(),
+			&identity.Identity{
+				Subject: "851f90b3-cee5-425e-8f6e-b36de1993e7e",
+				Tenant:  "123456789012345678901234",
+			},
+		),
 		Params: &model.SearchParams{
 			PerPage: 10,
 			Page:    2,
@@ -144,19 +150,29 @@ func TestInternalSearch(t *testing.T) {
 
 			app.On("InventorySearchDevices",
 				contextMatcher,
-				newSearchParamMatcher(self.Params)).
+				newSearchParamMatcher(self.Params.(*model.SearchParams))).
 				Return([]model.InvDevice{}, 0, nil)
 			return app
 		},
-		TenantID: "123456789012345678901234",
-		Params:   &model.SearchParams{},
+		CTX: identity.WithContext(context.Background(),
+			&identity.Identity{
+				Subject: "851f90b3-cee5-425e-8f6e-b36de1993e7e",
+				Tenant:  "123456789012345678901234",
+			},
+		),
+		Params: &model.SearchParams{},
 
 		Code:     http.StatusOK,
 		Response: []model.InvDevice{},
 	}, {
 		Name: "error, malformed request body",
 
-		TenantID: "123456789012345678901234",
+		CTX: identity.WithContext(context.Background(),
+			&identity.Identity{
+				Subject: "851f90b3-cee5-425e-8f6e-b36de1993e7e",
+				Tenant:  "123456789012345678901234",
+			},
+		),
 		Params: &model.SearchParams{
 			Filters: []model.FilterPredicate{{
 				Scope:     "secret-attrs",
@@ -175,11 +191,16 @@ func TestInternalSearch(t *testing.T) {
 
 			app.On("InventorySearchDevices",
 				contextMatcher,
-				newSearchParamMatcher(self.Params)).
+				newSearchParamMatcher(self.Params.(*model.SearchParams))).
 				Return(nil, 0, errors.New("internal error"))
 			return app
 		},
-		TenantID: "123456789012345678901234",
+		CTX: identity.WithContext(context.Background(),
+			&identity.Identity{
+				Subject: "851f90b3-cee5-425e-8f6e-b36de1993e7e",
+				Tenant:  "123456789012345678901234",
+			},
+		),
 		Params: &model.SearchParams{
 			PerPage: 10,
 			Page:    2,
@@ -198,6 +219,43 @@ func TestInternalSearch(t *testing.T) {
 
 		Code:     http.StatusInternalServerError,
 		Response: rest.Error{Err: "internal error"},
+	}, {
+		Name: "error, tenant ID not present",
+
+		App: func(t *testing.T, self testCase) *mapp.App {
+			return new(mapp.App)
+		},
+		CTX: identity.WithContext(context.Background(),
+			&identity.Identity{
+				Subject: "851f90b3-cee5-425e-8f6e-b36de1993e7e",
+			},
+		),
+		Params: &model.SearchParams{},
+
+		Code:     http.StatusUnauthorized,
+		Response: rest.Error{Err: "tenant claim not present in JWT"},
+	}, {
+		Name: "error, tenant ID not present",
+
+		App: func(t *testing.T, self testCase) *mapp.App {
+			return new(mapp.App)
+		},
+		CTX: identity.WithContext(context.Background(),
+			&identity.Identity{
+				Subject: "851f90b3-cee5-425e-8f6e-b36de1993e7e",
+				Tenant:  "123456789012345678901234",
+			},
+		),
+		Params: map[string]string{
+			"filters": "foo",
+		},
+
+		Code: http.StatusBadRequest,
+		Response: rest.Error{
+			Err: "malformed request body: json: " +
+				"cannot unmarshal string into Go struct field " +
+				"SearchParams.filters of type []model.FilterPredicate",
+		},
 	}}
 	for i := range testCases {
 		tc := testCases[i]
@@ -213,12 +271,14 @@ func TestInternalSearch(t *testing.T) {
 			router := NewRouter(app)
 
 			b, _ := json.Marshal(tc.Params)
-			repl := strings.NewReplacer(":tenant_id", tc.TenantID)
 			req, _ := http.NewRequest(
 				http.MethodPost,
-				URIInternal+repl.Replace(URIInventorySearchInternal),
+				URIManagement+URIInventorySearch,
 				bytes.NewReader(b),
 			)
+			if id := identity.FromContext(tc.CTX); id != nil {
+				req.Header.Set("Authorization", "Bearer "+GenerateJWT(*id))
+			}
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, req)
 
@@ -245,122 +305,6 @@ func TestInternalSearch(t *testing.T) {
 				panic("[TEST ERR] Dunno what to compare!")
 			}
 
-		})
-	}
-}
-
-func TestReindex(t *testing.T) {
-	t.Parallel()
-	type testCase struct {
-		Name string
-
-		App      func(*testing.T, testCase) *mapp.App
-		TenantID string
-		DeviceID string
-		Q        url.Values
-
-		Code     int
-		Response interface{}
-	}
-	testCases := []testCase{{
-		Name: "ok",
-
-		App: func(t *testing.T, self testCase) *mapp.App {
-			app := new(mapp.App)
-			app.On("Reindex", contextMatcher, self.TenantID,
-				self.DeviceID, "inventory").
-				Return(nil)
-			return app
-		},
-		TenantID: "123456789012345678901234",
-		DeviceID: "3ff2da3a-342f-45a1-b7f7-d79c080db5f1",
-		Q: url.Values{
-			"service": []string{"inventory"},
-		},
-
-		Code:     http.StatusAccepted,
-		Response: nil,
-	}, {
-		Name: "error, service unknown",
-
-		App: func(t *testing.T, self testCase) *mapp.App {
-			app := new(mapp.App)
-			app.On("Reindex", contextMatcher, self.TenantID,
-				self.DeviceID, "elasticbogaloo").
-				Return(reporting.ErrUnknownService)
-			return app
-		},
-		TenantID: "123456789012345678901234",
-		DeviceID: "3ff2da3a-342f-45a1-b7f7-d79c080db5f1",
-		Q: url.Values{
-			"service": []string{"elasticbogaloo"},
-		},
-
-		Code: http.StatusBadRequest,
-		Response: rest.Error{
-			Err: reporting.ErrUnknownService.Error(),
-		},
-	}, {
-		Name: "error, internal error",
-
-		App: func(t *testing.T, self testCase) *mapp.App {
-			app := new(mapp.App)
-			app.On("Reindex", contextMatcher, self.TenantID,
-				self.DeviceID, "").
-				Return(errors.New("internal error"))
-			return app
-		},
-		TenantID: "123456789012345678901234",
-		DeviceID: "3ff2da3a-342f-45a1-b7f7-d79c080db5f1",
-
-		Code: http.StatusInternalServerError,
-		Response: rest.Error{
-			Err: http.StatusText(http.StatusInternalServerError),
-		},
-	}}
-	for i := range testCases {
-		tc := testCases[i]
-		t.Run(tc.Name, func(t *testing.T) {
-			t.Parallel()
-			var app *mapp.App
-			if tc.App == nil {
-				app = new(mapp.App)
-			} else {
-				app = tc.App(t, tc)
-			}
-			defer app.AssertExpectations(t)
-			router := NewRouter(app)
-
-			repl := strings.NewReplacer(
-				":tenant_id", tc.TenantID,
-				":device_id", tc.DeviceID,
-			)
-			req, _ := http.NewRequest(
-				http.MethodPost,
-				URIInternal+repl.Replace(URIReindexInternal),
-				nil,
-			)
-			req.URL.RawQuery = tc.Q.Encode()
-			w := httptest.NewRecorder()
-			router.ServeHTTP(w, req)
-
-			assert.Equal(t, tc.Code, w.Code)
-
-			switch typ := tc.Response.(type) {
-			case rest.Error:
-				var actual rest.Error
-				dec := json.NewDecoder(w.Body)
-				dec.DisallowUnknownFields()
-				err := dec.Decode(&actual)
-				if assert.NoError(t, err, "unexpected response schema") {
-					assert.EqualError(t, actual, typ.Error())
-				}
-
-			case nil:
-				assert.Empty(t, w.Body.Bytes())
-			default:
-				panic("[TEST ERR] Dunno what to compare!")
-			}
 		})
 	}
 }
