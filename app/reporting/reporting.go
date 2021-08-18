@@ -37,9 +37,10 @@ var (
 	ErrUnknownService = errors.New("unknown service name")
 )
 
+//go:generate ../../x/mockgen.sh
 type App interface {
-	InventorySearchDevices(ctx context.Context, searchParams *model.SearchParams) (interface{}, int, error)
 	GetSearchableInvAttrs(ctx context.Context, tid string) ([]model.InvFilterAttr, error)
+	InventorySearchDevices(ctx context.Context, searchParams *model.SearchParams) ([]model.InvDevice, int, error)
 	Reindex(ctx context.Context, tenantID, devID string, service string) error
 }
 
@@ -55,7 +56,7 @@ func NewApp(store store.Store, client inventory.Client) App {
 	}
 }
 
-func (app *app) InventorySearchDevices(ctx context.Context, searchParams *model.SearchParams) (interface{}, int, error) {
+func (app *app) InventorySearchDevices(ctx context.Context, searchParams *model.SearchParams) ([]model.InvDevice, int, error) {
 	query, err := model.BuildQuery(*searchParams)
 	if err != nil {
 		return nil, 0, err

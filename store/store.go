@@ -34,6 +34,7 @@ import (
 	"github.com/mendersoftware/reporting/model"
 )
 
+//go:generate ../x/mockgen.sh
 type Store interface {
 	IndexDevice(ctx context.Context, device *model.Device) error
 	BulkIndexDevices(ctx context.Context, devices []*model.Device) error
