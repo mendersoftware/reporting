@@ -3,7 +3,7 @@ module github.com/mendersoftware/reporting
 go 1.15
 
 require (
-	github.com/elastic/go-elasticsearch/v7 v7.13.1
+	github.com/elastic/go-elasticsearch/v7 v7.14.0
 	github.com/gin-gonic/gin v1.7.2
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/google/uuid v1.2.0
