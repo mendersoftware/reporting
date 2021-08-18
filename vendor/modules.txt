@@ -59,6 +59,7 @@ github.com/magiconair/properties
 github.com/mattn/go-isatty
 # github.com/mendersoftware/go-lib-micro v0.0.0-20210705093343-c14ca951acc5
 ## explicit
+github.com/mendersoftware/go-lib-micro/accesslog
 github.com/mendersoftware/go-lib-micro/addons
 github.com/mendersoftware/go-lib-micro/config
 github.com/mendersoftware/go-lib-micro/identity
