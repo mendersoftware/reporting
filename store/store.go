@@ -42,6 +42,7 @@ type Store interface {
 	GetDevice(ctx context.Context, tenant, devid string) (*model.Device, error)
 	UpdateDevice(ctx context.Context, tenantID, deviceID string, updateDev *model.Device) error
 	Migrate(ctx context.Context) error
+	GetDevIndex(ctx context.Context, tid string) (map[string]interface{}, error)
 }
 
 type StoreOption func(*store)
@@ -76,7 +77,7 @@ func NewStore(opts ...StoreOption) (Store, error) {
 
 func (s *store) IndexDevice(ctx context.Context, device *model.Device) error {
 	req := esapi.IndexRequest{
-		Index:      indexDevices + "-" + device.GetTenantID(),
+		Index:      devIdx(device.GetTenantID()),
 		DocumentID: device.GetID(),
 		Body:       esutil.NewJSONReader(device),
 	}
@@ -105,7 +106,7 @@ func (s *store) BulkIndexDevices(ctx context.Context, devices []*model.Device) e
 		actionJSON, err := json.Marshal(bulkAction{
 			Index: &bulkActionIndex{
 				ID:    device.GetID(),
-				Index: indexDevices + "-" + device.GetTenantID(),
+				Index: devIdx(device.GetTenantID()),
 			},
 		})
 		if err != nil {
@@ -192,7 +193,7 @@ func (s *store) GetDevice(ctx context.Context, tenant, devid string) (*model.Dev
 	id := identity.FromContext(ctx)
 
 	req := esapi.GetRequest{
-		Index:      indexDevices + "-" + id.Tenant,
+		Index:      devIdx(id.Tenant),
 		DocumentID: devid,
 	}
 
@@ -236,7 +237,7 @@ func (s *store) UpdateDevice(ctx context.Context, tenantID, deviceID string, upd
 
 	// DocumentType is _doc by default
 	req := esapi.UpdateRequest{
-		Index:      indexDevices + "-" + id.Tenant,
+		Index:      devIdx(id.Tenant),
 		DocumentID: deviceID,
 		Body:       esutil.NewJSONReader(body),
 	}
@@ -264,8 +265,54 @@ func (s *store) UpdateDevice(ctx context.Context, tenantID, deviceID string, upd
 	}
 }
 
+// GetDevIndex retrieves the "devices-" index definition for tenant 'tid'
+// existing fields, incl. inventory attributes, are found under 'properties'
+// see: https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-get-index.html
+func (s *store) GetDevIndex(ctx context.Context, tid string) (map[string]interface{}, error) {
+	l := log.FromContext(ctx)
+	idx := devIdx(tid)
+
+	req := esapi.IndicesGetRequest{
+		Index: []string{idx},
+	}
+
+	res, err := req.Do(ctx, s.client)
+	if err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("failed to get devices index from store, tid %s", tid))
+	}
+	defer res.Body.Close()
+
+	if res.IsError() {
+		return nil, errors.New(fmt.Sprintf("failed to get devices index from store, tid %s, code %d", tid, res.StatusCode))
+	}
+
+	var indexRes map[string]interface{}
+	if err := json.NewDecoder(res.Body).Decode(&indexRes); err != nil {
+		return nil, err
+	}
+
+	index, ok := indexRes[idx]
+	if !ok {
+		return nil, errors.New("can't parse index defintion response")
+	}
+
+	indexM, ok := index.(map[string]interface{})
+	if !ok {
+		return nil, errors.New("can't parse index defintion response")
+	}
+
+	l.Debugf("devices index for tid %s\n%s\n", tid, indexM)
+
+	return indexM, nil
+}
+
 func WithServerAddresses(addresses []string) StoreOption {
 	return func(s *store) {
 		s.addresses = addresses
 	}
+}
+
+// devIdx prepares "devices" index name for tenant tid
+func devIdx(tid string) string {
+	return indexDevices + "-" + tid
 }

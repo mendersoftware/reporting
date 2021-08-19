@@ -31,6 +31,7 @@ const (
 
 	URILiveliness              = "/alive"
 	URIInventorySearch         = "devices/search"
+	URIInventorySearchAttrs    = "devices/search/attributes"
 	URIInventorySearchInternal = "inventory/tenants/:tenant_id/search"
 	URIReindexInternal         = "tenants/:tenant_id/devices/:device_id/reindex"
 )
@@ -57,6 +58,7 @@ func NewRouter(reporting reporting.App) *gin.Engine {
 	mgmtAPI := router.Group(URIManagement)
 	mgmtAPI.Use(identity.Middleware())
 	mgmtAPI.POST(URIInventorySearch, mgmt.Search)
+	mgmtAPI.GET(URIInventorySearchAttrs, mgmt.SearchAttrs)
 
 	return router
 }
