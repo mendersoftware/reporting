@@ -16,6 +16,7 @@ package reporting
 import (
 	"context"
 	"errors"
+	"sort"
 	"time"
 
 	"github.com/mendersoftware/go-lib-micro/log"
@@ -38,6 +39,7 @@ var (
 
 type App interface {
 	InventorySearchDevices(ctx context.Context, searchParams *model.SearchParams) (interface{}, int, error)
+	GetSearchableInvAttrs(ctx context.Context, tid string) ([]model.InvFilterAttr, error)
 	Reindex(ctx context.Context, tenantID, devID string, service string) error
 }
 
@@ -240,4 +242,64 @@ func (app *app) Reindex(ctx context.Context, tenantID, devID string, service str
 	}
 
 	return nil
+}
+
+func (app *app) GetSearchableInvAttrs(ctx context.Context, tid string) ([]model.InvFilterAttr, error) {
+	l := log.FromContext(ctx)
+
+	index, err := app.store.GetDevIndex(ctx, tid)
+	if err != nil {
+		return nil, err
+	}
+
+	// inventory attributes are under 'mappings.properties'
+	mappings, ok := index["mappings"]
+	if !ok {
+		return nil, errors.New("can't parse index mappings")
+	}
+
+	mappingsM, ok := mappings.(map[string]interface{})
+	if !ok {
+		return nil, errors.New("can't parse index mappings")
+	}
+
+	props, ok := mappingsM["properties"]
+	if !ok {
+		return nil, errors.New("can't parse index properties")
+	}
+
+	propsM, ok := props.(map[string]interface{})
+	if !ok {
+		return nil, errors.New("can't parse index properties")
+	}
+
+	ret := []model.InvFilterAttr{}
+
+	for k := range propsM {
+		s, n, err := model.MaybeParseAttr(k)
+
+		if err != nil {
+			return nil, err
+		}
+
+		if n != "" {
+			ret = append(ret, model.InvFilterAttr{Name: n, Scope: s, Count: 1})
+		}
+	}
+
+	sort.Slice(ret, func(i, j int) bool {
+		if ret[j].Scope > ret[i].Scope {
+			return true
+		}
+
+		if ret[j].Scope < ret[i].Scope {
+			return false
+		}
+
+		return ret[j].Name > ret[i].Name
+	})
+
+	l.Debugf("parsed searchable attributes %v\n", ret)
+
+	return ret, nil
 }
