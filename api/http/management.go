@@ -131,3 +131,27 @@ func pageLinkHdrs(c *gin.Context, page, perPage, total int) {
 	}
 	c.Header("Link", Link)
 }
+
+func (mc *ManagementController) SearchAttrs(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	id := identity.FromContext(ctx)
+	if id == nil || id.Tenant == "" {
+		rest.RenderError(c,
+			http.StatusUnauthorized,
+			errors.New("tenant claim not present in JWT"),
+		)
+		return
+	}
+
+	res, err := mc.reporting.GetSearchableInvAttrs(ctx, id.Tenant)
+	if err != nil {
+		rest.RenderError(c,
+			http.StatusInternalServerError,
+			err,
+		)
+		return
+	}
+
+	c.JSON(http.StatusOK, res)
+}
