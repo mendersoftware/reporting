@@ -12,18 +12,26 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+import time
 import requests
+import os
 
 
 def main():
-    while True:
-        try:
-            r = requests.get("http://mender-elasticsearch:9200")
-            assert r.status_code == 200
-        except (requests.RequestException, AssertionError):
-            pass
+    es_url = os.getenv("ELASTICSEARCH_URL")
+    r_url = os.getenv("REPORTING_URL") + "/api/internal/v1/reporting/alive"
+    for url in [es_url, r_url]:
+        for i in range(300):
+            try:
+                r = requests.get(url)
+                assert 200 <= r.status_code < 400
+            except (requests.RequestException, AssertionError):
+                time.sleep(1)
+                pass
+            else:
+                break
         else:
-            break
+            raise TimeoutError("timed out waiting for '%s'" % url)
 
 
 if __name__ == "__main__":

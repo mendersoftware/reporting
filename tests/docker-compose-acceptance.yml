@@ -7,8 +7,13 @@ services:
             - mender
         volumes:
             - ".:/testing"
+        environment:
+          TESTING_HOST: "mender-reporting:8080"
+          REPORTING_URL: "http://mender-reporting:8080"
+          ELASTICSEARCH_URL: "http://mender-elasticsearch:9200"
         depends_on:
             - mender-reporting
+            - mender-elasticsearch
 
     mender-reporting:
       image: mendersoftware/reporting:prtest

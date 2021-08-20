@@ -69,27 +69,17 @@ docker: bin/reporting.docker
 
 .PHONY: docker-test
 docker-test: bin/reporting.acceptance.docker
-
-.PHONY: acceptance-tests-elasticsearch
-acceptance-tests-elasticsearch:
-	docker-compose \
-	    -f tests/docker-compose-acceptance.yml \
-		-p acceptance \
-		up -d mender-elasticsearch
-	docker run \
-		-v $(shell pwd)/tests:/tests \
-		--network "acceptance_mender" \
-		--entrypoint "" \
-		mendersoftware/mender-test-containers:acceptance-testing \
-		python3 /tests/wait_for_es.py
 	
 .PHONY: acceptance-tests
-acceptance-tests: docker-test acceptance-tests-elasticsearch docs
+acceptance-tests: docker-test docs
 	docker-compose \
 		-f tests/docker-compose-acceptance.yml \
 		-p acceptance \
-		up -d
-	docker attach acceptance_acceptance_1
+		up --scale acceptance=0 -d
+	docker-compose \
+	    -f tests/docker-compose-acceptance.yml \
+		-p acceptance \
+		run --rm -v $(shell pwd)/tests:/tests acceptance
 
 .PHONY: acceptance-tests-logs
 acceptance-tests-logs:
