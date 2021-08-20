@@ -127,9 +127,6 @@ components:
           type: string
           description: Name of the attribute.
         value:
-          oneOf:
-          - type: string
-          - type: number
           description: Value of the attribute.
         scope:
           type: string
@@ -164,9 +161,6 @@ components:
           type: string
           description: Attribute key to compare.
         value:
-          oneOf: # FIXME: Do we support floats with ES?
-            - type: string
-            - type: number
           description: Filter matching expression.
         type:
           type: string

@@ -168,9 +168,6 @@ components:
           type: string
           description: Name of the attribute.
         value:
-          oneOf:
-          - type: string
-          - type: number
           description: Value of the attribute.
         scope:
           type: string
@@ -205,9 +202,6 @@ components:
           type: string
           description: Attribute key to compare.
         value:
-          oneOf: # FIXME: Do we support floats with ES?
-            - type: string
-            - type: number
           description: Filter matching expression.
         type:
           type: string
@@ -291,6 +285,33 @@ components:
           items:
             type: string
           description: Restrict the result to the given device IDs.
+
+    InternalDevice:
+      description: >-
+        NOTE: This is an internal flattened representation of DeviceInventory.
+        It is currently not exposed by the API.
+      type: object
+      properties:
+        id:
+          type: string
+        tenantID:
+          type: string
+        name:
+          type: string
+        groupName:
+          type: string
+        status:
+          type: string
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attribute'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
 
   responses:
     InternalServerError:
