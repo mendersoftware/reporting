@@ -69,7 +69,8 @@ docker: bin/reporting.docker
 
 .PHONY: docker-test
 docker-test: bin/reporting.acceptance.docker
-	
+
+PYTEST_ARGS ?=
 .PHONY: acceptance-tests
 acceptance-tests: docker-test docs
 	docker-compose \
@@ -79,7 +80,7 @@ acceptance-tests: docker-test docs
 	docker-compose \
 	    -f tests/docker-compose-acceptance.yml \
 		-p acceptance \
-		run --rm -v $(shell pwd)/tests:/tests acceptance
+		run --rm -v $(shell pwd)/tests:/tests acceptance $(PYTEST_ARGS)
 
 .PHONY: acceptance-tests-logs
 acceptance-tests-logs:
