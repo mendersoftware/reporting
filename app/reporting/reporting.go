@@ -197,6 +197,9 @@ func (app *app) Reindex(ctx context.Context, tenantID, devID string, service str
 	devs, err := app.invClient.GetDevices(ctx, tenantID, []string{devID})
 	if err != nil {
 		return err
+	} else if len(devs) == 0 {
+		// No device update, we're done...
+		return nil
 	}
 	l.Debugf("got inventory device %v\n", devs)
 
