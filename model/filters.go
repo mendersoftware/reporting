@@ -81,7 +81,10 @@ func (sp SearchParams) Validate() error {
 		err := validation.ValidateStruct(&s,
 			validation.Field(&s.Scope, validation.Required),
 			validation.Field(&s.Attribute, validation.Required),
-			validation.Field(&s.Order, validation.Required, validation.In(validSortOrders...)))
+			validation.Field(&s.Order,
+				validation.Required, validation.In(validSortOrders...),
+			),
+		)
 		if err != nil {
 			return err
 		}
@@ -149,10 +152,16 @@ func (f FilterPredicate) ValueType() (Type, bool, error) {
 		case string:
 			break
 		default:
-			return 0, false, errors.New(fmt.Sprintf("unknown attribute value type: %v %T", ival[0], ival[0]))
+			return 0, false, errors.New(
+				fmt.Sprintf("unknown attribute value type: %v %T",
+					ival[0], ival[0]),
+			)
 		}
 	default:
-		return 0, false, errors.New(fmt.Sprintf("unknown attribute value type: %v %T", f.Value, f.Value))
+		return 0, false, errors.New(
+			fmt.Sprintf("unknown attribute value type: %v %T",
+				f.Value, f.Value),
+		)
 
 	}
 

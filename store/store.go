@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -208,7 +207,9 @@ func (s *store) GetDevice(ctx context.Context, tenant, devid string) (*model.Dev
 		if res.StatusCode == http.StatusNotFound {
 			return nil, nil
 		} else {
-			return nil, errors.New(fmt.Sprintf("failed to get device from ES, code %d", res.StatusCode))
+			return nil, errors.Errorf(
+				"failed to get device from ES, code %d", res.StatusCode,
+			)
 
 		}
 	}
@@ -227,7 +228,12 @@ func (s *store) GetDevice(ctx context.Context, tenant, devid string) (*model.Dev
 
 }
 
-func (s *store) UpdateDevice(ctx context.Context, tenantID, deviceID string, updateDev *model.Device) error {
+func (s *store) UpdateDevice(
+	ctx context.Context,
+	tenantID string,
+	deviceID string,
+	updateDev *model.Device,
+) error {
 	l := log.FromContext(ctx)
 
 	id := identity.FromContext(ctx)
@@ -260,7 +266,7 @@ func (s *store) UpdateDevice(ctx context.Context, tenantID, deviceID string, upd
 	case err != nil:
 		return errors.Wrap(err, "failed to update device in ES")
 	case res.IsError():
-		return errors.New(fmt.Sprintf("failed to update device in ES, code %d", res.StatusCode))
+		return errors.Errorf("failed to update device in ES, code %d", res.StatusCode)
 	default:
 		return nil
 	}
@@ -279,12 +285,15 @@ func (s *store) GetDevIndex(ctx context.Context, tid string) (map[string]interfa
 
 	res, err := req.Do(ctx, s.client)
 	if err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("failed to get devices index from store, tid %s", tid))
+		return nil, errors.Wrapf(err, "failed to get devices index from store, tid %s", tid)
 	}
 	defer res.Body.Close()
 
 	if res.IsError() {
-		return nil, errors.New(fmt.Sprintf("failed to get devices index from store, tid %s, code %d", tid, res.StatusCode))
+		return nil, errors.Errorf(
+			"failed to get devices index from store, tid %s, code %d",
+			tid, res.StatusCode,
+		)
 	}
 
 	var indexRes map[string]interface{}

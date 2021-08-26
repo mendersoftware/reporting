@@ -57,7 +57,11 @@ func NewClient(urlBase string, skipVerify bool) Client {
 	}
 }
 
-func (c *client) GetDevices(ctx context.Context, tid string, deviceIDs []string) ([]model.InvDevice, error) {
+func (c *client) GetDevices(
+	ctx context.Context,
+	tid string,
+	deviceIDs []string,
+) ([]model.InvDevice, error) {
 	l := log.FromContext(ctx)
 
 	getReq := &GetDevsReq{

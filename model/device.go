@@ -328,7 +328,10 @@ func randomMacAddress() string {
 	buf := make([]byte, 6)
 	_, _ = rand.Read(buf)
 	buf[0] |= 2
-	return fmt.Sprintf("%02x:%02x:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5])
+	return fmt.Sprintf(
+		"%02x:%02x:%02x:%02x:%02x:%02x",
+		buf[0], buf[1], buf[2], buf[3], buf[4], buf[5],
+	)
 }
 
 func RandomDevice(tid string) *Device {
@@ -396,7 +399,10 @@ func RandomDevice(tid string) *Device {
 
 		NewInventoryAttribute(scopeInventory).
 			SetName("kernel").
-			SetString("Linux version 4.14.181 (charles-chang@rdsuper) (gcc version 8.2.1 20180802 (Linaro GCC 8.2-2018.08~dev)) #1 SMP PREEMPT Fri Mar 12 13:21:16 CST 2021"),
+			SetString("Linux version 4.14.181 (charles-chang@rdsuper) " +
+				"(gcc version 8.2.1 20180802 " +
+				"(Linaro GCC 8.2-2018.08~dev)) " +
+				"#1 SMP PREEMPT Fri Mar 12 13:21:16 CST 2021"),
 
 		NewInventoryAttribute(scopeInventory).
 			SetName("mac_bcm0").
@@ -444,7 +450,9 @@ func RandomDevice(tid string) *Device {
 
 		NewInventoryAttribute(scopeInventory).
 			SetName("rootfs-image.checksum").
-			SetString("dbc44ce5bd57f0c909dfb15a1efd9fd5d4e426c0fa95f18ea2876e1b8a08818f"),
+			SetString(
+				"dbc44ce5bd57f0c909dfb15a1efd9fd5d4e426c0fa95f18ea2876e1b8a08818f",
+			),
 
 		NewInventoryAttribute(scopeInventory).
 			SetName("rootfs-image.version").SetString("system-M1"),

@@ -16,7 +16,6 @@ package http
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -24,6 +23,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/mendersoftware/go-lib-micro/identity"
 	"github.com/mendersoftware/go-lib-micro/rest.utils"
+	"github.com/pkg/errors"
 
 	"github.com/mendersoftware/reporting/app/reporting"
 	"github.com/mendersoftware/reporting/model"
