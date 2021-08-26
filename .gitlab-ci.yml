@@ -29,12 +29,10 @@ include:
     file: '.gitlab-ci-check-docker-build.yml'
 
 test:static:
-  image: golang:1.15
+  image: golangci/golangci-lint:v1.42.0
   needs: []
-  before_script:
-    - |
-      curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | \
-           sh -s -- -b $(go env GOPATH)/bin v1.31.0
+  after_script: []
+  before_script: []
   script:
     - golangci-lint run -v
 
