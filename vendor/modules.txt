@@ -59,6 +59,7 @@ github.com/magiconair/properties
 github.com/mattn/go-isatty
 # github.com/mendersoftware/go-lib-micro v0.0.0-20210705093343-c14ca951acc5
 ## explicit
+github.com/mendersoftware/go-lib-micro/accesslog
 github.com/mendersoftware/go-lib-micro/addons
 github.com/mendersoftware/go-lib-micro/config
 github.com/mendersoftware/go-lib-micro/identity
@@ -98,9 +99,12 @@ github.com/spf13/jwalterweatherman
 github.com/spf13/pflag
 # github.com/spf13/viper v1.8.1
 github.com/spf13/viper
+# github.com/stretchr/objx v0.1.1
+github.com/stretchr/objx
 # github.com/stretchr/testify v1.7.0
 ## explicit
 github.com/stretchr/testify/assert
+github.com/stretchr/testify/mock
 # github.com/subosito/gotenv v1.2.0
 github.com/subosito/gotenv
 # github.com/ugorji/go/codec v1.1.7

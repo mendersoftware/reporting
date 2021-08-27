@@ -18,7 +18,6 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
@@ -34,7 +33,7 @@ const (
 	defaultTimeout = 10 * time.Second
 )
 
-//go:generate ../../utils/mockgen.sh
+//go:generate ../../x/mockgen.sh
 type Client interface {
 	//GetDevices uses the search endpoint to get devices just by ids (not filters)
 	GetDevices(ctx context.Context, tid string, deviceIDs []string) ([]model.InvDevice, error)
@@ -45,7 +44,7 @@ type client struct {
 	urlBase string
 }
 
-func NewClient(urlBase string, skipVerify bool) *client {
+func NewClient(urlBase string, skipVerify bool) Client {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: skipVerify},
 	}
@@ -58,7 +57,11 @@ func NewClient(urlBase string, skipVerify bool) *client {
 	}
 }
 
-func (c *client) GetDevices(ctx context.Context, tid string, deviceIDs []string) ([]model.InvDevice, error) {
+func (c *client) GetDevices(
+	ctx context.Context,
+	tid string,
+	deviceIDs []string,
+) ([]model.InvDevice, error) {
 	l := log.FromContext(ctx)
 
 	getReq := &GetDevsReq{
@@ -75,26 +78,21 @@ func (c *client) GetDevices(ctx context.Context, tid string, deviceIDs []string)
 	url := joinURL(c.urlBase, urlSearch)
 	url = strings.Replace(url, ":tid", tid, 1)
 
-	req, err := http.NewRequest(http.MethodPost, url, rd)
+	ctx, cancel := context.WithTimeout(ctx, defaultTimeout)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, rd)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to create request")
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 
-	ctx, cancel := context.WithTimeout(ctx, defaultTimeout)
-	defer cancel()
-
-	rsp, err := c.client.Do(req.WithContext(ctx))
+	rsp, err := c.client.Do(req)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to submit %s %s", req.Method, req.URL)
 	}
 	defer rsp.Body.Close()
-
-	body, err = ioutil.ReadAll(rsp.Body)
-	if err != nil {
-		body = []byte("<failed to read>")
-	}
 
 	if rsp.StatusCode != http.StatusOK {
 		l.Errorf("request %s %s failed with status %v, response: %s",
@@ -104,10 +102,10 @@ func (c *client) GetDevices(ctx context.Context, tid string, deviceIDs []string)
 			"%s %s request failed with status %v", req.Method, req.URL, rsp.Status)
 	}
 
+	dec := json.NewDecoder(rsp.Body)
 	var invDevs []model.InvDevice
-	err = json.Unmarshal(body, &invDevs)
-	if err != nil {
-		return nil, errors.New("failed to parse inventory device(s)")
+	if err = dec.Decode(&invDevs); err != nil {
+		return nil, errors.Wrap(err, "failed to parse request body")
 	}
 
 	return invDevs, nil

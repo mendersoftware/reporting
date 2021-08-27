@@ -37,9 +37,11 @@ var (
 	ErrUnknownService = errors.New("unknown service name")
 )
 
+//nolint:lll
+//go:generate ../../x/mockgen.sh
 type App interface {
-	InventorySearchDevices(ctx context.Context, searchParams *model.SearchParams) (interface{}, int, error)
 	GetSearchableInvAttrs(ctx context.Context, tid string) ([]model.InvFilterAttr, error)
+	InventorySearchDevices(ctx context.Context, searchParams *model.SearchParams) ([]model.InvDevice, int, error)
 	Reindex(ctx context.Context, tenantID, devID string, service string) error
 }
 
@@ -55,7 +57,10 @@ func NewApp(store store.Store, client inventory.Client) App {
 	}
 }
 
-func (app *app) InventorySearchDevices(ctx context.Context, searchParams *model.SearchParams) (interface{}, int, error) {
+func (app *app) InventorySearchDevices(
+	ctx context.Context,
+	searchParams *model.SearchParams,
+) ([]model.InvDevice, int, error) {
 	query, err := model.BuildQuery(*searchParams)
 	if err != nil {
 		return nil, 0, err
@@ -84,7 +89,9 @@ func (app *app) InventorySearchDevices(ctx context.Context, searchParams *model.
 }
 
 // storeToInventoryDevs translates ES results directly to iventory devices
-func (a *app) storeToInventoryDevs(storeRes map[string]interface{}) ([]model.InvDevice, int, error) {
+func (a *app) storeToInventoryDevs(
+	storeRes map[string]interface{},
+) ([]model.InvDevice, int, error) {
 	devs := []model.InvDevice{}
 
 	hitsM, ok := storeRes["hits"].(map[string]interface{})
@@ -139,12 +146,16 @@ func (a *app) storeToInventoryDev(storeRes interface{}) (*model.InvDevice, error
 	if !ok {
 		idarr, ok := sourceM["id"].([]interface{})
 		if !ok {
-			return nil, errors.New("can't parse device id as neither single value nor array")
+			return nil, errors.New(
+				"can't parse device id as neither single value nor array",
+			)
 		}
 
 		id, ok = idarr[0].(string)
 		if !ok {
-			return nil, errors.New("can't parse device id as neither single value nor array")
+			return nil, errors.New(
+				"can't parse device id as neither single value nor array",
+			)
 		}
 	}
 
@@ -196,6 +207,9 @@ func (app *app) Reindex(ctx context.Context, tenantID, devID string, service str
 	devs, err := app.invClient.GetDevices(ctx, tenantID, []string{devID})
 	if err != nil {
 		return err
+	} else if len(devs) == 0 {
+		// No device update, we're done...
+		return nil
 	}
 	l.Debugf("got inventory device %v\n", devs)
 
@@ -244,7 +258,10 @@ func (app *app) Reindex(ctx context.Context, tenantID, devID string, service str
 	return nil
 }
 
-func (app *app) GetSearchableInvAttrs(ctx context.Context, tid string) ([]model.InvFilterAttr, error) {
+func (app *app) GetSearchableInvAttrs(
+	ctx context.Context,
+	tid string,
+) ([]model.InvFilterAttr, error) {
 	l := log.FromContext(ctx)
 
 	index, err := app.store.GetDevIndex(ctx, tid)

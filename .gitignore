@@ -10,7 +10,7 @@
 *.rej
 *.exe
 .*.swp
-reporting
+/reporting
 
 # Golang files
 **/coverage.txt

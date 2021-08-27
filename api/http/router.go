@@ -15,11 +15,9 @@
 package http
 
 import (
-	"context"
-
 	"github.com/gin-gonic/gin"
+	"github.com/mendersoftware/go-lib-micro/accesslog"
 	"github.com/mendersoftware/go-lib-micro/identity"
-	"github.com/mendersoftware/go-lib-micro/log"
 
 	"github.com/mendersoftware/reporting/app/reporting"
 )
@@ -30,10 +28,10 @@ const (
 	URIManagement = "/api/management/v1/reporting"
 
 	URILiveliness              = "/alive"
-	URIInventorySearch         = "devices/search"
-	URIInventorySearchAttrs    = "devices/search/attributes"
-	URIInventorySearchInternal = "inventory/tenants/:tenant_id/search"
-	URIReindexInternal         = "tenants/:tenant_id/devices/:device_id/reindex"
+	URIInventorySearch         = "/devices/search"
+	URIInventorySearchAttrs    = "/devices/search/attributes"
+	URIInventorySearchInternal = "/inventory/tenants/:tenant_id/search"
+	URIReindexInternal         = "/tenants/:tenant_id/devices/:device_id/reindex"
 )
 
 // NewRouter returns the gin router
@@ -42,10 +40,7 @@ func NewRouter(reporting reporting.App) *gin.Engine {
 	gin.DisableConsoleColor()
 
 	router := gin.New()
-	ctx := context.Background()
-	l := log.FromContext(ctx)
-
-	router.Use(routerLogger(l))
+	router.Use(accesslog.Middleware())
 	router.Use(gin.Recovery())
 
 	internal := NewInternalController(reporting)

@@ -3,7 +3,7 @@ openapi: 3.0.3
 info:
   title: Reporting
   description: |
-    Internal API for the reporting service.
+    Management API for the reporting service.
   version: "1"
 
   contact:
@@ -16,38 +16,21 @@ info:
     url: https://www.apache.org/licenses/LICENSE-2.0.html
 
 servers:
-  - url: http://mender-reporting:8080/api/internal/v1/reporting
+  - url: http://mender-reporting:8080/api/management/v1/reporting
+
+security:
+  - ManagementJWT: []
 
 tags:
-  - name: Internal API
+  - name: Management API
 
 paths:
-  /alive:
-    get:
-      tags:
-        - Internal API
-      summary: Get service liveliness status.
-      operationId: Check Liveliness
-      responses:
-        204:
-          description: Service is up and serving requests.
-        500:
-          $ref: '#/components/responses/InternalServerError'
-
-  /inventory/tenants/{tenant_id}/search:
+  /devices/search:
     post:
       tags:
-        - Internal API
+        - Management API
       summary: Search device inventory data.
-      operationId: Device Search
-      parameters:
-        - in: path
-          name: tenant_id
-          required: true
-          description: Tenant ID to restrct the search context.
-          schema:
-            type: string
-            example: "123456789012345678901234"
+      operationId: Search
       requestBody:
         content:
           application/json:
@@ -59,8 +42,8 @@ paths:
               filters:
                 - attribute: "SN"
                   scope: "inventory"
-                  type: "$eq"
-                  value: "1234567890"
+                  type: "$in"
+                  value: ["1234567890", "0987654321"]
               sort:
                 - attribute: "system-version"
                   scope: "inventory"
@@ -74,6 +57,7 @@ paths:
                 - "ed15eec1-5add-495d-9a3c-119dafe85e4c"
                 - "b8783fed-103f-4416-b935-3dd1180640c6"
                 - "8e5372bc-b28c-4df4-8de2-9fea92e62db3"
+
       responses:
         200:
           description: OK. Returns a paginated list of devices.
@@ -108,42 +92,17 @@ paths:
         500:
           $ref: '#/components/responses/InternalServerError'
 
-  /tenants/{tenant_id}/devices/{device_id}/reindex:
-    post:
-      tags:
-        - Internal API
-      summary: Start reindexing device attributes.
-      operationId: Start Re-indexing
-      parameters:
-        - in: query
-          name: service
-          schema:
-            type: string
-            example: "inventory"
-          description: The name of the calling service. # FIXME Guessing here...
-        - in: path
-          name: device_id
-          required: true
-          description: ID of the device that needs reindexing.
-          schema:
-            type: string
-            example: "4396a839-8147-4d01-ac7d-fd3edf8f7ad0"
-        - in: path
-          name: tenant_id
-          required: true
-          description: ID of tenant owning the device.
-          schema:
-            type: string
-            example: "123456789012345678901234"
-      responses:
-        201:
-          description: Accepted. Re-indexing started.
-        400:
-          $ref: '#/components/responses/InvalidRequestError'
-        500:
-          $ref: '#/components/responses/InternalServerError'
-
 components:
+  securitySchemes:
+    ManagementJWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token issued by 'POST /api/management/v1/useradm/auth/login'
+
+        The JWT can be alternatively passed as a cookie named "JWT".
+
   schemas:
     Error:
       type: object
@@ -285,33 +244,6 @@ components:
           items:
             type: string
           description: Restrict the result to the given device IDs.
-
-    InternalDevice:
-      description: >-
-        NOTE: This is an internal flattened representation of DeviceInventory.
-        It is currently not exposed by the API.
-      type: object
-      properties:
-        id:
-          type: string
-        tenantID:
-          type: string
-        name:
-          type: string
-        groupName:
-          type: string
-        status:
-          type: string
-        attributes:
-          type: array
-          items:
-            $ref: '#/components/schemas/Attribute'
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
 
   responses:
     InternalServerError:

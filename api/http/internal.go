@@ -15,13 +15,13 @@
 package http
 
 import (
-	"github.com/pkg/errors"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mendersoftware/go-lib-micro/identity"
 	"github.com/mendersoftware/go-lib-micro/rest.utils"
+	"github.com/pkg/errors"
 
 	"github.com/mendersoftware/reporting/app/reporting"
 )
@@ -98,9 +98,10 @@ func (ic *InternalController) Reindex(c *gin.Context) {
 			return
 		}
 	default:
+		c.Error(err) //nolint:errcheck
 		rest.RenderError(c,
 			http.StatusInternalServerError,
-			err,
+			errors.New(http.StatusText(http.StatusInternalServerError)),
 		)
 		return
 	}

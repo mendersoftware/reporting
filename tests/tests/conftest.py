@@ -12,27 +12,23 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-import time
-import requests
+import pytest
 import os
 
-
-def main():
-    es_url = os.getenv("ELASTICSEARCH_URL")
-    r_url = os.getenv("REPORTING_URL") + "/api/internal/v1/reporting/alive"
-    for url in [es_url, r_url]:
-        for i in range(300):
-            try:
-                r = requests.get(url)
-                assert 200 <= r.status_code < 400
-            except (requests.RequestException, AssertionError):
-                time.sleep(1)
-                pass
-            else:
-                break
-        else:
-            raise TimeoutError("timed out waiting for '%s'" % url)
+from elasticsearch import Elasticsearch
 
 
-if __name__ == "__main__":
-    main()
+@pytest.fixture(scope="session")
+def elasticsearch():
+    hosts = os.getenv("ELASTICSEARCH_URL").split(",")
+    client = Elasticsearch(hosts=hosts)
+    yield client
+    client.close()
+
+
+@pytest.fixture(scope="function")
+def clean_es(elasticsearch):
+    indices = elasticsearch.cat.indices(format="json")
+    for idx in indices:
+        elasticsearch.indices.delete(idx["index"])
+    yield elasticsearch
