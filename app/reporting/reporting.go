@@ -193,11 +193,21 @@ func (app *app) Reindex(ctx context.Context, tenantID, devID string, service str
 	l := log.FromContext(ctx)
 	l.Debugf("triggered reindexing for device %v:%v", tenantID, devID)
 
+	known := false
+	for _, s := range knownServices {
+		if service == s {
+			known = true
+		}
+	}
+	if !known {
+		return ErrUnknownService
+	}
+
 	err := app.reindexer.Handle(
 		reindexReq{
 			Tenant:   tenantID,
 			Device:   devID,
-			Services: []string{SvcInventory}})
+			Services: []string{service}})
 
 	return err
 }

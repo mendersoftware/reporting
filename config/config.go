@@ -41,7 +41,8 @@ const (
 	SettingReindexMaxTimeMsec        = "reindex_max_time_msec"
 	SettingReindexMaxTimeMsecDefault = 1000
 
-	// SettingReindexBuffLen is the length of the reindex pipeline input buffer/buffered channel (in number of reindex events)
+	// SettingReindexBuffLen is the length of the reindex pipeline input
+	// buffer/buffered channel (in number of reindex events)
 	SettingReindexBuffLen        = "reindex_buff_len"
 	SettingReindexBuffLenDefault = 100
 

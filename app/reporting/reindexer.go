@@ -172,7 +172,11 @@ func squash(inchan chan []reindexReq) chan []reindexReq {
 
 			for k, v := range m {
 				key := strings.Split(k, ":")
-				squashed = append(squashed, reindexReq{Tenant: key[0], Device: key[1], Services: v})
+				squashed = append(squashed,
+					reindexReq{
+						Tenant:   key[0],
+						Device:   key[1],
+						Services: v})
 			}
 
 			out <- squashed
@@ -195,7 +199,8 @@ func fetch(inchan chan []reindexReq, client inventory.Client, store store.Store)
 			// as tenant:device:job maps
 			jobs := map[string]map[string]mergeJob{}
 
-			// inventory, and services in general have to be queried tenant by tenant,so have that
+			// inventory, and services in general have to be queried
+			// tenant by tenant,so do that
 			// (most popular convention in our APIs)
 			tenantDevs := map[string][]string{}
 
@@ -228,13 +233,16 @@ func fetch(inchan chan []reindexReq, client inventory.Client, store store.Store)
 			for tenant, devs := range tenantDevs {
 				invDevs, err := client.GetDevices(context.TODO(), tenant, devs)
 				if err != nil {
-					l.Debugf("fetch inventory error %v for devs %v", err, tenantDevs)
+					l.Debugf("fetch inventory error %v for devs %v",
+						err,
+						tenantDevs)
 					continue
 				} else {
 					l.Debugf("fetch inventory got devs %v \n", invDevs)
 					for _, d := range invDevs {
 						dev := d
-						jobs[tenant][string(d.ID)].SrcInventory.device = &dev
+						jobs[tenant][string(d.ID)].SrcInventory.device =
+							&dev
 					}
 				}
 			}
@@ -268,8 +276,9 @@ func fetch(inchan chan []reindexReq, client inventory.Client, store store.Store)
 	return out
 }
 
-// mergeJob aggregates all the fetched representations of a device (inventory API + other service APIs + ES)
-// (if a representation is null - service didn't ask for an update)
+// mergeJob aggregates all the fetched representations of a device
+// (inventory API + other service APIs + ES)
+// if a representation is null - service didn't ask for an update
 type mergeJob struct {
 	Tenant       string
 	Device       string
@@ -374,51 +383,62 @@ func update(inchan chan []store.BulkItem, store store.Store, numWorkers int) err
 		for bulkItems := range inchan {
 			l.Debugf("update recv %v\n", bulkItems)
 
-			p.Submit(func() {
+			err := p.Submit(func() {
 				res, err := store.BulkRaw(context.TODO(), bulkItems)
 				if err != nil {
-					l.Errorf("BulkRaw failed for bulkItems %v with error %v", bulkItems, err)
+					l.Errorf("BulkRaw failed for bulkItems %v with error %v",
+						bulkItems,
+						err)
 				}
 
 				l.Debugf("bulk response %v", res)
 
 				// inspect the bulk response and at least emit warnings
 				// (future: requeue conflicting devices?)
-				hasErrs := res["errors"].(bool)
-				l.Debugf("bulk response hasErrs %v", hasErrs)
-
-				if hasErrs {
-					items := res["items"].([]interface{})
-
-					// FIXME: steal the struct def from esapi.BulkIndexer
-					// or write our own
-					for _, item := range items {
-						action := item.(map[string]interface{})
-
-						for _, v := range action {
-							valM := v.(map[string]interface{})
-
-							for kk, vv := range valM {
-								var id, idx string
-
-								if kk == "_id" {
-									id = vv.(string)
-								}
-								if kk == "_index" {
-									idx = vv.(string)
-								}
-
-								if kk == "error" {
-									l.Warnf("bulk update failed for dev %v:%v, %v\n", id, idx, valM)
-								}
-							}
-						}
-					}
-
-				}
+				handleBulkResponse(res)
 			})
+			if err != nil {
+				l.Errorf("failed to submit bulk update to pool %v\n", bulkItems)
+			}
 		}
 	}()
 
 	return nil
+}
+
+func handleBulkResponse(res map[string]interface{}) {
+	hasErrs := res["errors"].(bool)
+	l.Debugf("bulk response hasErrs %v", hasErrs)
+
+	if hasErrs {
+		items := res["items"].([]interface{})
+
+		// FIXME: steal the struct def from esapi.BulkIndexer
+		// or write our own
+		for _, item := range items {
+			action := item.(map[string]interface{})
+
+			for _, v := range action {
+				valM := v.(map[string]interface{})
+
+				for kk, vv := range valM {
+					var id, idx string
+
+					if kk == "_id" {
+						id = vv.(string)
+					}
+					if kk == "_index" {
+						idx = vv.(string)
+					}
+
+					if kk == "error" {
+						l.Warnf("bulk update failed for dev %v:%v, %v\n",
+							id,
+							idx,
+							valM)
+					}
+				}
+			}
+		}
+	}
 }

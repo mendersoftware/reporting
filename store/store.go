@@ -184,9 +184,7 @@ func (s *store) BulkRaw(ctx context.Context, items []BulkItem) (map[string]inter
 		return nil, err
 	}
 
-	if l.Logger.IsLevelEnabled(logrus.DebugLevel) {
-		l.Debug("bulk response %v\n", storeRes)
-	}
+	l.Debugf("bulk response %v\n", storeRes)
 
 	return storeRes, nil
 }
@@ -329,7 +327,8 @@ type mgetDoc struct {
 	Index string `json:"_index"`
 }
 
-func (s *store) GetDevices(ctx context.Context, tenantDevs map[string][]string) ([]model.Device, error) {
+func (s *store) GetDevices(ctx context.Context,
+	tenantDevs map[string][]string) ([]model.Device, error) {
 	l := log.FromContext(ctx)
 
 	body := mgetDocs{
@@ -358,7 +357,8 @@ func (s *store) GetDevices(ctx context.Context, tenantDevs map[string][]string) 
 	defer res.Body.Close()
 
 	if res.IsError() {
-		return nil, errors.New(fmt.Sprintf("failed to mget devices, code %d", res.StatusCode))
+		return nil, errors.New(fmt.Sprintf("failed to mget devices, code %d",
+			res.StatusCode))
 	}
 
 	var storeRes map[string]interface{}
@@ -408,7 +408,9 @@ func (s *store) GetDevices(ctx context.Context, tenantDevs map[string][]string) 
 		if !ok {
 			e, ok := docM["error"].(map[string]interface{})
 			if !ok {
-				e := fmt.Sprintf("neither '_source', 'found' nor 'error' found in doc %v", docM)
+				e := fmt.Sprintf(
+					"neither '_source', 'found' nor 'error' found in doc %v",
+					docM)
 				return nil, errors.New(e)
 			}
 
@@ -429,7 +431,10 @@ func (s *store) GetDevices(ctx context.Context, tenantDevs map[string][]string) 
 	return ret, nil
 }
 
-func (s *store) UpdateDevice(ctx context.Context, tenantID, deviceID string, updateDev *model.Device) error {
+func (s *store) UpdateDevice(ctx context.Context,
+	tenantID,
+	deviceID string,
+	updateDev *model.Device) error {
 	l := log.FromContext(ctx)
 
 	id := identity.FromContext(ctx)
