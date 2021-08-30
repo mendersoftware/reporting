@@ -9,3 +9,27 @@
 # Overwrite with environment variable: REPORTING_ELASTICSEARCH_ADDRESSES
 
 # elasticsearch_addresses: "http://localhost:9200"
+
+# Reindex batch size, in number of buffered requests
+# Defauls to: 20
+# Overwrite with environment variable: REPORTING_REINDEX_BATCH_SIZE
+
+# reindex_batch_size: 20
+
+# Reindex max time, after which reindexing is triggered.
+# Defauls to: 1000
+# Overwrite with environment variable: REPORTING_REINDEX_MAX_TIME_MSEC
+
+# reindex_max_time_msec: 1000
+
+# Reindex input buffer length.
+# Defauls to: 100
+# Overwrite with environment variable: REPORTING_REINDEX_BUF_LEN.
+
+# reindex_buf_len: 100
+
+# Number of reindexing workers in the pool
+# Defauls to: 5
+# Overwrite with environment variable: REPORTING_REINDEX_NUM_WORKERS.
+
+# reindex_num_workers: 100

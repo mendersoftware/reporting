@@ -32,6 +32,23 @@ const (
 	SettingInventoryAddr        = "inventory_addr"
 	SettingInventoryAddrDefault = "http://mender-inventory:8080/"
 
+	// SettingReindexBatchSize is the num of buffered requests processed together
+	SettingReindexBatchSize        = "reindex_batch_size"
+	SettingReindexBatchSizeDefault = 20
+
+	// SettingReindexTimeMsec is the max time after which reindexing is triggered
+	// (even if buffered requests didn't reach reindex_batch_size yet)
+	SettingReindexMaxTimeMsec        = "reindex_max_time_msec"
+	SettingReindexMaxTimeMsecDefault = 1000
+
+	// SettingReindexBuffLen is the length of the reindex pipeline input buffer/buffered channel (in number of reindex events)
+	SettingReindexBuffLen        = "reindex_buff_len"
+	SettingReindexBuffLenDefault = 100
+
+	// SettingReindexNumWorkers is the num of workers actually issuing the reindex bulk requests
+	SettingReindexNumWorkers        = "reindex_num_workers"
+	SettingReindexNumWorkersDefault = 5
+
 	// SettingDebugLog is the config key for the truning on the debug log
 	SettingDebugLog = "debug_log"
 	// SettingDebugLogDefault is the default value for the debug log enabling
@@ -45,5 +62,9 @@ var (
 		{Key: SettingElasticsearchAddresses, Value: SettingElasticsearchAddressesDefault},
 		{Key: SettingDebugLog, Value: SettingDebugLogDefault},
 		{Key: SettingInventoryAddr, Value: SettingInventoryAddrDefault},
+		{Key: SettingReindexBuffLen, Value: SettingReindexBuffLenDefault},
+		{Key: SettingReindexMaxTimeMsec, Value: SettingReindexMaxTimeMsecDefault},
+		{Key: SettingReindexBatchSize, Value: SettingReindexBatchSizeDefault},
+		{Key: SettingReindexNumWorkers, Value: SettingReindexNumWorkersDefault},
 	}
 )
