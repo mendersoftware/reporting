@@ -38,6 +38,7 @@ import (
 type Store interface {
 	IndexDevice(ctx context.Context, device *model.Device) error
 	BulkIndexDevices(ctx context.Context, devices []*model.Device) error
+	BulkRaw(ctx context.Context, items []BulkItem) (map[string]interface{}, error)
 
 	Search(ctx context.Context, query interface{}) (model.M, error)
 	GetDevice(ctx context.Context, tenant, devid string) (*model.Device, error)
@@ -93,20 +94,109 @@ func (s *store) IndexDevice(ctx context.Context, device *model.Device) error {
 	return nil
 }
 
-type bulkAction struct {
-	Index *bulkActionIndex `json:"index"`
+type BulkAction struct {
+	Type string
+	Desc *BulkActionDesc
 }
 
-type bulkActionIndex struct {
-	ID    string `json:"_id"`
-	Index string `json:"_index"`
+type BulkActionDesc struct {
+	ID            string `json:"_id"`
+	Index         string `json:"_index"`
+	IfSeqNo       int64  `json:"_if_seq_no"`
+	IfPrimaryTerm int64  `json:"_if_primary_term"`
+	Tenant        string
+}
+
+type BulkItem struct {
+	Action *BulkAction
+	Doc    interface{}
+}
+
+func (bad BulkActionDesc) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		ID    string `json:"_id"`
+		Index string `json:"_index"`
+	}{
+		ID:    bad.ID,
+		Index: devIdx(bad.Tenant),
+	})
+}
+
+func (ba BulkAction) MarshalJSON() ([]byte, error) {
+	a := map[string]*BulkActionDesc{
+		ba.Type: ba.Desc,
+	}
+	return json.Marshal(a)
+}
+
+func (bi BulkItem) Marshal() ([]byte, error) {
+	action, err := json.Marshal(bi.Action)
+	if err != nil {
+		return nil, err
+	}
+	buf := bytes.NewBuffer(action)
+	buf.WriteString("\n")
+
+	if bi.Doc == nil {
+		return buf.Bytes(), nil
+	}
+
+	if bi.Doc != nil {
+		doc, err := json.Marshal(bi.Doc)
+		if err != nil {
+			return nil, err
+		}
+		buf.Write(doc)
+		buf.WriteString("\n")
+	}
+
+	return buf.Bytes(), nil
+}
+
+func (s *store) BulkRaw(ctx context.Context, items []BulkItem) (map[string]interface{}, error) {
+	l := log.FromContext(ctx)
+
+	var buf *bytes.Buffer
+	for _, bi := range items {
+		b, err := bi.Marshal()
+		if err != nil {
+			return nil, err
+		}
+
+		if buf == nil {
+			buf = bytes.NewBuffer(b)
+		}
+
+		buf.Write(b)
+	}
+
+	req := esapi.BulkRequest{
+		Body: buf,
+	}
+	res, err := req.Do(ctx, s.client)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to bulk index")
+	}
+	defer res.Body.Close()
+
+	var storeRes map[string]interface{}
+	if err := json.NewDecoder(res.Body).Decode(&storeRes); err != nil {
+		return nil, err
+	}
+
+	if l.Logger.IsLevelEnabled(logrus.DebugLevel) {
+		l.Debug("bulk response %v\n", storeRes)
+	}
+
+	return storeRes, nil
 }
 
 func (s *store) BulkIndexDevices(ctx context.Context, devices []*model.Device) error {
 	data := ""
 	for _, device := range devices {
-		actionJSON, err := json.Marshal(bulkAction{
-			Index: &bulkActionIndex{
+		actionJSON, err := json.Marshal(BulkAction{
+			Type: "index",
+			Desc: &BulkActionDesc{
 				ID:    device.GetID(),
 				Index: devIdx(device.GetTenantID()),
 			},
