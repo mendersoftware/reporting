@@ -97,6 +97,12 @@ func (ic *InternalController) Reindex(c *gin.Context) {
 			)
 			return
 		}
+	case reporting.ErrReindexChannelFull:
+		rest.RenderError(c,
+			http.StatusServiceUnavailable,
+			err,
+		)
+		return
 	default:
 		c.Error(err) //nolint:errcheck
 		rest.RenderError(c,
