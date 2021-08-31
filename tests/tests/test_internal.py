@@ -408,18 +408,6 @@ class TestInternalSearch:
                     ),
                 ],
             ),
-            _TestCase(
-                tenant_id="wrong",
-                search_terms=internal_api.models.SearchTerms(
-                    filters=[
-                        internal_api.models.FilterTerm(
-                            attribute="foo", value="bar", type="$eq", scope="inventory",
-                        )
-                    ],
-                ),
-                http_code=500,
-                result=[],
-            ),
         ],
         ids=[
             "ok, $eq",
@@ -429,7 +417,6 @@ class TestInternalSearch:
             "ok, $ne + sort",
             "ok, $exists",
             "ok, $regex + sort",
-            "error, missing index for tenant",
         ],
     )
     def test_internal_search(self, test_case, setup_test_context):
@@ -532,12 +519,6 @@ class TestReindex:
             _TestCase(
                 tenant_id="123456789012345678901234",
                 device_id="92173184-1c33-491c-be36-93adba31c2c1",
-                inv_response='{"error": "internal error"}',
-                http_code=500,
-            ),
-            _TestCase(
-                tenant_id="123456789012345678901234",
-                device_id="92173184-1c33-491c-be36-93adba31c2c1",
                 service="unknown",
                 http_code=400,
                 http_body="unknown service name",
@@ -547,7 +528,6 @@ class TestReindex:
             "ok, index new device",
             "ok, update existing device",
             "ok, device has no inventory",
-            "error, internal error from inventory service",
             "error, unknown service",
         ],
     )
