@@ -583,7 +583,7 @@ class TestReindex:
                 and len(test_case.inv_response) > 0
                 and status == 202
             ):
-                time.sleep(1.0)
+                time.sleep(3.0)
                 res = elasticsearch.search(
                     body={"query": {"match": {"id": test_case.device_id}}},
                     index=f"devices-{test_case.tenant_id}",
