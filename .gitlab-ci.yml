@@ -47,6 +47,7 @@ test:acceptance:
   services:
     - name: docker:20.10.8-dind
       alias: docker
+      command: ["--mtu=1440"]
   before_script:
     - apk add docker-compose make
   script:
