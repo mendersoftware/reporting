@@ -508,7 +508,6 @@ class TestReindex:
                         )
                     ],
                 ),
-                marks=pytest.mark.xfail(reason="MEN-4845"),
             ),
             _TestCase(
                 tenant_id="123456789012345678901234",
@@ -564,24 +563,30 @@ class TestReindex:
                 and status == 202
             ):
                 time.sleep(3.0)
-                res = elasticsearch.search(
-                    body={"query": {"match": {"id": test_case.device_id}}},
-                    index=f"devices-{test_case.tenant_id}",
+                res, status, _ = client.device_search_with_http_info(
+                    test_case.tenant_id,
+                    search_terms=internal_api.models.SearchTerms(
+                        filters=[
+                            internal_api.models.FilterTerm(
+                                attribute="id",
+                                value=test_case.device_id,
+                                type="$eq",
+                                scope="system",
+                            )
+                        ]
+                    ),
                 )
-                hits = res["hits"]["hits"]
-                assert len(hits) == 1, (
+                assert status < 300
+                assert len(res) == 1, (
                     "did not find the expected number of device documents, found: %s"
-                    % hits
+                    % repr(res)
                 )
-                actual_doc = hits[0]["_source"]
                 # Check that new attributes exists
                 attrs = test_case.inv_response[0].attributes
-                expected_doc = utils.attributes_to_document(attrs)
-                for key, value in expected_doc.items():
-                    assert key in actual_doc.keys(), (
-                        "key '%s' does not exist in elastic document" % key
-                    )
-                    assert expected_doc[key] == actual_doc[key], (
-                        "document key '%s' does not match" % key
-                    )
+                res_attrs = res[0].attributes
+                for attr in attrs:
+                    if not isinstance(attr.value, list):
+                        # This information is lost on reindex
+                        attr.value = [attr.value]
+                    assert attr in res_attrs
                 # TODO: compare with the old document if any
