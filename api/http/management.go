@@ -86,11 +86,16 @@ func (mc *ManagementController) Search(c *gin.Context) {
 func parseSearchParams(c *gin.Context) (*model.SearchParams, error) {
 	var searchParams model.SearchParams
 
-	searchParams.Page = ParamPageDefault
-	searchParams.PerPage = ParamPerPageDefault
 	err := c.ShouldBindJSON(&searchParams)
 	if err != nil {
 		return nil, err
+	}
+
+	if searchParams.PerPage <= 0 {
+		searchParams.PerPage = ParamPerPageDefault
+	}
+	if searchParams.Page <= 0 {
+		searchParams.Page = ParamPageDefault
 	}
 
 	if err := searchParams.Validate(); err != nil {

@@ -408,18 +408,6 @@ class TestInternalSearch:
                     ),
                 ],
             ),
-            _TestCase(
-                tenant_id="wrong",
-                search_terms=internal_api.models.SearchTerms(
-                    filters=[
-                        internal_api.models.FilterTerm(
-                            attribute="foo", value="bar", type="$eq", scope="inventory",
-                        )
-                    ],
-                ),
-                http_code=500,
-                result=[],
-            ),
         ],
         ids=[
             "ok, $eq",
@@ -429,7 +417,6 @@ class TestInternalSearch:
             "ok, $ne + sort",
             "ok, $exists",
             "ok, $regex + sort",
-            "error, missing index for tenant",
         ],
     )
     def test_internal_search(self, test_case, setup_test_context):
@@ -521,19 +508,12 @@ class TestReindex:
                         )
                     ],
                 ),
-                marks=pytest.mark.xfail(reason="MEN-4845"),
             ),
             _TestCase(
                 tenant_id="123456789012345678901234",
                 device_id="92173184-1c33-491c-be36-93adba31c2c1",
                 inv_response=[],
                 http_code=202,
-            ),
-            _TestCase(
-                tenant_id="123456789012345678901234",
-                device_id="92173184-1c33-491c-be36-93adba31c2c1",
-                inv_response='{"error": "internal error"}',
-                http_code=500,
             ),
             _TestCase(
                 tenant_id="123456789012345678901234",
@@ -547,7 +527,6 @@ class TestReindex:
             "ok, index new device",
             "ok, update existing device",
             "ok, device has no inventory",
-            "error, internal error from inventory service",
             "error, unknown service",
         ],
     )
@@ -583,25 +562,31 @@ class TestReindex:
                 and len(test_case.inv_response) > 0
                 and status == 202
             ):
-                time.sleep(1.0)
-                res = elasticsearch.search(
-                    body={"query": {"match": {"id": test_case.device_id}}},
-                    index=f"devices-{test_case.tenant_id}",
+                time.sleep(3.0)
+                res, status, _ = client.device_search_with_http_info(
+                    test_case.tenant_id,
+                    search_terms=internal_api.models.SearchTerms(
+                        filters=[
+                            internal_api.models.FilterTerm(
+                                attribute="id",
+                                value=test_case.device_id,
+                                type="$eq",
+                                scope="system",
+                            )
+                        ]
+                    ),
                 )
-                hits = res["hits"]["hits"]
-                assert len(hits) == 1, (
+                assert status < 300
+                assert len(res) == 1, (
                     "did not find the expected number of device documents, found: %s"
-                    % hits
+                    % repr(res)
                 )
-                actual_doc = hits[0]["_source"]
                 # Check that new attributes exists
                 attrs = test_case.inv_response[0].attributes
-                expected_doc = utils.attributes_to_document(attrs)
-                for key, value in expected_doc.items():
-                    assert key in actual_doc.keys(), (
-                        "key '%s' does not exist in elastic document" % key
-                    )
-                    assert expected_doc[key] == actual_doc[key], (
-                        "document key '%s' does not match" % key
-                    )
+                res_attrs = res[0].attributes
+                for attr in attrs:
+                    if not isinstance(attr.value, list):
+                        # This information is lost on reindex
+                        attr.value = [attr.value]
+                    assert attr in res_attrs
                 # TODO: compare with the old document if any

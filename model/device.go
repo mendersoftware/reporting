@@ -48,6 +48,17 @@ type Device struct {
 	SystemAttributes    DeviceInventory `json:"systemAttributes,omitempty"`
 	CreatedAt           *time.Time      `json:"createdAt,omitempty"`
 	UpdatedAt           *time.Time      `json:"updatedAt,omitempty"`
+	Meta                *DeviceMeta     `json:"-"`
+}
+
+type DeviceMeta struct {
+	SeqNo       int64
+	PrimaryTerm int64
+}
+
+func (d *Device) WithMeta(m *DeviceMeta) *Device {
+	d.Meta = m
+	return d
 }
 
 func NewDevice(id string) *Device {

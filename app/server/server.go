@@ -56,7 +56,21 @@ func InitAndRun(conf config.Reader, store store.Store) error {
 		false,
 	)
 
-	reporting := reporting.NewApp(store, invClient)
+	reindexer := reporting.NewReindexer(
+		&reporting.ReindexerConfig{
+			NumWorkers:  conf.GetInt(dconfig.SettingReindexNumWorkers),
+			BatchSize:   conf.GetInt(dconfig.SettingReindexBatchSize),
+			MaxTimeMsec: conf.GetInt(dconfig.SettingReindexMaxTimeMsec),
+			BuffLen:     conf.GetInt(dconfig.SettingReindexBuffLen),
+		},
+		invClient,
+		store)
+
+	reporting := reporting.NewApp(store, invClient, reindexer)
+	err := reindexer.Run()
+	if err != nil {
+		return err
+	}
 
 	var router = api.NewRouter(reporting)
 	srv := &http.Server{

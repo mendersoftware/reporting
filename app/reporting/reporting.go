@@ -17,7 +17,6 @@ import (
 	"context"
 	"errors"
 	"sort"
-	"time"
 
 	"github.com/mendersoftware/go-lib-micro/log"
 
@@ -48,12 +47,14 @@ type App interface {
 type app struct {
 	store     store.Store
 	invClient inventory.Client
+	reindexer Reindexer
 }
 
-func NewApp(store store.Store, client inventory.Client) App {
+func NewApp(store store.Store, client inventory.Client, ri Reindexer) App {
 	return &app{
 		store:     store,
 		invClient: client,
+		reindexer: ri,
 	}
 }
 
@@ -192,70 +193,23 @@ func (app *app) Reindex(ctx context.Context, tenantID, devID string, service str
 	l := log.FromContext(ctx)
 	l.Debugf("triggered reindexing for device %v:%v", tenantID, devID)
 
-	found := false
+	known := false
 	for _, s := range knownServices {
-		if s == service {
-			found = true
+		if service == s {
+			known = true
 		}
 	}
-
-	if !found {
+	if !known {
 		return ErrUnknownService
 	}
 
-	l.Debug("getting inventory device")
-	devs, err := app.invClient.GetDevices(ctx, tenantID, []string{devID})
-	if err != nil {
-		return err
-	} else if len(devs) == 0 {
-		// No device update, we're done...
-		return nil
-	}
-	l.Debugf("got inventory device %v\n", devs)
+	err := app.reindexer.Handle(
+		reindexReq{
+			Tenant:   tenantID,
+			Device:   devID,
+			Services: []string{service}})
 
-	l.Debugf("getting store device")
-	esdev, err := app.store.GetDevice(ctx, tenantID, devID)
-
-	if err != nil {
-		return err
-	}
-
-	now := time.Now().UTC()
-
-	if esdev == nil {
-		l.Debug("device not found in store, but it's ok, creating")
-		newdev, _ := model.NewDeviceFromInv(tenantID, &devs[0])
-		newdev.SetCreatedAt(now)
-		newdev.SetUpdatedAt(now)
-
-		err := app.store.IndexDevice(ctx, newdev)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	}
-
-	l.Debugf("got store device %v", esdev)
-
-	// GOTCHA here we could prepare a diff between the es device and inventory device but
-	// the logic is extremely complex
-	// instead prepare a 'new' device (based on the inventory device) as an update document
-	// worst case - noop from ES
-	update, err := model.NewDeviceFromInv(tenantID, &devs[0])
-	update.SetUpdatedAt(now)
-
-	if err != nil {
-		return err
-	}
-
-	l.Debugf("updating device %v", update)
-	err = app.store.UpdateDevice(ctx, tenantID, devID, update)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func (app *app) GetSearchableInvAttrs(

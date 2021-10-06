@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -37,9 +38,11 @@ import (
 type Store interface {
 	IndexDevice(ctx context.Context, device *model.Device) error
 	BulkIndexDevices(ctx context.Context, devices []*model.Device) error
+	BulkRaw(ctx context.Context, items []BulkItem) (map[string]interface{}, error)
 
 	Search(ctx context.Context, query interface{}) (model.M, error)
 	GetDevice(ctx context.Context, tenant, devid string) (*model.Device, error)
+	GetDevices(ctx context.Context, tenantDevs map[string][]string) ([]model.Device, error)
 	UpdateDevice(ctx context.Context, tenantID, deviceID string, updateDev *model.Device) error
 	Migrate(ctx context.Context) error
 	GetDevIndex(ctx context.Context, tid string) (map[string]interface{}, error)
@@ -91,20 +94,107 @@ func (s *store) IndexDevice(ctx context.Context, device *model.Device) error {
 	return nil
 }
 
-type bulkAction struct {
-	Index *bulkActionIndex `json:"index"`
+type BulkAction struct {
+	Type string
+	Desc *BulkActionDesc
 }
 
-type bulkActionIndex struct {
-	ID    string `json:"_id"`
-	Index string `json:"_index"`
+type BulkActionDesc struct {
+	ID            string `json:"_id"`
+	Index         string `json:"_index"`
+	IfSeqNo       int64  `json:"_if_seq_no"`
+	IfPrimaryTerm int64  `json:"_if_primary_term"`
+	Tenant        string
+}
+
+type BulkItem struct {
+	Action *BulkAction
+	Doc    interface{}
+}
+
+func (bad BulkActionDesc) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		ID    string `json:"_id"`
+		Index string `json:"_index"`
+	}{
+		ID:    bad.ID,
+		Index: devIdx(bad.Tenant),
+	})
+}
+
+func (ba BulkAction) MarshalJSON() ([]byte, error) {
+	a := map[string]*BulkActionDesc{
+		ba.Type: ba.Desc,
+	}
+	return json.Marshal(a)
+}
+
+func (bi BulkItem) Marshal() ([]byte, error) {
+	action, err := json.Marshal(bi.Action)
+	if err != nil {
+		return nil, err
+	}
+	buf := bytes.NewBuffer(action)
+	buf.WriteString("\n")
+
+	if bi.Doc == nil {
+		return buf.Bytes(), nil
+	}
+
+	if bi.Doc != nil {
+		doc, err := json.Marshal(bi.Doc)
+		if err != nil {
+			return nil, err
+		}
+		buf.Write(doc)
+		buf.WriteString("\n")
+	}
+
+	return buf.Bytes(), nil
+}
+
+func (s *store) BulkRaw(ctx context.Context, items []BulkItem) (map[string]interface{}, error) {
+	l := log.FromContext(ctx)
+
+	var buf *bytes.Buffer
+	for _, bi := range items {
+		b, err := bi.Marshal()
+		if err != nil {
+			return nil, err
+		}
+
+		if buf == nil {
+			buf = bytes.NewBuffer(b)
+		}
+
+		buf.Write(b)
+	}
+
+	req := esapi.BulkRequest{
+		Body: buf,
+	}
+	res, err := req.Do(ctx, s.client)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to bulk index")
+	}
+	defer res.Body.Close()
+
+	var storeRes map[string]interface{}
+	if err := json.NewDecoder(res.Body).Decode(&storeRes); err != nil {
+		return nil, err
+	}
+
+	l.Debugf("bulk response %v\n", storeRes)
+
+	return storeRes, nil
 }
 
 func (s *store) BulkIndexDevices(ctx context.Context, devices []*model.Device) error {
 	data := ""
 	for _, device := range devices {
-		actionJSON, err := json.Marshal(bulkAction{
-			Index: &bulkActionIndex{
+		actionJSON, err := json.Marshal(BulkAction{
+			Type: "index",
+			Desc: &BulkActionDesc{
 				ID:    device.GetID(),
 				Index: devIdx(device.GetTenantID()),
 			},
@@ -228,12 +318,123 @@ func (s *store) GetDevice(ctx context.Context, tenant, devid string) (*model.Dev
 
 }
 
-func (s *store) UpdateDevice(
-	ctx context.Context,
-	tenantID string,
+type mgetDocs struct {
+	Docs []mgetDoc `json:"docs"`
+}
+
+type mgetDoc struct {
+	ID    string `json:"_id"`
+	Index string `json:"_index"`
+}
+
+func (s *store) GetDevices(ctx context.Context,
+	tenantDevs map[string][]string) ([]model.Device, error) {
+	l := log.FromContext(ctx)
+
+	body := mgetDocs{
+		Docs: []mgetDoc{},
+	}
+
+	for tid, devs := range tenantDevs {
+		for _, d := range devs {
+			body.Docs = append(body.Docs, mgetDoc{d, devIdx(tid)})
+		}
+	}
+
+	data, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+
+	req := esapi.MgetRequest{
+		Body: bytes.NewReader(data),
+	}
+
+	res, err := req.Do(ctx, s.client)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to mget devices")
+	}
+	defer res.Body.Close()
+
+	if res.IsError() {
+		return nil, errors.New(fmt.Sprintf("failed to mget devices, code %d",
+			res.StatusCode))
+	}
+
+	var storeRes map[string]interface{}
+	if err := json.NewDecoder(res.Body).Decode(&storeRes); err != nil {
+		return nil, err
+	}
+
+	if l.Logger.IsLevelEnabled(logrus.DebugLevel) {
+		l.Debugf("es mget result:\n%v\n", storeRes)
+	}
+
+	ret := []model.Device{}
+
+	// result is a list of docs
+	storeDocs := storeRes["docs"].([]interface{})
+
+	// each doc has a '_source'
+	// (if found and didn't trigger an error)
+	for _, doc := range storeDocs {
+		docM, ok := doc.(map[string]interface{})
+		if !ok {
+			return nil, errors.New("can't process doc")
+		}
+
+		// if not found - has 'found = false'
+		found, ok := docM["found"].(bool)
+		if ok && !found {
+			continue
+		}
+
+		source, ok := docM["_source"].(map[string]interface{})
+		if ok {
+			dev, err := model.NewDeviceFromEsSource(source)
+			if err != nil {
+				return nil, errors.Wrap(err, "can't parse _source into model")
+			}
+
+			dev = dev.WithMeta(&model.DeviceMeta{
+				SeqNo:       int64(docM["_seq_no"].(float64)),
+				PrimaryTerm: int64(docM["_primary_term"].(float64)),
+			})
+			ret = append(ret, *dev)
+		}
+
+		// source not parsed after all - maybe doc triggered an error
+		// we allow one kind of error, index not found (yet - before first device request)
+		if !ok {
+			e, ok := docM["error"].(map[string]interface{})
+			if !ok {
+				e := fmt.Sprintf(
+					"neither '_source', 'found' nor 'error' found in doc %v",
+					docM)
+				return nil, errors.New(e)
+			}
+
+			etyp, ok := e["type"].(string)
+			if !ok {
+				return nil, errors.New("found doc error, but it has no type")
+			}
+
+			if etyp != "index_not_found_exception" {
+				return nil, errors.New("unexpected error " + etyp)
+			}
+
+		}
+	}
+
+	l.Debugf("es mget parsed result:\n%v\n", ret)
+
+	return ret, nil
+}
+
+func (s *store) UpdateDevice(ctx context.Context,
+	tenantID,
 	deviceID string,
-	updateDev *model.Device,
-) error {
+	updateDev *model.Device) error {
 	l := log.FromContext(ctx)
 
 	id := identity.FromContext(ctx)

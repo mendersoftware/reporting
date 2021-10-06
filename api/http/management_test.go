@@ -53,10 +53,10 @@ func TestManagementSearch(t *testing.T) {
 	t.Parallel()
 	var newSearchParamMatcher = func(expected *model.SearchParams) interface{} {
 		return mock.MatchedBy(func(actual *model.SearchParams) bool {
-			if expected.Page < 0 {
+			if expected.Page <= 0 {
 				expected.Page = ParamPageDefault
 			}
-			if expected.PerPage < 0 {
+			if expected.PerPage <= 0 {
 				expected.PerPage = ParamPerPageDefault
 			}
 			if assert.NotNil(t, actual) {
