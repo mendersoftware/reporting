@@ -50,15 +50,6 @@ func (mc *ManagementController) Search(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	id := identity.FromContext(ctx)
-	if id == nil || id.Tenant == "" {
-		rest.RenderError(c,
-			http.StatusUnauthorized,
-			errors.New("tenant claim not present in JWT"),
-		)
-		return
-	}
-
 	params, err := parseSearchParams(c)
 	if err != nil {
 		rest.RenderError(c,
@@ -139,14 +130,6 @@ func (mc *ManagementController) SearchAttrs(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	id := identity.FromContext(ctx)
-	if id == nil || id.Tenant == "" {
-		rest.RenderError(c,
-			http.StatusUnauthorized,
-			errors.New("tenant claim not present in JWT"),
-		)
-		return
-	}
-
 	res, err := mc.reporting.GetSearchableInvAttrs(ctx, id.Tenant)
 	if err != nil {
 		rest.RenderError(c,
