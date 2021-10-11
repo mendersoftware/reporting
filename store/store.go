@@ -254,9 +254,13 @@ func (s *store) Search(ctx context.Context, query interface{}) (model.M, error) 
 
 	id := identity.FromContext(ctx)
 
+	indexName := "devices"
+	if id.Tenant != "" {
+		indexName = indexName + "-" + id.Tenant
+	}
 	resp, err := s.client.Search(
 		s.client.Search.WithContext(ctx),
-		s.client.Search.WithIndex("devices-"+id.Tenant),
+		s.client.Search.WithIndex(indexName),
 		s.client.Search.WithBody(&buf),
 		s.client.Search.WithTrackTotalHits(true),
 	)
@@ -473,7 +477,7 @@ func (s *store) UpdateDevice(ctx context.Context,
 	}
 }
 
-// GetDevIndex retrieves the "devices-" index definition for tenant 'tid'
+// GetDevIndex retrieves the "devices*" index definition for tenant 'tid'
 // existing fields, incl. inventory attributes, are found under 'properties'
 // see: https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-get-index.html
 func (s *store) GetDevIndex(ctx context.Context, tid string) (map[string]interface{}, error) {
@@ -525,5 +529,8 @@ func WithServerAddresses(addresses []string) StoreOption {
 
 // devIdx prepares "devices" index name for tenant tid
 func devIdx(tid string) string {
+	if tid == "" {
+		return indexDevices
+	}
 	return indexDevices + "-" + tid
 }

@@ -17,7 +17,7 @@ package store
 const (
 	indexDevices         = "devices"
 	indexDevicesTemplate = `{
-	"index_patterns": ["devices-*"],
+	"index_patterns": ["devices*"],
 	"priority": 1,
 	"template": {
 		"settings": {
