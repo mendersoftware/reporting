@@ -17,22 +17,13 @@ package model
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
-	"math/rand"
 	"strings"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 const (
 	StatusAccepted = "accepted"
 	StatusPending  = "pending"
-)
-
-const (
-	attrMacAddress = "mac"
-	attrSerialNo   = "serial_no"
 )
 
 type Device struct {
@@ -336,137 +327,6 @@ func (a *InventoryAttribute) SetVal(val interface{}) *InventoryAttribute {
 	}
 
 	return a
-}
-
-func randomMacAddress() string {
-	buf := make([]byte, 6)
-	_, _ = rand.Read(buf)
-	buf[0] |= 2
-	return fmt.Sprintf(
-		"%02x:%02x:%02x:%02x:%02x:%02x",
-		buf[0], buf[1], buf[2], buf[3], buf[4], buf[5],
-	)
-}
-
-func RandomDevice(tid string) *Device {
-	id := uuid.New().String()
-	device := NewDevice(id)
-	device.SetName("device-" + id)
-	device.SetTenantID(tid)
-	device.SetCreatedAt(time.Now().UTC()).SetUpdatedAt(time.Now().UTC())
-
-	if rand.Intn(10) > 7 {
-		device.SetStatus(StatusPending)
-	} else {
-		device.SetStatus(StatusAccepted)
-	}
-
-	groupId := rand.Intn(100)
-	device.SetGroupName(fmt.Sprintf("group-%02d", groupId))
-
-	macAddress := randomMacAddress()
-
-	device.IdentityAttributes = DeviceInventory{
-		NewInventoryAttribute(scopeIdentity).
-			SetName(attrMacAddress).
-			SetString(macAddress),
-
-		NewInventoryAttribute(scopeIdentity).
-			SetName(attrSerialNo).
-			SetString(fmt.Sprintf("%012d", rand.Intn(999999999999))),
-	}
-
-	device.InventoryAttributes = DeviceInventory{
-		NewInventoryAttribute(scopeInventory).
-			SetName(attrMacAddress).
-			SetString(macAddress),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("artifact_name").
-			SetString("system-M1"),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("device_type").
-			SetString("dm1"),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("hostname").
-			SetString("Ambarella"),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("ipv4_bcm0").
-			SetString("192.168.42.1/24"),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("ipv4_usb0").
-			SetString("10.0.1.2/8"),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("ipv4_wlan0").
-			SetString("192.168.1.111/24"),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("kernel").
-			SetString("Linux version 4.14.181 (charles-chang@rdsuper) " +
-				"(gcc version 8.2.1 20180802 " +
-				"(Linaro GCC 8.2-2018.08~dev)) " +
-				"#1 SMP PREEMPT Fri Mar 12 13:21:16 CST 2021"),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("mac_bcm0").
-			SetString(macAddress),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("mac_usb0").
-			SetString(macAddress),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("mac_wlan0").
-			SetString(macAddress),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("mem_total_kB").
-			SetNumeric(1020664),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("group_id").
-			SetNumeric(float64(groupId)),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("mender_bootloader_integration").
-			SetString("unknown"),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("mender_client_version").
-			SetString("7cb96ca"),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("network_interfaces").
-			SetStrings([]string{"bcm0", "usb0", "wlan0"}),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("os").
-			SetString("Ambarella Flexible Linux CV25 (2.5.7) DMS (0.0.0.21B)"),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("rootfs_type").
-			SetString("ext4"),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("rootfs_type").
-			SetString("ext4"),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("rootfs-image.checksum").
-			SetString(
-				"dbc44ce5bd57f0c909dfb15a1efd9fd5d4e426c0fa95f18ea2876e1b8a08818f",
-			),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("rootfs-image.version").SetString("system-M1"),
-	}
-
-	return device
 }
 
 func (d *Device) MarshalJSON() ([]byte, error) {
