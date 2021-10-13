@@ -378,6 +378,7 @@ func (f *filterExists) AddTo(q Query) Query {
 	exists := f.fp.Value.(bool)
 	astr := ToAttr(f.fp.Scope, f.fp.Attribute, TypeStr)
 	anum := ToAttr(f.fp.Scope, f.fp.Attribute, TypeNum)
+	abool := ToAttr(f.fp.Scope, f.fp.Attribute, TypeBool)
 
 	if exists {
 		return q.Must(M{
@@ -386,6 +387,7 @@ func (f *filterExists) AddTo(q Query) Query {
 				"should": S{
 					M{"exists": M{"field": astr}},
 					M{"exists": M{"field": anum}},
+					M{"exists": M{"field": abool}},
 				},
 			},
 		})
@@ -393,7 +395,8 @@ func (f *filterExists) AddTo(q Query) Query {
 
 	return q.
 		MustNot(M{"exists": M{"field": astr}}).
-		MustNot(M{"exists": M{"field": anum}})
+		MustNot(M{"exists": M{"field": anum}}).
+		MustNot(M{"exists": M{"field": abool}})
 }
 
 // "$gt", "$gte", "$lt", "$lte"
@@ -427,14 +430,16 @@ func (f *filterRange) AddTo(q Query) Query {
 
 //
 type sort struct {
-	attrStr string
-	attrNum string
+	attrStr  string
+	attrNum  string
+	attrBool string
 }
 
 func NewSort(sc SortCriteria) *sort {
 	return &sort{
-		attrStr: ToAttr(sc.Scope, sc.Attribute, TypeStr),
-		attrNum: ToAttr(sc.Scope, sc.Attribute, TypeNum),
+		attrStr:  ToAttr(sc.Scope, sc.Attribute, TypeStr),
+		attrNum:  ToAttr(sc.Scope, sc.Attribute, TypeNum),
+		attrBool: ToAttr(sc.Scope, sc.Attribute, TypeBool),
 	}
 }
 
@@ -475,6 +480,7 @@ func (s *sel) AddTo(q Query) Query {
 		fields = append(fields,
 			ToAttr(a.Scope, a.Attribute, TypeStr),
 			ToAttr(a.Scope, a.Attribute, TypeNum),
+			ToAttr(a.Scope, a.Attribute, TypeBool),
 		)
 	}
 

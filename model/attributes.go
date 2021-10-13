@@ -35,14 +35,16 @@ const (
 
 // type enum/suffixes
 const (
-	typeStr = "str"
-	typeNum = "num"
+	typeStr  = "str"
+	typeNum  = "num"
+	typeBool = "bool"
 )
 
 var (
 	attrSuffixes = map[Type]string{
-		TypeStr: typeStr,
-		TypeNum: typeNum,
+		TypeStr:  typeStr,
+		TypeNum:  typeNum,
+		TypeBool: typeBool,
 	}
 )
 

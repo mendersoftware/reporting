@@ -94,6 +94,14 @@ const (
 					}
 				},
 				{
+					"monitor_bools": {
+						"match": "monitor_*_bool",
+						"mapping": {
+							"type": "boolean"
+						}
+					}
+				},
+				{
 					"monitor_nums": {
 						"match": "monitor_*_num",
 						"mapping": {
@@ -108,7 +116,7 @@ const (
 							"type": "keyword"
 						}
 					}
-				}
+				},
 				{
 					"tags_nums": {
 						"match": "tags_*_num",
@@ -127,5 +135,6 @@ const (
 				}
 			]
 		}
-	}}`
+	}
+}`
 )

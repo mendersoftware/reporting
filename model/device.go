@@ -234,6 +234,7 @@ type InventoryAttribute struct {
 	Name    string
 	String  []string
 	Numeric []float64
+	Boolean []bool
 }
 
 func (a *InventoryAttribute) IsStr() bool {
@@ -242,6 +243,10 @@ func (a *InventoryAttribute) IsStr() bool {
 
 func (a *InventoryAttribute) IsNum() bool {
 	return a.Numeric != nil
+}
+
+func (a *InventoryAttribute) IsBool() bool {
+	return a.Boolean != nil
 }
 
 func NewInventoryAttribute(s string) *InventoryAttribute {
@@ -268,6 +273,7 @@ func (a *InventoryAttribute) GetString() string {
 
 func (a *InventoryAttribute) SetString(val string) *InventoryAttribute {
 	a.String = []string{val}
+	a.Boolean = nil
 	a.Numeric = nil
 	return a
 }
@@ -278,6 +284,7 @@ func (a *InventoryAttribute) GetStrings() []string {
 
 func (a *InventoryAttribute) SetStrings(val []string) *InventoryAttribute {
 	a.String = val
+	a.Boolean = nil
 	a.Numeric = nil
 	return a
 }
@@ -291,12 +298,28 @@ func (a *InventoryAttribute) GetNumeric() float64 {
 
 func (a *InventoryAttribute) SetNumeric(val float64) *InventoryAttribute {
 	a.Numeric = []float64{val}
+	a.Boolean = nil
 	a.String = nil
 	return a
 }
 
 func (a *InventoryAttribute) SetNumerics(val []float64) *InventoryAttribute {
 	a.Numeric = val
+	a.String = nil
+	a.Boolean = nil
+	return a
+}
+
+func (a *InventoryAttribute) SetBoolean(val bool) *InventoryAttribute {
+	a.Boolean = []bool{val}
+	a.Numeric = nil
+	a.String = nil
+	return a
+}
+
+func (a *InventoryAttribute) SetBooleans(val []bool) *InventoryAttribute {
+	a.Boolean = val
+	a.Numeric = nil
 	a.String = nil
 	return a
 }
@@ -305,12 +328,20 @@ func (a *InventoryAttribute) SetNumerics(val []float64) *InventoryAttribute {
 // useful for translating from inventory attributes (interface{})
 func (a *InventoryAttribute) SetVal(val interface{}) *InventoryAttribute {
 	switch val := val.(type) {
+	case bool:
+		a.SetBoolean(val)
 	case float64:
 		a.SetNumeric(val)
 	case string:
 		a.SetString(val)
 	case []interface{}:
 		switch val[0].(type) {
+		case bool:
+			bools := make([]bool, len(val))
+			for i, v := range val {
+				bools[i] = v.(bool)
+			}
+			a.SetBooleans(bools)
 		case float64:
 			nums := make([]float64, len(val))
 			for i, v := range val {
@@ -360,11 +391,12 @@ func (a *InventoryAttribute) Map() (string, interface{}) {
 	if a.IsStr() {
 		typ = TypeStr
 		val = a.String
-	}
-
-	if a.IsNum() {
+	} else if a.IsNum() {
 		typ = TypeNum
 		val = a.Numeric
+	} else if a.IsBool() {
+		typ = TypeBool
+		val = a.Boolean
 	}
 
 	name := ToAttr(a.Scope, a.Name, typ)
