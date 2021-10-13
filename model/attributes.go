@@ -28,8 +28,9 @@ const (
 const (
 	scopeInventory = "inventory"
 	scopeIdentity  = "identity"
-	scopeCustom    = "custom"
 	scopeSystem    = "system"
+	scopeTags      = "tags"
+	scopeMonitor   = "monitor"
 )
 
 // type enum/suffixes

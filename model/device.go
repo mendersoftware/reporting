@@ -33,7 +33,6 @@ const (
 const (
 	attrMacAddress = "mac"
 	attrSerialNo   = "serial_no"
-	attrTag        = "tag"
 )
 
 type Device struct {
@@ -42,10 +41,11 @@ type Device struct {
 	Name                *string         `json:"name,omitempty"`
 	GroupName           *string         `json:"groupName,omitempty"`
 	Status              *string         `json:"status,omitempty"`
-	CustomAttributes    DeviceInventory `json:"customAttributes,omitempty"`
 	IdentityAttributes  DeviceInventory `json:"identityAttributes,omitempty"`
 	InventoryAttributes DeviceInventory `json:"inventoryAttributes,omitempty"`
+	MonitorAttributes   DeviceInventory `json:"monitorAttributes,omitempty"`
 	SystemAttributes    DeviceInventory `json:"systemAttributes,omitempty"`
+	TagsAttributes      DeviceInventory `json:"tagsAttributes,omitempty"`
 	CreatedAt           *time.Time      `json:"createdAt,omitempty"`
 	UpdatedAt           *time.Time      `json:"updatedAt,omitempty"`
 	Meta                *DeviceMeta     `json:"-"`
@@ -131,17 +131,20 @@ func (a *Device) handleSpecialAttr(attr *InventoryAttribute) {
 
 func (a *Device) AppendAttr(attr *InventoryAttribute) error {
 	switch attr.Scope {
+	case scopeIdentity:
+		a.IdentityAttributes = append(a.IdentityAttributes, attr)
+		return nil
 	case scopeInventory:
 		a.InventoryAttributes = append(a.InventoryAttributes, attr)
 		return nil
-	case scopeIdentity:
-		a.IdentityAttributes = append(a.IdentityAttributes, attr)
+	case scopeMonitor:
+		a.MonitorAttributes = append(a.MonitorAttributes, attr)
 		return nil
 	case scopeSystem:
 		a.SystemAttributes = append(a.SystemAttributes, attr)
 		return nil
-	case scopeCustom:
-		a.CustomAttributes = append(a.CustomAttributes, attr)
+	case scopeTags:
+		a.TagsAttributes = append(a.TagsAttributes, attr)
 		return nil
 	default:
 		return errors.New("unknown attribute scope " + attr.Scope)
@@ -361,12 +364,6 @@ func RandomDevice(tid string) *Device {
 	groupId := rand.Intn(100)
 	device.SetGroupName(fmt.Sprintf("group-%02d", groupId))
 
-	device.CustomAttributes = DeviceInventory{
-		NewInventoryAttribute(scopeCustom).
-			SetName(attrTag).
-			SetString(fmt.Sprintf("value-%02d", rand.Intn(100))),
-	}
-
 	macAddress := randomMacAddress()
 
 	device.IdentityAttributes = DeviceInventory{
@@ -483,22 +480,12 @@ func (d *Device) MarshalJSON() ([]byte, error) {
 	m["createdAt"] = d.CreatedAt
 	m["updatedAt"] = d.UpdatedAt
 
-	for _, a := range d.CustomAttributes {
-		name, val := a.Map()
-		m[name] = val
-	}
+	attributes := append(d.IdentityAttributes, d.InventoryAttributes...)
+	attributes = append(attributes, d.MonitorAttributes...)
+	attributes = append(attributes, d.SystemAttributes...)
+	attributes = append(attributes, d.TagsAttributes...)
 
-	for _, a := range d.IdentityAttributes {
-		name, val := a.Map()
-		m[name] = val
-	}
-
-	for _, a := range d.InventoryAttributes {
-		name, val := a.Map()
-		m[name] = val
-	}
-
-	for _, a := range d.SystemAttributes {
+	for _, a := range attributes {
 		name, val := a.Map()
 		m[name] = val
 	}
@@ -531,7 +518,8 @@ func MaybeParseAttr(field string) (string, string, error) {
 	scope := ""
 	name := ""
 
-	for _, s := range []string{scopeInventory, scopeIdentity, scopeCustom, scopeSystem} {
+	for _, s := range []string{scopeIdentity, scopeInventory, scopeMonitor,
+		scopeSystem, scopeTags} {
 		if strings.HasPrefix(field, s+"_") {
 			scope = s
 			break

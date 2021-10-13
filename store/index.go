@@ -62,10 +62,10 @@ const (
 					}
 				},
 				{
-					"inventory_strings": {
-						"match": "inventory_*_str",
+					"identity_nums": {
+						"match": "identity_*_num",
 						"mapping": {
-							"type": "keyword"
+							"type": "double"
 						}
 					}
 				},
@@ -78,8 +78,8 @@ const (
 					}
 				},
 				{
-					"custom_strings": {
-						"match": "custom_*_str",
+					"inventory_strings": {
+						"match": "inventory_*_str",
 						"mapping": {
 							"type": "keyword"
 						}
@@ -94,18 +94,34 @@ const (
 					}
 				},
 				{
-					"identity_nums": {
-						"match": "identity_*_num",
+					"monitor_nums": {
+						"match": "monitor_*_num",
 						"mapping": {
 							"type": "double"
 						}
 					}
 				},
 				{
-					"custom_nums": {
-						"match": "custom_*_num",
+					"monitor_strings": {
+						"match": "monitor_*_str",
+						"mapping": {
+							"type": "keyword"
+						}
+					}
+				}
+				{
+					"tags_nums": {
+						"match": "tags_*_num",
 						"mapping": {
 							"type": "double"
+						}
+					}
+				},
+				{
+					"tags_strings": {
+						"match": "tags_*_str",
+						"mapping": {
+							"type": "keyword"
 						}
 					}
 				}
