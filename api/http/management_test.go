@@ -220,22 +220,18 @@ func TestManagementSearch(t *testing.T) {
 		Code:     http.StatusInternalServerError,
 		Response: rest.Error{Err: "internal error"},
 	}, {
-		Name: "error, tenant ID not present",
+		Name: "error, request identity not present",
 
 		App: func(t *testing.T, self testCase) *mapp.App {
 			return new(mapp.App)
 		},
-		CTX: identity.WithContext(context.Background(),
-			&identity.Identity{
-				Subject: "851f90b3-cee5-425e-8f6e-b36de1993e7e",
-			},
-		),
+		CTX:    identity.WithContext(context.Background(), nil),
 		Params: &model.SearchParams{},
 
 		Code:     http.StatusUnauthorized,
-		Response: rest.Error{Err: "tenant claim not present in JWT"},
+		Response: rest.Error{Err: "Authorization not present in header"},
 	}, {
-		Name: "error, tenant ID not present",
+		Name: "error, malformed request body",
 
 		App: func(t *testing.T, self testCase) *mapp.App {
 			return new(mapp.App)
