@@ -25,7 +25,9 @@ const (
 			"number_of_replicas": 1
 		},
 		"mappings": {
-			"dynamic": "true",
+			"dynamic": "runtime",
+			"date_detection": false,
+			"numeric_detection": false,
 			"_source": {
 				"enabled": true
 			},
@@ -62,74 +64,26 @@ const (
 					}
 				},
 				{
-					"identity_nums": {
-						"match": "identity_*_num",
+					"nums": {
+						"match": "*_num",
 						"mapping": {
 							"type": "double"
 						}
 					}
 				},
 				{
-					"identity_strings": {
-						"match": "identity_*_str",
+					"strings": {
+						"match": "*_str",
 						"mapping": {
 							"type": "keyword"
 						}
 					}
 				},
 				{
-					"inventory_strings": {
-						"match": "inventory_*_str",
-						"mapping": {
-							"type": "keyword"
-						}
-					}
-				},
-				{
-					"inventory_nums": {
-						"match": "inventory_*_num",
-						"mapping": {
-							"type": "double"
-						}
-					}
-				},
-				{
-					"monitor_bools": {
-						"match": "monitor_*_bool",
+					"bools": {
+						"match": "*_bool",
 						"mapping": {
 							"type": "boolean"
-						}
-					}
-				},
-				{
-					"monitor_nums": {
-						"match": "monitor_*_num",
-						"mapping": {
-							"type": "double"
-						}
-					}
-				},
-				{
-					"monitor_strings": {
-						"match": "monitor_*_str",
-						"mapping": {
-							"type": "keyword"
-						}
-					}
-				},
-				{
-					"tags_nums": {
-						"match": "tags_*_num",
-						"mapping": {
-							"type": "double"
-						}
-					}
-				},
-				{
-					"tags_strings": {
-						"match": "tags_*_str",
-						"mapping": {
-							"type": "keyword"
 						}
 					}
 				}
