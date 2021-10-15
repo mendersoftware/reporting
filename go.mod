@@ -4,11 +4,10 @@ go 1.15
 
 require (
 	github.com/elastic/go-elasticsearch/v7 v7.15.0
-	github.com/gin-gonic/gin v1.7.2
+	github.com/gin-gonic/gin v1.7.4
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
-	github.com/google/uuid v1.3.0
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/mendersoftware/go-lib-micro v0.0.0-20210705093343-c14ca951acc5
-	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/panjf2000/ants/v2 v2.4.6
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.8.1
