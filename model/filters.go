@@ -137,16 +137,18 @@ func (f FilterPredicate) ValueType() (Type, bool, error) {
 	typ := TypeStr
 
 	switch f.Value.(type) {
+	case bool:
+		typ = TypeBool
 	case float64:
 		typ = TypeNum
 	case string:
 		break
-	case bool:
-		typ = TypeBool
 	case []interface{}:
 		isArr = true
 		ival := f.Value.([]interface{})
 		switch ival[0].(type) {
+		case bool:
+			typ = TypeBool
 		case float64:
 			typ = TypeNum
 		case string:

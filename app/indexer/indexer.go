@@ -15,37 +15,11 @@
 package indexer
 
 import (
-	"context"
-
 	"github.com/mendersoftware/go-lib-micro/config"
-	"github.com/mendersoftware/reporting/model"
 	"github.com/mendersoftware/reporting/store"
 )
 
-const batchSize = 200
-
 // InitAndRun initializes the indexer and runs it
-func InitAndRun(conf config.Reader, store store.Store, devices int64, tid string) error {
-	ctx := context.Background()
-
-	devicesToIndex := make([]*model.Device, 0, batchSize)
-
-	for i := int64(1); i <= devices; i++ {
-		device := model.RandomDevice(tid)
-		devicesToIndex = append(devicesToIndex, device)
-		if len(devicesToIndex) == batchSize {
-			err := store.BulkIndexDevices(ctx, devicesToIndex)
-			if err != nil {
-				return err
-			}
-			devicesToIndex = devicesToIndex[:0]
-		}
-	}
-	if len(devicesToIndex) > 0 {
-		err := store.BulkIndexDevices(ctx, devicesToIndex)
-		if err != nil {
-			return err
-		}
-	}
+func InitAndRun(conf config.Reader, store store.Store) error {
 	return nil
 }

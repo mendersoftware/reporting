@@ -17,23 +17,13 @@ package model
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
-	"math/rand"
 	"strings"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 const (
 	StatusAccepted = "accepted"
 	StatusPending  = "pending"
-)
-
-const (
-	attrMacAddress = "mac"
-	attrSerialNo   = "serial_no"
-	attrTag        = "tag"
 )
 
 type Device struct {
@@ -42,10 +32,11 @@ type Device struct {
 	Name                *string         `json:"name,omitempty"`
 	GroupName           *string         `json:"groupName,omitempty"`
 	Status              *string         `json:"status,omitempty"`
-	CustomAttributes    DeviceInventory `json:"customAttributes,omitempty"`
 	IdentityAttributes  DeviceInventory `json:"identityAttributes,omitempty"`
 	InventoryAttributes DeviceInventory `json:"inventoryAttributes,omitempty"`
+	MonitorAttributes   DeviceInventory `json:"monitorAttributes,omitempty"`
 	SystemAttributes    DeviceInventory `json:"systemAttributes,omitempty"`
+	TagsAttributes      DeviceInventory `json:"tagsAttributes,omitempty"`
 	CreatedAt           *time.Time      `json:"createdAt,omitempty"`
 	UpdatedAt           *time.Time      `json:"updatedAt,omitempty"`
 	Meta                *DeviceMeta     `json:"-"`
@@ -131,17 +122,20 @@ func (a *Device) handleSpecialAttr(attr *InventoryAttribute) {
 
 func (a *Device) AppendAttr(attr *InventoryAttribute) error {
 	switch attr.Scope {
+	case scopeIdentity:
+		a.IdentityAttributes = append(a.IdentityAttributes, attr)
+		return nil
 	case scopeInventory:
 		a.InventoryAttributes = append(a.InventoryAttributes, attr)
 		return nil
-	case scopeIdentity:
-		a.IdentityAttributes = append(a.IdentityAttributes, attr)
+	case scopeMonitor:
+		a.MonitorAttributes = append(a.MonitorAttributes, attr)
 		return nil
 	case scopeSystem:
 		a.SystemAttributes = append(a.SystemAttributes, attr)
 		return nil
-	case scopeCustom:
-		a.CustomAttributes = append(a.CustomAttributes, attr)
+	case scopeTags:
+		a.TagsAttributes = append(a.TagsAttributes, attr)
 		return nil
 	default:
 		return errors.New("unknown attribute scope " + attr.Scope)
@@ -240,6 +234,7 @@ type InventoryAttribute struct {
 	Name    string
 	String  []string
 	Numeric []float64
+	Boolean []bool
 }
 
 func (a *InventoryAttribute) IsStr() bool {
@@ -248,6 +243,10 @@ func (a *InventoryAttribute) IsStr() bool {
 
 func (a *InventoryAttribute) IsNum() bool {
 	return a.Numeric != nil
+}
+
+func (a *InventoryAttribute) IsBool() bool {
+	return a.Boolean != nil
 }
 
 func NewInventoryAttribute(s string) *InventoryAttribute {
@@ -274,6 +273,7 @@ func (a *InventoryAttribute) GetString() string {
 
 func (a *InventoryAttribute) SetString(val string) *InventoryAttribute {
 	a.String = []string{val}
+	a.Boolean = nil
 	a.Numeric = nil
 	return a
 }
@@ -284,6 +284,7 @@ func (a *InventoryAttribute) GetStrings() []string {
 
 func (a *InventoryAttribute) SetStrings(val []string) *InventoryAttribute {
 	a.String = val
+	a.Boolean = nil
 	a.Numeric = nil
 	return a
 }
@@ -297,12 +298,28 @@ func (a *InventoryAttribute) GetNumeric() float64 {
 
 func (a *InventoryAttribute) SetNumeric(val float64) *InventoryAttribute {
 	a.Numeric = []float64{val}
+	a.Boolean = nil
 	a.String = nil
 	return a
 }
 
 func (a *InventoryAttribute) SetNumerics(val []float64) *InventoryAttribute {
 	a.Numeric = val
+	a.String = nil
+	a.Boolean = nil
+	return a
+}
+
+func (a *InventoryAttribute) SetBoolean(val bool) *InventoryAttribute {
+	a.Boolean = []bool{val}
+	a.Numeric = nil
+	a.String = nil
+	return a
+}
+
+func (a *InventoryAttribute) SetBooleans(val []bool) *InventoryAttribute {
+	a.Boolean = val
+	a.Numeric = nil
 	a.String = nil
 	return a
 }
@@ -311,12 +328,20 @@ func (a *InventoryAttribute) SetNumerics(val []float64) *InventoryAttribute {
 // useful for translating from inventory attributes (interface{})
 func (a *InventoryAttribute) SetVal(val interface{}) *InventoryAttribute {
 	switch val := val.(type) {
+	case bool:
+		a.SetBoolean(val)
 	case float64:
 		a.SetNumeric(val)
 	case string:
 		a.SetString(val)
 	case []interface{}:
 		switch val[0].(type) {
+		case bool:
+			bools := make([]bool, len(val))
+			for i, v := range val {
+				bools[i] = v.(bool)
+			}
+			a.SetBooleans(bools)
 		case float64:
 			nums := make([]float64, len(val))
 			for i, v := range val {
@@ -335,143 +360,6 @@ func (a *InventoryAttribute) SetVal(val interface{}) *InventoryAttribute {
 	return a
 }
 
-func randomMacAddress() string {
-	buf := make([]byte, 6)
-	_, _ = rand.Read(buf)
-	buf[0] |= 2
-	return fmt.Sprintf(
-		"%02x:%02x:%02x:%02x:%02x:%02x",
-		buf[0], buf[1], buf[2], buf[3], buf[4], buf[5],
-	)
-}
-
-func RandomDevice(tid string) *Device {
-	id := uuid.New().String()
-	device := NewDevice(id)
-	device.SetName("device-" + id)
-	device.SetTenantID(tid)
-	device.SetCreatedAt(time.Now().UTC()).SetUpdatedAt(time.Now().UTC())
-
-	if rand.Intn(10) > 7 {
-		device.SetStatus(StatusPending)
-	} else {
-		device.SetStatus(StatusAccepted)
-	}
-
-	groupId := rand.Intn(100)
-	device.SetGroupName(fmt.Sprintf("group-%02d", groupId))
-
-	device.CustomAttributes = DeviceInventory{
-		NewInventoryAttribute(scopeCustom).
-			SetName(attrTag).
-			SetString(fmt.Sprintf("value-%02d", rand.Intn(100))),
-	}
-
-	macAddress := randomMacAddress()
-
-	device.IdentityAttributes = DeviceInventory{
-		NewInventoryAttribute(scopeIdentity).
-			SetName(attrMacAddress).
-			SetString(macAddress),
-
-		NewInventoryAttribute(scopeIdentity).
-			SetName(attrSerialNo).
-			SetString(fmt.Sprintf("%012d", rand.Intn(999999999999))),
-	}
-
-	device.InventoryAttributes = DeviceInventory{
-		NewInventoryAttribute(scopeInventory).
-			SetName(attrMacAddress).
-			SetString(macAddress),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("artifact_name").
-			SetString("system-M1"),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("device_type").
-			SetString("dm1"),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("hostname").
-			SetString("Ambarella"),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("ipv4_bcm0").
-			SetString("192.168.42.1/24"),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("ipv4_usb0").
-			SetString("10.0.1.2/8"),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("ipv4_wlan0").
-			SetString("192.168.1.111/24"),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("kernel").
-			SetString("Linux version 4.14.181 (charles-chang@rdsuper) " +
-				"(gcc version 8.2.1 20180802 " +
-				"(Linaro GCC 8.2-2018.08~dev)) " +
-				"#1 SMP PREEMPT Fri Mar 12 13:21:16 CST 2021"),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("mac_bcm0").
-			SetString(macAddress),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("mac_usb0").
-			SetString(macAddress),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("mac_wlan0").
-			SetString(macAddress),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("mem_total_kB").
-			SetNumeric(1020664),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("group_id").
-			SetNumeric(float64(groupId)),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("mender_bootloader_integration").
-			SetString("unknown"),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("mender_client_version").
-			SetString("7cb96ca"),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("network_interfaces").
-			SetStrings([]string{"bcm0", "usb0", "wlan0"}),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("os").
-			SetString("Ambarella Flexible Linux CV25 (2.5.7) DMS (0.0.0.21B)"),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("rootfs_type").
-			SetString("ext4"),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("rootfs_type").
-			SetString("ext4"),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("rootfs-image.checksum").
-			SetString(
-				"dbc44ce5bd57f0c909dfb15a1efd9fd5d4e426c0fa95f18ea2876e1b8a08818f",
-			),
-
-		NewInventoryAttribute(scopeInventory).
-			SetName("rootfs-image.version").SetString("system-M1"),
-	}
-
-	return device
-}
-
 func (d *Device) MarshalJSON() ([]byte, error) {
 	// TODO: smarter encoding, without explicit rewrites?
 	m := make(map[string]interface{})
@@ -483,22 +371,12 @@ func (d *Device) MarshalJSON() ([]byte, error) {
 	m["createdAt"] = d.CreatedAt
 	m["updatedAt"] = d.UpdatedAt
 
-	for _, a := range d.CustomAttributes {
-		name, val := a.Map()
-		m[name] = val
-	}
+	attributes := append(d.IdentityAttributes, d.InventoryAttributes...)
+	attributes = append(attributes, d.MonitorAttributes...)
+	attributes = append(attributes, d.SystemAttributes...)
+	attributes = append(attributes, d.TagsAttributes...)
 
-	for _, a := range d.IdentityAttributes {
-		name, val := a.Map()
-		m[name] = val
-	}
-
-	for _, a := range d.InventoryAttributes {
-		name, val := a.Map()
-		m[name] = val
-	}
-
-	for _, a := range d.SystemAttributes {
+	for _, a := range attributes {
 		name, val := a.Map()
 		m[name] = val
 	}
@@ -513,11 +391,12 @@ func (a *InventoryAttribute) Map() (string, interface{}) {
 	if a.IsStr() {
 		typ = TypeStr
 		val = a.String
-	}
-
-	if a.IsNum() {
+	} else if a.IsNum() {
 		typ = TypeNum
 		val = a.Numeric
+	} else if a.IsBool() {
+		typ = TypeBool
+		val = a.Boolean
 	}
 
 	name := ToAttr(a.Scope, a.Name, typ)
@@ -531,7 +410,8 @@ func MaybeParseAttr(field string) (string, string, error) {
 	scope := ""
 	name := ""
 
-	for _, s := range []string{scopeInventory, scopeIdentity, scopeCustom, scopeSystem} {
+	for _, s := range []string{scopeIdentity, scopeInventory, scopeMonitor,
+		scopeSystem, scopeTags} {
 		if strings.HasPrefix(field, s+"_") {
 			scope = s
 			break

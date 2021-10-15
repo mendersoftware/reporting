@@ -28,20 +28,23 @@ const (
 const (
 	scopeInventory = "inventory"
 	scopeIdentity  = "identity"
-	scopeCustom    = "custom"
 	scopeSystem    = "system"
+	scopeTags      = "tags"
+	scopeMonitor   = "monitor"
 )
 
 // type enum/suffixes
 const (
-	typeStr = "str"
-	typeNum = "num"
+	typeStr  = "str"
+	typeNum  = "num"
+	typeBool = "bool"
 )
 
 var (
 	attrSuffixes = map[Type]string{
-		TypeStr: typeStr,
-		TypeNum: typeNum,
+		TypeStr:  typeStr,
+		TypeNum:  typeNum,
+		TypeBool: typeBool,
 	}
 )
 

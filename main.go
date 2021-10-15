@@ -64,16 +64,6 @@ func doMain(args []string) {
 				Usage:  "Run the indexer process",
 				Action: cmdIndexer,
 				Flags: []cli.Flag{
-					&cli.Int64Flag{
-						Name:  "devices",
-						Usage: "Number of devices to index",
-						Value: 1000,
-					},
-					&cli.StringFlag{
-						Name:  "tenant_id",
-						Usage: "Destination tenant ID",
-						Value: "test-tenant",
-					},
 					&cli.BoolFlag{
 						Name:  "automigrate",
 						Usage: "Run database migrations before starting.",
@@ -140,9 +130,7 @@ func cmdIndexer(args *cli.Context) error {
 			return err
 		}
 	}
-	devices := args.Int64("devices")
-	tid := args.String("tenant_id")
-	return indexer.InitAndRun(config.Config, store, devices, tid)
+	return indexer.InitAndRun(config.Config, store)
 }
 
 func cmdMigrate(args *cli.Context) error {

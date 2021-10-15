@@ -25,7 +25,9 @@ const (
 			"number_of_replicas": 1
 		},
 		"mappings": {
-			"dynamic": "true",
+			"dynamic": "runtime",
+			"date_detection": false,
+			"numeric_detection": false,
 			"_source": {
 				"enabled": true
 			},
@@ -62,54 +64,31 @@ const (
 					}
 				},
 				{
-					"inventory_strings": {
-						"match": "inventory_*_str",
-						"mapping": {
-							"type": "keyword"
-						}
-					}
-				},
-				{
-					"identity_strings": {
-						"match": "identity_*_str",
-						"mapping": {
-							"type": "keyword"
-						}
-					}
-				},
-				{
-					"custom_strings": {
-						"match": "custom_*_str",
-						"mapping": {
-							"type": "keyword"
-						}
-					}
-				},
-				{
-					"inventory_nums": {
-						"match": "inventory_*_num",
+					"nums": {
+						"match": "*_num",
 						"mapping": {
 							"type": "double"
 						}
 					}
 				},
 				{
-					"identity_nums": {
-						"match": "identity_*_num",
+					"strings": {
+						"match": "*_str",
 						"mapping": {
-							"type": "double"
+							"type": "keyword"
 						}
 					}
 				},
 				{
-					"custom_nums": {
-						"match": "custom_*_num",
+					"bools": {
+						"match": "*_bool",
 						"mapping": {
-							"type": "double"
+							"type": "boolean"
 						}
 					}
 				}
 			]
 		}
-	}}`
+	}
+}`
 )
