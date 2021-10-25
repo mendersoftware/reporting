@@ -18,6 +18,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/mendersoftware/go-lib-micro/accesslog"
 	"github.com/mendersoftware/go-lib-micro/identity"
+	"github.com/mendersoftware/go-lib-micro/rbac"
 
 	"github.com/mendersoftware/reporting/app/reporting"
 )
@@ -52,6 +53,7 @@ func NewRouter(reporting reporting.App) *gin.Engine {
 	mgmt := NewManagementController(reporting)
 	mgmtAPI := router.Group(URIManagement)
 	mgmtAPI.Use(identity.Middleware())
+	mgmtAPI.Use(rbac.Middleware())
 	mgmtAPI.POST(URIInventorySearch, mgmt.Search)
 	mgmtAPI.GET(URIInventorySearchAttrs, mgmt.SearchAttrs)
 

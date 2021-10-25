@@ -513,10 +513,10 @@ func (f *devIDsFilter) AddTo(q Query) Query {
 	})
 }
 
-func BuildQuery(parms SearchParams) (Query, error) {
+func BuildQuery(params SearchParams) (Query, error) {
 	query := NewQuery()
 
-	for _, f := range parms.Filters {
+	for _, f := range params.Filters {
 		fpart, err := getFilterPart(f)
 		if err != nil {
 			return nil, err
@@ -524,20 +524,34 @@ func BuildQuery(parms SearchParams) (Query, error) {
 		query = fpart.AddTo(query)
 	}
 
-	for _, s := range parms.Sort {
+	if len(params.Groups) > 0 {
+		fp := FilterPredicate{
+			Scope:     scopeSystem,
+			Attribute: AttrNameGroup,
+			Type:      "$in",
+			Value:     params.Groups,
+		}
+		fpart, err := NewFilterIn(fp)
+		if err != nil {
+			return nil, err
+		}
+		query = fpart.AddTo(query)
+	}
+
+	for _, s := range params.Sort {
 		sort := NewSort(s)
 		query = sort.AddTo(query)
 	}
 
-	query = query.WithPage(parms.Page, parms.PerPage)
+	query = query.WithPage(params.Page, params.PerPage)
 
-	if len(parms.Attributes) > 0 {
-		sel := NewSelect(parms.Attributes)
+	if len(params.Attributes) > 0 {
+		sel := NewSelect(params.Attributes)
 		query = sel.AddTo(query)
 	}
 
-	if len(parms.DeviceIDs) > 0 {
-		devs := NewDevIDsFilter(parms.DeviceIDs)
+	if len(params.DeviceIDs) > 0 {
+		devs := NewDevIDsFilter(params.DeviceIDs)
 		query = devs.AddTo(query)
 	}
 
