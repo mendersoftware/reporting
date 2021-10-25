@@ -18,9 +18,6 @@ info:
 servers:
   - url: http://mender-reporting:8080/api/internal/v1/reporting
 
-tags:
-  - name: Internal API
-
 paths:
   /alive:
     get:
