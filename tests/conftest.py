@@ -15,6 +15,7 @@
 import os
 
 import internal_api
+import management_api
 
 
 def pytest_addoption(parser):
@@ -33,5 +34,10 @@ def pytest_configure(config):
     internal_api.Configuration.set_default(
         internal_api.Configuration(
             host="http://" + host + "/api/internal/v1/reporting"
+        )
+    )
+    management_api.Configuration.set_default(
+        management_api.Configuration(
+            host="http://" + host + "/api/management/v1/reporting"
         )
     )

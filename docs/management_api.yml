@@ -6,23 +6,11 @@ info:
     Management API for the reporting service.
   version: "1"
 
-  contact:
-    name: Mender Support
-    email: support@mender.io
-    url: https://mender.io/contact-us
-
-  license:
-    name: Apache 2.0
-    url: https://www.apache.org/licenses/LICENSE-2.0.html
-
 servers:
-  - url: http://mender-reporting:8080/api/management/v1/reporting
+  - url: https://hosted.mender.io/api/management/v1/reporting
 
 security:
   - ManagementJWT: []
-
-tags:
-  - name: Management API
 
 paths:
   /devices/search:
@@ -92,6 +80,34 @@ paths:
         500:
           $ref: '#/components/responses/InternalServerError'
 
+  /devices/search/attributes:
+    get:
+      tags:
+        - Management API
+      operationId: Get device filterable attributes
+      summary: Get the list of device filterable attributes
+      description:  |
+        Returns a list of device filterable attributes.
+      responses:
+        200:
+          description: OK. Returns a list of filterable attributes.
+          content:
+            application/json:
+              schema:
+                title: List of filter attributes
+                type: array
+                items:
+                  $ref: '#/components/schemas/FilterAttribute'
+              example:
+                - name: "serial_no"
+                  scope: "inventory"
+                  count: 1
+                - name: "region"
+                  scope: "inventory"
+                  count: 1
+        500:
+          $ref: '#/components/responses/InternalServerError'
+
 components:
   securitySchemes:
     ManagementJWT:
@@ -153,6 +169,28 @@ components:
           format: date-time
           description: >-
             Timestamp of the last update to the device attributes.
+
+    FilterAttribute:
+      description: Filterable attribute
+      type: object
+      required:
+        - scope
+        - name
+        - count
+      properties:
+        name:
+          type: string
+          description: Name of the attribute.
+        scope:
+          type: string
+          description: Scope of the attribute.
+        count:
+          type: integer
+          description: Number of occurrences of the attribute in the database.
+      example:
+        name: "serial_no"
+        scope: "inventory"
+        count: 10
 
     FilterTerm:
       type: object
