@@ -21,8 +21,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mendersoftware/go-lib-micro/config"
 	"github.com/urfave/cli"
+
+	"github.com/mendersoftware/go-lib-micro/config"
 
 	"github.com/mendersoftware/reporting/app/indexer"
 	"github.com/mendersoftware/reporting/app/server"

@@ -25,11 +25,12 @@ import (
 	es "github.com/elastic/go-elasticsearch/v7"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/elastic/go-elasticsearch/v7/esutil"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
+
 	"github.com/mendersoftware/go-lib-micro/identity"
 	"github.com/mendersoftware/go-lib-micro/log"
 	_ "github.com/mendersoftware/go-lib-micro/log"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 
 	"github.com/mendersoftware/reporting/model"
 )

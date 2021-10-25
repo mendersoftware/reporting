@@ -25,10 +25,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mendersoftware/go-lib-micro/rest.utils"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+
+	"github.com/mendersoftware/go-lib-micro/rest.utils"
 
 	"github.com/mendersoftware/reporting/app/reporting"
 	mapp "github.com/mendersoftware/reporting/app/reporting/mocks"

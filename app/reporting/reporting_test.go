@@ -18,10 +18,11 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/mendersoftware/reporting/model"
-	mstore "github.com/mendersoftware/reporting/store/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+
+	"github.com/mendersoftware/reporting/model"
+	mstore "github.com/mendersoftware/reporting/store/mocks"
 )
 
 var contextMatcher = mock.MatchedBy(func(_ context.Context) bool { return true })

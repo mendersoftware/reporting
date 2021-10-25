@@ -19,8 +19,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mendersoftware/go-lib-micro/log"
 	"github.com/panjf2000/ants/v2"
+
+	"github.com/mendersoftware/go-lib-micro/log"
 
 	"github.com/mendersoftware/reporting/client/inventory"
 	"github.com/mendersoftware/reporting/model"

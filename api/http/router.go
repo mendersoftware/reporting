@@ -16,6 +16,7 @@ package http
 
 import (
 	"github.com/gin-gonic/gin"
+
 	"github.com/mendersoftware/go-lib-micro/accesslog"
 	"github.com/mendersoftware/go-lib-micro/identity"
 	"github.com/mendersoftware/go-lib-micro/rbac"
