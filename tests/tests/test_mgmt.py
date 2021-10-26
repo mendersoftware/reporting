@@ -488,7 +488,7 @@ class TestManagementSearch:
     def test_search(self, test_case, setup_test_context):
         conf = None
         if test_case.authorization is not None:
-            conf = management_api.Configuration()
+            conf = management_api.Configuration.get_default_copy()
             conf.access_token = test_case.authorization
         api_client = management_api.ApiClient(configuration=conf)
         client = management_api.ManagementAPIClient(api_client=api_client)

@@ -64,6 +64,7 @@ github.com/mendersoftware/go-lib-micro/addons
 github.com/mendersoftware/go-lib-micro/config
 github.com/mendersoftware/go-lib-micro/identity
 github.com/mendersoftware/go-lib-micro/log
+github.com/mendersoftware/go-lib-micro/rbac
 github.com/mendersoftware/go-lib-micro/requestid
 github.com/mendersoftware/go-lib-micro/requestlog
 github.com/mendersoftware/go-lib-micro/rest.utils

@@ -23,15 +23,18 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
-	"github.com/mendersoftware/go-lib-micro/rest.utils"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
 	"github.com/mendersoftware/go-lib-micro/identity"
+	"github.com/mendersoftware/go-lib-micro/rbac"
+	"github.com/mendersoftware/go-lib-micro/rest.utils"
+
 	mapp "github.com/mendersoftware/reporting/app/reporting/mocks"
 	"github.com/mendersoftware/reporting/model"
 )
@@ -165,6 +168,32 @@ func TestManagementSearch(t *testing.T) {
 		Code:     http.StatusOK,
 		Response: []model.InvDevice{},
 	}, {
+		Name: "ok, with scope, empty results",
+
+		App: func(t *testing.T, self testCase) *mapp.App {
+			app := new(mapp.App)
+
+			app.On("InventorySearchDevices",
+				contextMatcher,
+				newSearchParamMatcher(self.Params.(*model.SearchParams))).
+				Return([]model.InvDevice{}, 0, nil)
+			return app
+		},
+		CTX: rbac.WithContext(identity.WithContext(context.Background(),
+			&identity.Identity{
+				Subject: "851f90b3-cee5-425e-8f6e-b36de1993e7e",
+				Tenant:  "123456789012345678901234",
+			},
+		), &rbac.Scope{
+			DeviceGroups: []string{"group1", "group2"},
+		}),
+		Params: &model.SearchParams{
+			Groups: []string{"group1", "group2"},
+		},
+
+		Code:     http.StatusOK,
+		Response: []model.InvDevice{},
+	}, {
 		Name: "error, malformed request body",
 
 		CTX: identity.WithContext(context.Background(),
@@ -274,6 +303,9 @@ func TestManagementSearch(t *testing.T) {
 			)
 			if id := identity.FromContext(tc.CTX); id != nil {
 				req.Header.Set("Authorization", "Bearer "+GenerateJWT(*id))
+			}
+			if scope := rbac.FromContext(tc.CTX); scope != nil {
+				req.Header.Set(rbac.ScopeHeader, strings.Join(scope.DeviceGroups, ","))
 			}
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, req)

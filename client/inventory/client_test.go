@@ -24,10 +24,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mendersoftware/go-lib-micro/rest.utils"
-	"github.com/mendersoftware/reporting/model"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/mendersoftware/go-lib-micro/rest.utils"
+	"github.com/mendersoftware/reporting/model"
 )
 
 func newTestServer(

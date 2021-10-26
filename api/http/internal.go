@@ -19,9 +19,10 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
+
 	"github.com/mendersoftware/go-lib-micro/identity"
 	"github.com/mendersoftware/go-lib-micro/rest.utils"
-	"github.com/pkg/errors"
 
 	"github.com/mendersoftware/reporting/app/reporting"
 )

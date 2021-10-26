@@ -43,6 +43,7 @@ type SearchParams struct {
 	Sort       []SortCriteria    `json:"sort"`
 	Attributes []SelectAttribute `json:"attributes"`
 	DeviceIDs  []string          `json:"device_ids"`
+	Groups     []string          `json:"-"`
 }
 
 type Filter struct {
@@ -143,6 +144,8 @@ func (f FilterPredicate) ValueType() (Type, bool, error) {
 		typ = TypeNum
 	case string:
 		break
+	case []string:
+		isArr = true
 	case []interface{}:
 		isArr = true
 		ival := f.Value.([]interface{})

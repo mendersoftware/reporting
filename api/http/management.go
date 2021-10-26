@@ -21,9 +21,11 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/mendersoftware/go-lib-micro/identity"
-	"github.com/mendersoftware/go-lib-micro/rest.utils"
 	"github.com/pkg/errors"
+
+	"github.com/mendersoftware/go-lib-micro/identity"
+	"github.com/mendersoftware/go-lib-micro/rbac"
+	"github.com/mendersoftware/go-lib-micro/rest.utils"
 
 	"github.com/mendersoftware/reporting/app/reporting"
 	"github.com/mendersoftware/reporting/model"
@@ -59,6 +61,9 @@ func (mc *ManagementController) Search(c *gin.Context) {
 		return
 	}
 
+	if scope := rbac.ExtractScopeFromHeader(c.Request); scope != nil {
+		params.Groups = scope.DeviceGroups
+	}
 	res, total, err := mc.reporting.InventorySearchDevices(ctx, params)
 	if err != nil {
 		rest.RenderError(c,
