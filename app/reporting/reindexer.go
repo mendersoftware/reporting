@@ -207,8 +207,10 @@ func fetch(inchan chan []reindexReq, client inventory.Client, store store.Store)
 
 			for _, r := range batch {
 				j := mergeJob{
-					Tenant: r.Tenant,
-					Device: r.Device,
+					Tenant:  r.Tenant,
+					Device:  r.Device,
+					Index:   store.GetDevicesIndex(r.Tenant),
+					Routing: store.GetDevicesRoutingKey(r.Tenant),
 					// we know we can only have inventory for now
 					// later, find out which sources asked for reindex
 					SrcInventory: &mergeSrcInventory{},
@@ -283,6 +285,8 @@ func fetch(inchan chan []reindexReq, client inventory.Client, store store.Store)
 type mergeJob struct {
 	Tenant       string
 	Device       string
+	Index        string
+	Routing      string
 	SrcInventory *mergeSrcInventory
 	SrcElastic   *mergeSrcElastic
 }
@@ -329,8 +333,10 @@ func merge(j *mergeJob) (*store.BulkItem, error) {
 
 	action := &store.BulkAction{
 		Desc: &store.BulkActionDesc{
-			Tenant: j.Tenant,
-			ID:     j.Device,
+			ID:      j.Device,
+			Index:   j.Index,
+			Routing: j.Routing,
+			Tenant:  j.Tenant,
 		},
 	}
 

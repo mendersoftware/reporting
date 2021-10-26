@@ -48,7 +48,9 @@ def index_device(es: Elasticsearch, device: InternalDevice):
     except KeyError:
         pass
     doc["tenantID"] = device.tenant_id
-    es.index(f"devices-{device.tenant_id}", doc, refresh="wait_for", id=device.id)
+    es.index(
+        f"devices", doc, routing=device.tenant_id, refresh="wait_for", id=device.id
+    )
 
 
 def attributes_to_document(attrs: list[Attribute]) -> dict[str, object]:

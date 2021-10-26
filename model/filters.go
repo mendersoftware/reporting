@@ -44,6 +44,7 @@ type SearchParams struct {
 	Attributes []SelectAttribute `json:"attributes"`
 	DeviceIDs  []string          `json:"device_ids"`
 	Groups     []string          `json:"-"`
+	TenantID   string            `json:"-"`
 }
 
 type Filter struct {

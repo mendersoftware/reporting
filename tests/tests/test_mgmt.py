@@ -458,7 +458,7 @@ class TestManagementSearch:
                         )
                     ],
                 ),
-                http_code=500,
+                http_code=200,
                 result=[],
             ),
             _TestCase(

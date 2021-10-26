@@ -14,15 +14,13 @@
 
 package store
 
-const (
-	indexDevices         = "devices"
-	indexDevicesTemplate = `{
-	"index_patterns": ["devices*"],
+const indexDevicesTemplate = `{
+	"index_patterns": ["%s*"],
 	"priority": 1,
 	"template": {
 		"settings": {
-			"number_of_shards": 1,
-			"number_of_replicas": 1
+			"number_of_shards": %d,
+			"number_of_replicas": %d
 		},
 		"mappings": {
 			"dynamic": "runtime",
@@ -91,4 +89,3 @@ const (
 		}
 	}
 }`
-)
