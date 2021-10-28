@@ -110,6 +110,7 @@ func TestManagementSearch(t *testing.T) {
 				Attribute: "ip4",
 				Order:     "asc",
 			}},
+			TenantID: "123456789012345678901234",
 		},
 
 		Code: http.StatusOK,
@@ -163,7 +164,9 @@ func TestManagementSearch(t *testing.T) {
 				Tenant:  "123456789012345678901234",
 			},
 		),
-		Params: &model.SearchParams{},
+		Params: &model.SearchParams{
+			TenantID: "123456789012345678901234",
+		},
 
 		Code:     http.StatusOK,
 		Response: []model.InvDevice{},
@@ -188,7 +191,8 @@ func TestManagementSearch(t *testing.T) {
 			DeviceGroups: []string{"group1", "group2"},
 		}),
 		Params: &model.SearchParams{
-			Groups: []string{"group1", "group2"},
+			Groups:   []string{"group1", "group2"},
+			TenantID: "123456789012345678901234",
 		},
 
 		Code:     http.StatusOK,
@@ -209,6 +213,7 @@ func TestManagementSearch(t *testing.T) {
 				Attribute: "rootpwd",
 				Value:     true,
 			}},
+			TenantID: "123456789012345678901234",
 		},
 		Code:     http.StatusBadRequest,
 		Response: rest.Error{Err: "malformed request body: type: must be a valid value."},
@@ -244,6 +249,7 @@ func TestManagementSearch(t *testing.T) {
 				Attribute: "ip4",
 				Order:     "asc",
 			}},
+			TenantID: "123456789012345678901234",
 		},
 
 		Code:     http.StatusInternalServerError,

@@ -135,6 +135,34 @@ func (_m *Store) GetDevices(ctx context.Context, tenantDevs map[string][]string)
 	return r0, r1
 }
 
+// GetDevicesIndex provides a mock function with given fields: tid
+func (_m *Store) GetDevicesIndex(tid string) string {
+	ret := _m.Called(tid)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(tid)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// GetDevicesRoutingKey provides a mock function with given fields: tid
+func (_m *Store) GetDevicesRoutingKey(tid string) string {
+	ret := _m.Called(tid)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(tid)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
 // IndexDevice provides a mock function with given fields: ctx, device
 func (_m *Store) IndexDevice(ctx context.Context, device *model.Device) error {
 	ret := _m.Called(ctx, device)

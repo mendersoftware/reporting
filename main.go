@@ -79,7 +79,6 @@ func doMain(args []string) {
 		},
 	}
 	app.Usage = "Reporting"
-	app.Version = "1.0.0"
 	app.Action = cmdServer
 
 	app.Before = func(args *cli.Context) error {
@@ -145,8 +144,15 @@ func cmdMigrate(args *cli.Context) error {
 
 func getStore(args *cli.Context) (store.Store, error) {
 	addresses := config.Config.GetStringSlice(dconfig.SettingElasticsearchAddresses)
+	devicesIndexName := config.Config.GetString(dconfig.SettingElasticsearchDevicesIndexName)
+	deviceesIndexShards := config.Config.GetInt(dconfig.SettingElasticsearchDevicesIndexShards)
+	deviceesIndexReplicas := config.Config.GetInt(
+		dconfig.SettingElasticsearchDevicesIndexReplicas)
 	store, err := store.NewStore(
 		store.WithServerAddresses(addresses),
+		store.WithDevicesIndexName(devicesIndexName),
+		store.WithDevicesIndexShards(deviceesIndexShards),
+		store.WithDevicesIndexReplicas(deviceesIndexReplicas),
 	)
 	if err != nil {
 		return nil, err

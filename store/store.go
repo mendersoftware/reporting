@@ -26,7 +26,6 @@ import (
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/elastic/go-elasticsearch/v7/esutil"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 
 	"github.com/mendersoftware/go-lib-micro/identity"
 	"github.com/mendersoftware/go-lib-micro/log"
@@ -40,20 +39,24 @@ type Store interface {
 	IndexDevice(ctx context.Context, device *model.Device) error
 	BulkIndexDevices(ctx context.Context, devices []*model.Device) error
 	BulkRaw(ctx context.Context, items []BulkItem) (map[string]interface{}, error)
-
-	Search(ctx context.Context, query interface{}) (model.M, error)
 	GetDevice(ctx context.Context, tenant, devid string) (*model.Device, error)
 	GetDevices(ctx context.Context, tenantDevs map[string][]string) ([]model.Device, error)
-	UpdateDevice(ctx context.Context, tenantID, deviceID string, updateDev *model.Device) error
-	Migrate(ctx context.Context) error
+	GetDevicesIndex(tid string) string
+	GetDevicesRoutingKey(tid string) string
 	GetDevIndex(ctx context.Context, tid string) (map[string]interface{}, error)
+	Migrate(ctx context.Context) error
+	Search(ctx context.Context, query interface{}) (model.M, error)
+	UpdateDevice(ctx context.Context, tenantID, deviceID string, updateDev *model.Device) error
 }
 
 type StoreOption func(*store)
 
 type store struct {
-	addresses []string
-	client    *es.Client
+	addresses            []string
+	devicesIndexName     string
+	devicesIndexShards   int
+	devicesIndexReplicas int
+	client               *es.Client
 }
 
 func NewStore(opts ...StoreOption) (Store, error) {
@@ -79,18 +82,52 @@ func NewStore(opts ...StoreOption) (Store, error) {
 	return store, nil
 }
 
+func WithServerAddresses(addresses []string) StoreOption {
+	return func(s *store) {
+		s.addresses = addresses
+	}
+}
+
+func WithDevicesIndexName(indexName string) StoreOption {
+	return func(s *store) {
+		s.devicesIndexName = indexName
+	}
+}
+
+func WithDevicesIndexShards(indexShards int) StoreOption {
+	return func(s *store) {
+		s.devicesIndexShards = indexShards
+	}
+}
+
+func WithDevicesIndexReplicas(indexReplicas int) StoreOption {
+	return func(s *store) {
+		s.devicesIndexReplicas = indexReplicas
+	}
+}
+
 func (s *store) IndexDevice(ctx context.Context, device *model.Device) error {
 	req := esapi.IndexRequest{
-		Index:      devIdx(device.GetTenantID()),
+		Index:      s.GetDevicesIndex(device.GetTenantID()),
+		Routing:    s.GetDevicesRoutingKey(device.GetTenantID()),
 		DocumentID: device.GetID(),
 		Body:       esutil.NewJSONReader(device),
 	}
+
+	l := log.FromContext(ctx)
+	l.Debugf("index device: %v", req)
 
 	res, err := req.Do(ctx, s.client)
 	if err != nil {
 		return errors.Wrap(err, "failed to index")
 	}
 	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		var body []byte
+		_, _ = res.Body.Read(body)
+		return errors.Wrapf(err, "failed to index: %v", body)
+	}
 
 	return nil
 }
@@ -105,6 +142,7 @@ type BulkActionDesc struct {
 	Index         string `json:"_index"`
 	IfSeqNo       int64  `json:"_if_seq_no"`
 	IfPrimaryTerm int64  `json:"_if_primary_term"`
+	Routing       string `json:"routing"`
 	Tenant        string
 }
 
@@ -115,11 +153,13 @@ type BulkItem struct {
 
 func (bad BulkActionDesc) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
-		ID    string `json:"_id"`
-		Index string `json:"_index"`
+		ID      string `json:"_id"`
+		Index   string `json:"_index"`
+		Routing string `json:"routing"`
 	}{
-		ID:    bad.ID,
-		Index: devIdx(bad.Tenant),
+		ID:      bad.ID,
+		Index:   bad.Index,
+		Routing: bad.Routing,
 	})
 }
 
@@ -185,7 +225,7 @@ func (s *store) BulkRaw(ctx context.Context, items []BulkItem) (map[string]inter
 		return nil, err
 	}
 
-	l.Debugf("bulk response %v\n", storeRes)
+	l.Debugf("bulk response: %v", storeRes)
 
 	return storeRes, nil
 }
@@ -196,8 +236,9 @@ func (s *store) BulkIndexDevices(ctx context.Context, devices []*model.Device) e
 		actionJSON, err := json.Marshal(BulkAction{
 			Type: "index",
 			Desc: &BulkActionDesc{
-				ID:    device.GetID(),
-				Index: devIdx(device.GetTenantID()),
+				ID:      device.GetID(),
+				Index:   s.GetDevicesIndex(device.GetTenantID()),
+				Routing: s.GetDevicesRoutingKey(device.GetTenantID()),
 			},
 		})
 		if err != nil {
@@ -223,9 +264,26 @@ func (s *store) BulkIndexDevices(ctx context.Context, devices []*model.Device) e
 }
 
 func (s *store) Migrate(ctx context.Context) error {
+	indexName := s.GetDevicesIndex("")
+	err := s.migratePutIndexTemplate(ctx, indexName)
+	if err == nil {
+		err = s.migrateCreateIndex(ctx, indexName)
+	}
+	return err
+}
+
+func (s *store) migratePutIndexTemplate(ctx context.Context, indexName string) error {
+	l := log.FromContext(ctx)
+	l.Infof("put the index template for %s", indexName)
+
+	template := fmt.Sprintf(indexDevicesTemplate,
+		indexName,
+		s.devicesIndexShards,
+		s.devicesIndexReplicas,
+	)
 	req := esapi.IndicesPutIndexTemplateRequest{
-		Name: indexDevices,
-		Body: strings.NewReader(indexDevicesTemplate),
+		Name: indexName,
+		Body: strings.NewReader(template),
 	}
 
 	res, err := req.Do(ctx, s.client)
@@ -234,8 +292,42 @@ func (s *store) Migrate(ctx context.Context) error {
 	}
 	defer res.Body.Close()
 
-	if res.StatusCode != 200 {
+	if res.StatusCode != http.StatusOK {
 		return errors.New("failed to set up the index template")
+	}
+	return nil
+}
+
+func (s *store) migrateCreateIndex(ctx context.Context, indexName string) error {
+	l := log.FromContext(ctx)
+	l.Infof("verify if the index %s exists", indexName)
+
+	req := esapi.IndicesExistsRequest{
+		Index: []string{indexName},
+	}
+	res, err := req.Do(ctx, s.client)
+	if err != nil {
+		return errors.Wrap(err, "failed to verify the index")
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode == http.StatusNotFound {
+		l.Infof("create the index %s", indexName)
+
+		req := esapi.IndicesCreateRequest{
+			Index: indexName,
+		}
+		res, err := req.Do(ctx, s.client)
+		if err != nil {
+			return errors.Wrap(err, "failed to create the index")
+		}
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusOK {
+			return errors.New("failed to create the index")
+		}
+	} else if res.StatusCode != http.StatusOK {
+		return errors.New("failed to verify the index")
 	}
 
 	return nil
@@ -249,19 +341,14 @@ func (s *store) Search(ctx context.Context, query interface{}) (model.M, error) 
 		return nil, err
 	}
 
-	if l.Logger.IsLevelEnabled(logrus.DebugLevel) {
-		l.Debugf("es query:\n%v\n", buf.String())
-	}
+	l.Debugf("es query: %v", buf.String())
 
 	id := identity.FromContext(ctx)
 
-	indexName := "devices"
-	if id.Tenant != "" {
-		indexName = indexName + "-" + id.Tenant
-	}
 	resp, err := s.client.Search(
 		s.client.Search.WithContext(ctx),
-		s.client.Search.WithIndex(indexName),
+		s.client.Search.WithIndex(s.GetDevicesIndex(id.Tenant)),
+		s.client.Search.WithRouting(s.GetDevicesRoutingKey(id.Tenant)),
 		s.client.Search.WithBody(&buf),
 		s.client.Search.WithTrackTotalHits(true),
 	)
@@ -282,13 +369,15 @@ func (s *store) Search(ctx context.Context, query interface{}) (model.M, error) 
 
 	return ret, nil
 }
+
 func (s *store) GetDevice(ctx context.Context, tenant, devid string) (*model.Device, error) {
 	//l := log.FromContext(ctx)
 
 	id := identity.FromContext(ctx)
 
 	req := esapi.GetRequest{
-		Index:      devIdx(id.Tenant),
+		Index:      s.GetDevicesIndex(id.Tenant),
+		Routing:    s.GetDevicesRoutingKey(id.Tenant),
 		DocumentID: devid,
 	}
 
@@ -328,8 +417,9 @@ type mgetDocs struct {
 }
 
 type mgetDoc struct {
-	ID    string `json:"_id"`
-	Index string `json:"_index"`
+	ID      string `json:"_id"`
+	Index   string `json:"_index"`
+	Routing string `json:"routing"`
 }
 
 func (s *store) GetDevices(ctx context.Context,
@@ -342,7 +432,11 @@ func (s *store) GetDevices(ctx context.Context,
 
 	for tid, devs := range tenantDevs {
 		for _, d := range devs {
-			body.Docs = append(body.Docs, mgetDoc{d, devIdx(tid)})
+			body.Docs = append(body.Docs, mgetDoc{
+				d,
+				s.GetDevicesIndex(tid),
+				s.GetDevicesRoutingKey(tid),
+			})
 		}
 	}
 
@@ -371,9 +465,7 @@ func (s *store) GetDevices(ctx context.Context,
 		return nil, err
 	}
 
-	if l.Logger.IsLevelEnabled(logrus.DebugLevel) {
-		l.Debugf("es mget result:\n%v\n", storeRes)
-	}
+	l.Debugf("es mget result:\n%v\n", storeRes)
 
 	ret := []model.Device{}
 
@@ -442,15 +534,14 @@ func (s *store) UpdateDevice(ctx context.Context,
 	updateDev *model.Device) error {
 	l := log.FromContext(ctx)
 
-	id := identity.FromContext(ctx)
-
 	body := map[string]interface{}{
 		"doc": updateDev,
 	}
 
 	// DocumentType is _doc by default
 	req := esapi.UpdateRequest{
-		Index:      devIdx(id.Tenant),
+		Index:      s.GetDevicesIndex(tenantID),
+		Routing:    s.GetDevicesRoutingKey(tenantID),
 		DocumentID: deviceID,
 		Body:       esutil.NewJSONReader(body),
 	}
@@ -466,7 +557,7 @@ func (s *store) UpdateDevice(ctx context.Context,
 	if err := json.NewDecoder(res.Body).Decode(&esbody); err != nil {
 		return err
 	}
-	l.Debugf("ES update response %v", esbody)
+	l.Debugf("es update response %v", esbody)
 
 	switch {
 	case err != nil:
@@ -483,7 +574,7 @@ func (s *store) UpdateDevice(ctx context.Context,
 // see: https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-get-index.html
 func (s *store) GetDevIndex(ctx context.Context, tid string) (map[string]interface{}, error) {
 	l := log.FromContext(ctx)
-	idx := devIdx(tid)
+	idx := s.GetDevicesIndex(tid)
 
 	req := esapi.IndicesGetRequest{
 		Index: []string{idx},
@@ -522,16 +613,12 @@ func (s *store) GetDevIndex(ctx context.Context, tid string) (map[string]interfa
 	return indexM, nil
 }
 
-func WithServerAddresses(addresses []string) StoreOption {
-	return func(s *store) {
-		s.addresses = addresses
-	}
+// GetDevicesIndex returns the index name for the tenant tid
+func (s *store) GetDevicesIndex(tid string) string {
+	return s.devicesIndexName
 }
 
-// devIdx prepares "devices" index name for tenant tid
-func devIdx(tid string) string {
-	if tid == "" {
-		return indexDevices
-	}
-	return indexDevices + "-" + tid
+// GetDevicesRoutingKey returns the routing key for the tenant tid
+func (s *store) GetDevicesRoutingKey(tid string) string {
+	return tid
 }

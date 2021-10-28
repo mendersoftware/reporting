@@ -15,6 +15,7 @@
 package http
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -49,10 +50,8 @@ func NewManagementController(r reporting.App) *ManagementController {
 }
 
 func (mc *ManagementController) Search(c *gin.Context) {
-
 	ctx := c.Request.Context()
-
-	params, err := parseSearchParams(c)
+	params, err := parseSearchParams(ctx, c)
 	if err != nil {
 		rest.RenderError(c,
 			http.StatusBadRequest,
@@ -79,12 +78,18 @@ func (mc *ManagementController) Search(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
-func parseSearchParams(c *gin.Context) (*model.SearchParams, error) {
+func parseSearchParams(ctx context.Context, c *gin.Context) (*model.SearchParams, error) {
 	var searchParams model.SearchParams
 
 	err := c.ShouldBindJSON(&searchParams)
 	if err != nil {
 		return nil, err
+	}
+
+	if id := identity.FromContext(ctx); id != nil {
+		searchParams.TenantID = id.Tenant
+	} else {
+		return nil, errors.New("missing tenant ID from the context")
 	}
 
 	if searchParams.PerPage <= 0 {

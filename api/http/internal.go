@@ -48,10 +48,9 @@ func (mc *InternalController) Search(c *gin.Context) {
 	tid := c.Param("tenant_id")
 
 	ctx := c.Request.Context()
-
 	ctx = identity.WithContext(ctx, &identity.Identity{Tenant: tid})
 
-	params, err := parseSearchParams(c)
+	params, err := parseSearchParams(ctx, c)
 
 	if err != nil {
 		rest.RenderError(c,

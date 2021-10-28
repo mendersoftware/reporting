@@ -29,6 +29,27 @@ const (
 	// SettingElasticsearchAddressesDefault is the default value for the elasticsearch addresses
 	SettingElasticsearchAddressesDefault = "http://localhost:9200"
 
+	// SettingElasticsearchDevicesIndexName is the config key for the elasticsearch devices
+	// index name
+	SettingElasticsearchDevicesIndexName = "elasticsearch_devices_index_name"
+	// SettingElasticsearchDevicesIndexNameDefault is the default value for the elasticsearch
+	// devices index name
+	SettingElasticsearchDevicesIndexNameDefault = "devices"
+
+	// SettingElasticsearchDevicesIndexShards is the config key for the elasticsearch devices
+	// index shards
+	SettingElasticsearchDevicesIndexShards = "elasticsearch_devices_index_shards"
+	// SettingElasticsearchDevicesIndexShardsDefault is the default value for the elasticsearch
+	// devices index shards
+	SettingElasticsearchDevicesIndexShardsDefault = 1
+
+	// SettingElasticsearchDevicesIndexReplicas is the config key for the elasticsearch devices
+	// index replicas
+	SettingElasticsearchDevicesIndexReplicas = "elasticsearch_devices_index_replicas"
+	// SettingElasticsearchDevicesIndexReplicasDefault is the default value for the
+	// elasticsearch devices index replicas
+	SettingElasticsearchDevicesIndexReplicasDefault = 0
+
 	SettingInventoryAddr        = "inventory_addr"
 	SettingInventoryAddrDefault = "http://mender-inventory:8080/"
 
@@ -61,6 +82,12 @@ var (
 	Defaults = []config.Default{
 		{Key: SettingListen, Value: SettingListenDefault},
 		{Key: SettingElasticsearchAddresses, Value: SettingElasticsearchAddressesDefault},
+		{Key: SettingElasticsearchDevicesIndexName,
+			Value: SettingElasticsearchDevicesIndexNameDefault},
+		{Key: SettingElasticsearchDevicesIndexShards,
+			Value: SettingElasticsearchDevicesIndexShardsDefault},
+		{Key: SettingElasticsearchDevicesIndexReplicas,
+			Value: SettingElasticsearchDevicesIndexReplicasDefault},
 		{Key: SettingDebugLog, Value: SettingDebugLogDefault},
 		{Key: SettingInventoryAddr, Value: SettingInventoryAddrDefault},
 		{Key: SettingReindexBuffLen, Value: SettingReindexBuffLenDefault},

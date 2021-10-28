@@ -102,6 +102,7 @@ func TestInternalSearch(t *testing.T) {
 				Attribute: "ip4",
 				Order:     "asc",
 			}},
+			TenantID: "123456789012345678901234",
 		},
 
 		Code: http.StatusOK,
@@ -150,7 +151,9 @@ func TestInternalSearch(t *testing.T) {
 			return app
 		},
 		TenantID: "123456789012345678901234",
-		Params:   &model.SearchParams{},
+		Params: &model.SearchParams{
+			TenantID: "123456789012345678901234",
+		},
 
 		Code:     http.StatusOK,
 		Response: []model.InvDevice{},
@@ -165,6 +168,7 @@ func TestInternalSearch(t *testing.T) {
 				Attribute: "rootpwd",
 				Value:     true,
 			}},
+			TenantID: "123456789012345678901234",
 		},
 		Code:     http.StatusBadRequest,
 		Response: rest.Error{Err: "malformed request body: type: must be a valid value."},
@@ -195,6 +199,7 @@ func TestInternalSearch(t *testing.T) {
 				Attribute: "ip4",
 				Order:     "asc",
 			}},
+			TenantID: "123456789012345678901234",
 		},
 
 		Code:     http.StatusInternalServerError,
