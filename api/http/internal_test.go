@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -31,7 +30,6 @@ import (
 
 	"github.com/mendersoftware/go-lib-micro/rest.utils"
 
-	"github.com/mendersoftware/reporting/app/reporting"
 	mapp "github.com/mendersoftware/reporting/app/reporting/mocks"
 	"github.com/mendersoftware/reporting/model"
 )
@@ -251,122 +249,6 @@ func TestInternalSearch(t *testing.T) {
 				panic("[TEST ERR] Dunno what to compare!")
 			}
 
-		})
-	}
-}
-
-func TestReindex(t *testing.T) {
-	t.Parallel()
-	type testCase struct {
-		Name string
-
-		App      func(*testing.T, testCase) *mapp.App
-		TenantID string
-		DeviceID string
-		Q        url.Values
-
-		Code     int
-		Response interface{}
-	}
-	testCases := []testCase{{
-		Name: "ok",
-
-		App: func(t *testing.T, self testCase) *mapp.App {
-			app := new(mapp.App)
-			app.On("Reindex", contextMatcher, self.TenantID,
-				self.DeviceID, "inventory").
-				Return(nil)
-			return app
-		},
-		TenantID: "123456789012345678901234",
-		DeviceID: "3ff2da3a-342f-45a1-b7f7-d79c080db5f1",
-		Q: url.Values{
-			"service": []string{"inventory"},
-		},
-
-		Code:     http.StatusAccepted,
-		Response: nil,
-	}, {
-		Name: "error, service unknown",
-
-		App: func(t *testing.T, self testCase) *mapp.App {
-			app := new(mapp.App)
-			app.On("Reindex", contextMatcher, self.TenantID,
-				self.DeviceID, "elasticbogaloo").
-				Return(reporting.ErrUnknownService)
-			return app
-		},
-		TenantID: "123456789012345678901234",
-		DeviceID: "3ff2da3a-342f-45a1-b7f7-d79c080db5f1",
-		Q: url.Values{
-			"service": []string{"elasticbogaloo"},
-		},
-
-		Code: http.StatusBadRequest,
-		Response: rest.Error{
-			Err: reporting.ErrUnknownService.Error(),
-		},
-	}, {
-		Name: "error, internal error",
-
-		App: func(t *testing.T, self testCase) *mapp.App {
-			app := new(mapp.App)
-			app.On("Reindex", contextMatcher, self.TenantID,
-				self.DeviceID, "").
-				Return(errors.New("internal error"))
-			return app
-		},
-		TenantID: "123456789012345678901234",
-		DeviceID: "3ff2da3a-342f-45a1-b7f7-d79c080db5f1",
-
-		Code: http.StatusInternalServerError,
-		Response: rest.Error{
-			Err: http.StatusText(http.StatusInternalServerError),
-		},
-	}}
-	for i := range testCases {
-		tc := testCases[i]
-		t.Run(tc.Name, func(t *testing.T) {
-			t.Parallel()
-			var app *mapp.App
-			if tc.App == nil {
-				app = new(mapp.App)
-			} else {
-				app = tc.App(t, tc)
-			}
-			defer app.AssertExpectations(t)
-			router := NewRouter(app)
-
-			repl := strings.NewReplacer(
-				":tenant_id", tc.TenantID,
-				":device_id", tc.DeviceID,
-			)
-			req, _ := http.NewRequest(
-				http.MethodPost,
-				URIInternal+repl.Replace(URIReindexInternal),
-				nil,
-			)
-			req.URL.RawQuery = tc.Q.Encode()
-			w := httptest.NewRecorder()
-			router.ServeHTTP(w, req)
-
-			assert.Equal(t, tc.Code, w.Code)
-
-			switch typ := tc.Response.(type) {
-			case rest.Error:
-				var actual rest.Error
-				dec := json.NewDecoder(w.Body)
-				dec.DisallowUnknownFields()
-				err := dec.Decode(&actual)
-				if assert.NoError(t, err, "unexpected response schema") {
-					assert.EqualError(t, actual, typ.Error())
-				}
-
-			case nil:
-				assert.Empty(t, w.Body.Bytes())
-			default:
-				panic("[TEST ERR] Dunno what to compare!")
-			}
 		})
 	}
 }
