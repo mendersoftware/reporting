@@ -11,14 +11,14 @@
 //    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
-package inventory
+package deviceauth
 
 import (
-	"bytes"
 	"context"
 	"crypto/tls"
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -26,19 +26,18 @@ import (
 
 	"github.com/mendersoftware/go-lib-micro/log"
 
-	"github.com/mendersoftware/reporting/model"
 	"github.com/mendersoftware/reporting/utils"
 )
 
 const (
-	urlSearch      = "/api/internal/v2/inventory/tenants/:tid/filters/search"
+	urlSearch      = "/api/internal/v1/devauth/tenants/:tid/devices"
 	defaultTimeout = 10 * time.Second
 )
 
 //go:generate ../../x/mockgen.sh
 type Client interface {
 	//GetDevices uses the search endpoint to get devices just by ids (not filters)
-	GetDevices(ctx context.Context, tid string, deviceIDs []string) ([]model.InvDevice, error)
+	GetDevices(ctx context.Context, tid string, deviceIDs []string) ([]DeviceAuthDevice, error)
 }
 
 type client struct {
@@ -63,21 +62,8 @@ func (c *client) GetDevices(
 	ctx context.Context,
 	tid string,
 	deviceIDs []string,
-) ([]model.InvDevice, error) {
+) ([]DeviceAuthDevice, error) {
 	l := log.FromContext(ctx)
-
-	getReq := &GetDevsReq{
-		DeviceIDs: deviceIDs,
-		Page:      1,
-		PerPage:   uint(len(deviceIDs)),
-	}
-
-	body, err := json.Marshal(getReq)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to serialize get devices request")
-	}
-
-	rd := bytes.NewReader(body)
 
 	url := utils.JoinURL(c.urlBase, urlSearch)
 	url = strings.Replace(url, ":tid", tid, 1)
@@ -85,12 +71,18 @@ func (c *client) GetDevices(
 	ctx, cancel := context.WithTimeout(ctx, defaultTimeout)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, rd)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to create request")
 	}
 
-	req.Header.Set("Content-Type", "application/json")
+	q := req.URL.Query()
+	for _, deviceID := range deviceIDs {
+		q.Add("id", deviceID)
+	}
+	q.Add("page", "1")
+	q.Add("per_page", strconv.Itoa(len(deviceIDs)))
+	req.URL.RawQuery = q.Encode()
 
 	rsp, err := c.client.Do(req)
 	if err != nil {
@@ -99,18 +91,17 @@ func (c *client) GetDevices(
 	defer rsp.Body.Close()
 
 	if rsp.StatusCode != http.StatusOK {
-		l.Errorf("request %s %s failed with status %v, response: %s",
-			req.Method, req.URL, rsp.Status, body)
-
-		return nil, errors.Errorf(
-			"%s %s request failed with status %v", req.Method, req.URL, rsp.Status)
+		err := errors.Errorf("%s %s request failed with status %v",
+			req.Method, req.URL, rsp.Status)
+		l.Errorf(err.Error())
+		return nil, err
 	}
 
 	dec := json.NewDecoder(rsp.Body)
-	var invDevs []model.InvDevice
-	if err = dec.Decode(&invDevs); err != nil {
+	var devDevs []DeviceAuthDevice
+	if err = dec.Decode(&devDevs); err != nil {
 		return nil, errors.Wrap(err, "failed to parse request body")
 	}
 
-	return invDevs, nil
+	return devDevs, nil
 }

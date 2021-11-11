@@ -11,12 +11,15 @@
 //    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
-package inventory
 
-// GetDevsReq is a stripped down inventory search query
-// default max 20 devices
-type GetDevsReq struct {
-	DeviceIDs []string `json:"device_ids"`
-	Page      uint     `json:"page"`
-	PerPage   uint     `json:"per_page"`
+package utils
+
+import "strings"
+
+func JoinURL(base, url string) string {
+	url = strings.TrimPrefix(url, "/")
+	if !strings.HasSuffix(base, "/") {
+		base = base + "/"
+	}
+	return base + url
 }
