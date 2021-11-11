@@ -294,13 +294,17 @@ func (s *store) Search(ctx context.Context, query interface{}) (model.M, error) 
 
 	id := identity.FromContext(ctx)
 
-	resp, err := s.client.Search(
+	searchRequests := []func(*esapi.SearchRequest){
 		s.client.Search.WithContext(ctx),
 		s.client.Search.WithIndex(s.GetDevicesIndex(id.Tenant)),
-		s.client.Search.WithRouting(s.GetDevicesRoutingKey(id.Tenant)),
 		s.client.Search.WithBody(&buf),
 		s.client.Search.WithTrackTotalHits(true),
-	)
+	}
+	routingKey := s.GetDevicesRoutingKey(id.Tenant)
+	if routingKey != "" {
+		searchRequests = append(searchRequests, s.client.Search.WithRouting(routingKey))
+	}
+	resp, err := s.client.Search(searchRequests...)
 	defer resp.Body.Close()
 
 	if err != nil {

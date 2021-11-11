@@ -39,12 +39,6 @@ const indexDevicesTemplate = `{
 				"name": {
 					"type": "keyword"
 				},
-				"groupName": {
-					"type": "keyword"
-				},
-				"status": {
-					"type": "keyword"
-				},
 				"createdAt": {
 					"type": "date"
 				},
