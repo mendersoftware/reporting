@@ -17,4 +17,6 @@ package inventory
 // default max 20 devices
 type GetDevsReq struct {
 	DeviceIDs []string `json:"device_ids"`
+	Page      uint     `json:"page"`
+	PerPage   uint     `json:"per_page"`
 }

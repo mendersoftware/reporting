@@ -67,6 +67,8 @@ func (c *client) GetDevices(
 
 	getReq := &GetDevsReq{
 		DeviceIDs: deviceIDs,
+		Page:      1,
+		PerPage:   uint(len(deviceIDs)),
 	}
 
 	body, err := json.Marshal(getReq)
