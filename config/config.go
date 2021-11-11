@@ -50,26 +50,45 @@ const (
 	// elasticsearch devices index replicas
 	SettingElasticsearchDevicesIndexReplicasDefault = 0
 
-	SettingInventoryAddr        = "inventory_addr"
+	// SettingDeviceAuthAddr is the config key for the deviceauth service address
+	SettingDeviceAuthAddr = "deviceauth_addr"
+	// SettingDeviceAuthAddrDefault is the default value for the deviceauth service address
+	SettingDeviceAuthAddrDefault = "http://mender-device-auth:8080/"
+
+	// SettingInventoryAddr is the config key for the inventory service address
+	SettingInventoryAddr = "inventory_addr"
+	// SettingInventoryAddrDefault is the default value for the inventory service address
 	SettingInventoryAddrDefault = "http://mender-inventory:8080/"
+
+	// SettingNatsURI is the config key for the nats uri
+	SettingNatsURI = "nats_uri"
+	// SettingNatsURIDefault is the default value for the nats uri
+	SettingNatsURIDefault = "nats://mender-nats:4222"
+
+	// SettingNatsStreamName is the config key for the nats streaem name
+	SettingNatsStreamName = "nats_stream_name"
+	// SettingNatsStreamNameDefault is the default value for the nats stream name
+	SettingNatsStreamNameDefault = "WORKFLOWS"
+
+	// SettingNatsSubscriberTopic is the config key for the nats subscriber topic name
+	SettingNatsSubscriberTopic = "nats_subscriber_topic"
+	// SettingNatsSubscriberTopicDefault is the default value for the nats subscriber topic name
+	SettingNatsSubscriberTopicDefault = "reporting"
+
+	// SettingNatsSubscriberDurable is the config key for the nats subscriber durable name
+	SettingNatsSubscriberDurable = "nats_subscriber_durable"
+	// SettingNatsSubscriberDurableDefault is the default value for the nats subscriber durable
+	// name
+	SettingNatsSubscriberDurableDefault = "reporting"
 
 	// SettingReindexBatchSize is the num of buffered requests processed together
 	SettingReindexBatchSize        = "reindex_batch_size"
-	SettingReindexBatchSizeDefault = 20
+	SettingReindexBatchSizeDefault = 100
 
 	// SettingReindexTimeMsec is the max time after which reindexing is triggered
 	// (even if buffered requests didn't reach reindex_batch_size yet)
 	SettingReindexMaxTimeMsec        = "reindex_max_time_msec"
 	SettingReindexMaxTimeMsecDefault = 1000
-
-	// SettingReindexBuffLen is the length of the reindex pipeline input
-	// buffer/buffered channel (in number of reindex events)
-	SettingReindexBuffLen        = "reindex_buff_len"
-	SettingReindexBuffLenDefault = 100
-
-	// SettingReindexNumWorkers is the num of workers actually issuing the reindex bulk requests
-	SettingReindexNumWorkers        = "reindex_num_workers"
-	SettingReindexNumWorkersDefault = 5
 
 	// SettingDebugLog is the config key for the truning on the debug log
 	SettingDebugLog = "debug_log"
@@ -89,10 +108,13 @@ var (
 		{Key: SettingElasticsearchDevicesIndexReplicas,
 			Value: SettingElasticsearchDevicesIndexReplicasDefault},
 		{Key: SettingDebugLog, Value: SettingDebugLogDefault},
+		{Key: SettingDeviceAuthAddr, Value: SettingDeviceAuthAddrDefault},
 		{Key: SettingInventoryAddr, Value: SettingInventoryAddrDefault},
-		{Key: SettingReindexBuffLen, Value: SettingReindexBuffLenDefault},
+		{Key: SettingNatsURI, Value: SettingNatsURIDefault},
+		{Key: SettingNatsStreamName, Value: SettingNatsStreamNameDefault},
+		{Key: SettingNatsSubscriberTopic, Value: SettingNatsSubscriberTopicDefault},
+		{Key: SettingNatsSubscriberDurable, Value: SettingNatsSubscriberDurableDefault},
 		{Key: SettingReindexMaxTimeMsec, Value: SettingReindexMaxTimeMsecDefault},
 		{Key: SettingReindexBatchSize, Value: SettingReindexBatchSizeDefault},
-		{Key: SettingReindexNumWorkers, Value: SettingReindexNumWorkersDefault},
 	}
 )

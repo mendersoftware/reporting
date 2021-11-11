@@ -79,17 +79,3 @@ func (_m *App) InventorySearchDevices(ctx context.Context, searchParams *model.S
 
 	return r0, r1, r2
 }
-
-// Reindex provides a mock function with given fields: ctx, tenantID, devID, service
-func (_m *App) Reindex(ctx context.Context, tenantID string, devID string, service string) error {
-	ret := _m.Called(ctx, tenantID, devID, service)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) error); ok {
-		r0 = rf(ctx, tenantID, devID, service)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}

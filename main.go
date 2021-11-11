@@ -21,12 +21,15 @@ import (
 	"os"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 
 	"github.com/mendersoftware/go-lib-micro/config"
+	mlog "github.com/mendersoftware/go-lib-micro/log"
 
 	"github.com/mendersoftware/reporting/app/indexer"
 	"github.com/mendersoftware/reporting/app/server"
+	"github.com/mendersoftware/reporting/client/nats"
 	dconfig "github.com/mendersoftware/reporting/config"
 	"github.com/mendersoftware/reporting/store"
 )
@@ -94,6 +97,9 @@ func doMain(args []string) {
 		config.Config.AutomaticEnv()
 		config.Config.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 
+		// setup logging
+		mlog.Setup(config.Config.GetBool(dconfig.SettingDebugLog))
+
 		return nil
 	}
 
@@ -118,6 +124,21 @@ func cmdServer(args *cli.Context) error {
 	return server.InitAndRun(config.Config, store)
 }
 
+func getNatsClient() (nats.Client, error) {
+	natsURI := config.Config.GetString(dconfig.SettingNatsURI)
+	nats, err := nats.NewClientWithDefaults(natsURI)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to connect to nats")
+	}
+
+	streamName := config.Config.GetString(dconfig.SettingNatsStreamName)
+	nats = nats.WithStreamName(streamName)
+	if err != nil {
+		return nil, err
+	}
+	return nats, nil
+}
+
 func cmdIndexer(args *cli.Context) error {
 	store, err := getStore(args)
 	if err != nil {
@@ -130,7 +151,14 @@ func cmdIndexer(args *cli.Context) error {
 			return err
 		}
 	}
-	return indexer.InitAndRun(config.Config, store)
+
+	nats, err := getNatsClient()
+	if err != nil {
+		return err
+	}
+	defer nats.Close()
+
+	return indexer.InitAndRun(config.Config, store, nats)
 }
 
 func cmdMigrate(args *cli.Context) error {

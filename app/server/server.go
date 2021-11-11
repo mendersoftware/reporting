@@ -30,7 +30,6 @@ import (
 
 	api "github.com/mendersoftware/reporting/api/http"
 	"github.com/mendersoftware/reporting/app/reporting"
-	"github.com/mendersoftware/reporting/client/inventory"
 	dconfig "github.com/mendersoftware/reporting/config"
 	"github.com/mendersoftware/reporting/store"
 )
@@ -47,32 +46,11 @@ func init() {
 func InitAndRun(conf config.Reader, store store.Store) error {
 	ctx := context.Background()
 
-	log.Setup(conf.GetBool(dconfig.SettingDebugLog))
 	l := log.FromContext(ctx)
 
+	reporting := reporting.NewApp(store)
+
 	var listen = conf.GetString(dconfig.SettingListen)
-
-	invClient := inventory.NewClient(
-		conf.GetString(dconfig.SettingInventoryAddr),
-		false,
-	)
-
-	reindexer := reporting.NewReindexer(
-		&reporting.ReindexerConfig{
-			NumWorkers:  conf.GetInt(dconfig.SettingReindexNumWorkers),
-			BatchSize:   conf.GetInt(dconfig.SettingReindexBatchSize),
-			MaxTimeMsec: conf.GetInt(dconfig.SettingReindexMaxTimeMsec),
-			BuffLen:     conf.GetInt(dconfig.SettingReindexBuffLen),
-		},
-		invClient,
-		store)
-
-	reporting := reporting.NewApp(store, invClient, reindexer)
-	err := reindexer.Run()
-	if err != nil {
-		return err
-	}
-
 	var router = api.NewRouter(reporting)
 	srv := &http.Server{
 		Addr:    listen,

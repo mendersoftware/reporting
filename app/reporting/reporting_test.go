@@ -160,7 +160,7 @@ func TestInventorySearchDevices(t *testing.T) {
 			}
 			defer store.AssertExpectations(t)
 
-			app := NewApp(store, nil, nil)
+			app := NewApp(store)
 			res, cnt, err := app.InventorySearchDevices(context.Background(), tc.Params)
 			if tc.Error != nil {
 				if assert.Error(t, err) {
