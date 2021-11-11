@@ -15,12 +15,39 @@
 package indexer
 
 import (
-	"github.com/mendersoftware/go-lib-micro/config"
+	"context"
 
+	"github.com/mendersoftware/reporting/client/deviceauth"
+	"github.com/mendersoftware/reporting/client/inventory"
+	"github.com/mendersoftware/reporting/client/nats"
+	"github.com/mendersoftware/reporting/model"
 	"github.com/mendersoftware/reporting/store"
 )
 
-// InitAndRun initializes the indexer and runs it
-func InitAndRun(conf config.Reader, store store.Store) error {
-	return nil
+//nolint:lll
+//go:generate ../../x/mockgen.sh
+type Indexer interface {
+	GetJobs(ctx context.Context, jobs chan *model.Job) error
+	ProcessJobs(ctx context.Context, jobs []*model.Job)
+}
+
+type indexer struct {
+	store     store.Store
+	nats      nats.Client
+	devClient deviceauth.Client
+	invClient inventory.Client
+}
+
+func NewIndexer(
+	store store.Store,
+	nats nats.Client,
+	devClient deviceauth.Client,
+	invClient inventory.Client,
+) Indexer {
+	return &indexer{
+		store:     store,
+		nats:      nats,
+		devClient: devClient,
+		invClient: invClient,
+	}
 }

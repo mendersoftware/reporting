@@ -20,7 +20,6 @@ import (
 
 	"github.com/mendersoftware/go-lib-micro/log"
 
-	"github.com/mendersoftware/reporting/client/inventory"
 	"github.com/mendersoftware/reporting/model"
 	"github.com/mendersoftware/reporting/store"
 )
@@ -41,20 +40,15 @@ var (
 type App interface {
 	GetSearchableInvAttrs(ctx context.Context, tid string) ([]model.InvFilterAttr, error)
 	InventorySearchDevices(ctx context.Context, searchParams *model.SearchParams) ([]model.InvDevice, int, error)
-	Reindex(ctx context.Context, tenantID, devID string, service string) error
 }
 
 type app struct {
-	store     store.Store
-	invClient inventory.Client
-	reindexer Reindexer
+	store store.Store
 }
 
-func NewApp(store store.Store, client inventory.Client, ri Reindexer) App {
+func NewApp(store store.Store) App {
 	return &app{
-		store:     store,
-		invClient: client,
-		reindexer: ri,
+		store: store,
 	}
 }
 
@@ -195,29 +189,6 @@ func (a *app) storeToInventoryDev(storeRes interface{}) (*model.InvDevice, error
 	ret.Attributes = attrs
 
 	return ret, nil
-}
-
-func (app *app) Reindex(ctx context.Context, tenantID, devID string, service string) error {
-	l := log.FromContext(ctx)
-	l.Debugf("triggered reindexing for device %v:%v", tenantID, devID)
-
-	known := false
-	for _, s := range knownServices {
-		if service == s {
-			known = true
-		}
-	}
-	if !known {
-		return ErrUnknownService
-	}
-
-	err := app.reindexer.Handle(
-		reindexReq{
-			Tenant:   tenantID,
-			Device:   devID,
-			Services: []string{service}})
-
-	return err
 }
 
 func (app *app) GetSearchableInvAttrs(

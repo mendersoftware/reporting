@@ -197,6 +197,9 @@ func (s *store) BulkIndexDevices(ctx context.Context, devices []*model.Device, r
 		data += string(actionJSON) + "\n"
 	}
 
+	l := log.FromContext(ctx)
+	l.Debugf("es request: %s", data)
+
 	req := esapi.BulkRequest{
 		Body: strings.NewReader(data),
 	}
