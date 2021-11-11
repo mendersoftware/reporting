@@ -43,22 +43,24 @@ type InvDeviceAttribute struct {
 	Scope       string      `json:"scope" bson:",omitempty"`
 }
 
-// Device wrapper
+// InvDevice is a wrapper for inventory devices
 type InvDevice struct {
-	//system-generated device ID
+	// ID is the system-generated device ID
 	ID DeviceID `json:"id" bson:"_id,omitempty"`
 
-	//a map of attributes names and their values.
+	// Attributes is a map of attributes names and their values.
 	Attributes DeviceAttributes `json:"attributes,omitempty" bson:"attributes,omitempty"`
 
-	//device's group name
+	// Group contains the device's group name
 	Group GroupName `json:"-" bson:"group,omitempty"`
 
+	// CreatedTs contains the timestamp of the creation time
 	CreatedTs time.Time `json:"-" bson:"created_ts,omitempty"`
-	//Timestamp of the last attribute update.
+
+	// UpdatedTs contains the timestamp of the latest attribute update
 	UpdatedTs time.Time `json:"updated_ts" bson:"updated_ts,omitempty"`
 
-	//device object revision
+	// Revision is the device object revision
 	Revision uint `json:"-" bson:"revision,omitempty"`
 }
 
