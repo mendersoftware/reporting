@@ -226,7 +226,7 @@ func (app *app) GetSearchableInvAttrs(
 ) ([]model.InvFilterAttr, error) {
 	l := log.FromContext(ctx)
 
-	index, err := app.store.GetDevIndex(ctx, tid)
+	index, err := app.store.GetDevicesIndexMapping(ctx, tid)
 	if err != nil {
 		return nil, err
 	}
