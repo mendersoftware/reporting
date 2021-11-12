@@ -127,20 +127,9 @@ func (a *InventoryAttribute) IsBool() bool {
 	return a.Boolean != nil
 }
 
-func (a *InventoryAttribute) GetName() string {
-	return a.Name
-}
-
 func (a *InventoryAttribute) SetName(val string) *InventoryAttribute {
 	a.Name = val
 	return a
-}
-
-func (a *InventoryAttribute) GetString() string {
-	if len(a.String) > 0 {
-		return a.String[0]
-	}
-	return ""
 }
 
 func (a *InventoryAttribute) SetString(val string) *InventoryAttribute {
@@ -150,22 +139,11 @@ func (a *InventoryAttribute) SetString(val string) *InventoryAttribute {
 	return a
 }
 
-func (a *InventoryAttribute) GetStrings() []string {
-	return a.String
-}
-
 func (a *InventoryAttribute) SetStrings(val []string) *InventoryAttribute {
 	a.String = val
 	a.Boolean = nil
 	a.Numeric = nil
 	return a
-}
-
-func (a *InventoryAttribute) GetNumeric() float64 {
-	if len(a.Numeric) > 0 {
-		return a.Numeric[0]
-	}
-	return float64(0)
 }
 
 func (a *InventoryAttribute) SetNumeric(val float64) *InventoryAttribute {

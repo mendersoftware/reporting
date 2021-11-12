@@ -15,6 +15,7 @@
 package model
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -45,6 +46,275 @@ func TestBuildQuery(t *testing.T) {
 				},
 			}),
 		},
+		"filter $eq": {
+			inParams: SearchParams{
+				Filters: []FilterPredicate{
+					{
+						Scope:     ScopeIdentity,
+						Attribute: "mac",
+						Type:      "$eq",
+						Value:     "00:11:22:33:44",
+					},
+				},
+				Page:    defaultPage,
+				PerPage: defaultPerPage,
+			},
+			outQuery: NewQuery().Must(M{
+				"match": M{
+					"identity_mac_str": "00:11:22:33:44",
+				},
+			}),
+		},
+		"filter $neq": {
+			inParams: SearchParams{
+				Filters: []FilterPredicate{
+					{
+						Scope:     ScopeIdentity,
+						Attribute: "mac",
+						Type:      "$ne",
+						Value:     "00:11:22:33:44",
+					},
+				},
+				Page:    defaultPage,
+				PerPage: defaultPerPage,
+			},
+			outQuery: NewQuery().MustNot(M{
+				"match": M{
+					"identity_mac_str": "00:11:22:33:44",
+				},
+			}),
+		},
+		"filter $gt": {
+			inParams: SearchParams{
+				Filters: []FilterPredicate{
+					{
+						Scope:     ScopeIdentity,
+						Attribute: "mac",
+						Type:      "$gt",
+						Value:     "00:11:22:33:44",
+					},
+				},
+				Page:    defaultPage,
+				PerPage: defaultPerPage,
+			},
+			outQuery: NewQuery().Must(M{
+				"range": M{
+					"identity_mac_str": M{
+						"gt": "00:11:22:33:44",
+					},
+				},
+			}),
+		},
+		"filter $gte": {
+			inParams: SearchParams{
+				Filters: []FilterPredicate{
+					{
+						Scope:     ScopeIdentity,
+						Attribute: "mac",
+						Type:      "$gte",
+						Value:     "00:11:22:33:44",
+					},
+				},
+				Page:    defaultPage,
+				PerPage: defaultPerPage,
+			},
+			outQuery: NewQuery().Must(M{
+				"range": M{
+					"identity_mac_str": M{
+						"gte": "00:11:22:33:44",
+					},
+				},
+			}),
+		},
+		"filter $lt": {
+			inParams: SearchParams{
+				Filters: []FilterPredicate{
+					{
+						Scope:     ScopeIdentity,
+						Attribute: "mac",
+						Type:      "$lt",
+						Value:     "00:11:22:33:44",
+					},
+				},
+				Page:    defaultPage,
+				PerPage: defaultPerPage,
+			},
+			outQuery: NewQuery().Must(M{
+				"range": M{
+					"identity_mac_str": M{
+						"lt": "00:11:22:33:44",
+					},
+				},
+			}),
+		},
+		"filter $lte": {
+			inParams: SearchParams{
+				Filters: []FilterPredicate{
+					{
+						Scope:     ScopeIdentity,
+						Attribute: "mac",
+						Type:      "$lte",
+						Value:     "00:11:22:33:44",
+					},
+				},
+				Page:    defaultPage,
+				PerPage: defaultPerPage,
+			},
+			outQuery: NewQuery().Must(M{
+				"range": M{
+					"identity_mac_str": M{
+						"lte": "00:11:22:33:44",
+					},
+				},
+			}),
+		},
+		"filter $in": {
+			inParams: SearchParams{
+				Filters: []FilterPredicate{
+					{
+						Scope:     ScopeIdentity,
+						Attribute: "mac",
+						Type:      "$in",
+						Value:     []string{"00:11:22:33:44"},
+					},
+				},
+				Page:    defaultPage,
+				PerPage: defaultPerPage,
+			},
+			outQuery: NewQuery().Must(M{
+				"terms": M{
+					"identity_mac_str": []string{"00:11:22:33:44"},
+				},
+			}),
+		},
+		"filter $nin": {
+			inParams: SearchParams{
+				Filters: []FilterPredicate{
+					{
+						Scope:     ScopeIdentity,
+						Attribute: "mac",
+						Type:      "$nin",
+						Value:     []string{"00:11:22:33:44"},
+					},
+				},
+				Page:    defaultPage,
+				PerPage: defaultPerPage,
+			},
+			outQuery: NewQuery().MustNot(M{
+				"terms": M{
+					"identity_mac_str": []string{"00:11:22:33:44"},
+				},
+			}),
+		},
+		"filter $exists": {
+			inParams: SearchParams{
+				Filters: []FilterPredicate{
+					{
+						Scope:     ScopeIdentity,
+						Attribute: "mac",
+						Type:      "$exists",
+						Value:     true,
+					},
+				},
+				Page:    defaultPage,
+				PerPage: defaultPerPage,
+			},
+			outQuery: NewQuery().Must(M{
+				"bool": M{
+					"minimum_should_match": 1,
+					"should": S{
+						M{
+							"exists": M{
+								"field": "identity_mac_str",
+							},
+						},
+						M{
+							"exists": M{
+								"field": "identity_mac_num",
+							},
+						},
+						M{
+							"exists": M{
+								"field": "identity_mac_bool",
+							},
+						},
+					},
+				},
+			}),
+		},
+		"filter $regex": {
+			inParams: SearchParams{
+				Filters: []FilterPredicate{
+					{
+						Scope:     ScopeIdentity,
+						Attribute: "mac",
+						Type:      "$regex",
+						Value:     "00:.*",
+					},
+				},
+				Page:    defaultPage,
+				PerPage: defaultPerPage,
+			},
+			outQuery: NewQuery().Must(M{
+				"regexp": M{
+					"identity_mac_str": "00:.*",
+				},
+			}),
+		},
+		"sort": {
+			inParams: SearchParams{
+				Sort: []SortCriteria{
+					{
+						Scope:     ScopeIdentity,
+						Attribute: "mac",
+					},
+				},
+				Page:    defaultPage,
+				PerPage: defaultPerPage,
+			},
+			outQuery: NewQuery().WithSort(M{
+				"identity_mac_str": M{
+					"unmapped_type": "keyword",
+				},
+			}).WithSort(M{
+				"identity_mac_num": M{
+					"unmapped_type": "double",
+				},
+			}),
+		},
+		"attributes": {
+			inParams: SearchParams{
+				Attributes: []SelectAttribute{
+					{
+						Scope:     ScopeIdentity,
+						Attribute: "mac",
+					},
+				},
+				Page:    defaultPage,
+				PerPage: defaultPerPage,
+			},
+			outQuery: NewQuery().With(map[string]interface{}{
+				"_source": false,
+				"fields": []string{
+					"identity_mac_str",
+					"identity_mac_num",
+					"identity_mac_bool",
+					"id",
+				},
+			}),
+		},
+		"device IDs": {
+			inParams: SearchParams{
+				DeviceIDs: []string{"1", "2"},
+				Page:      defaultPage,
+				PerPage:   defaultPerPage,
+			},
+			outQuery: NewQuery().Must(M{
+				"terms": M{
+					"id": []string{"1", "2"},
+				},
+			}),
+		},
 	}
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
@@ -55,6 +325,9 @@ func TestBuildQuery(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Equal(t, tc.outQuery, query)
 			}
+
+			_, err = json.Marshal(query)
+			assert.Nil(t, nil)
 		})
 	}
 }
