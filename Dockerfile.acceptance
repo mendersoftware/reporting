@@ -15,12 +15,7 @@ RUN mkdir -p /etc/reporting
 COPY ./config.yaml /etc/reporting
 COPY ./tests/wait-for /wait-for
 COPY --from=builder /go/src/github.com/mendersoftware/reporting/bin/reporting.test /usr/bin
-ENTRYPOINT ["/wait-for", "mender-elasticsearch:9200", "-t", "300", "-q", \
-        "--", "/usr/bin/reporting.test", \
-        "-test.coverprofile=/testing/coverage-acceptance.txt", \
-        "-acceptance-testing", \
-        "--", "--config=/etc/reporting/config.yaml", \
-        "server", "--automigrate"]
+ENTRYPOINT ["/wait-for", "mender-elasticsearch:9200", "-t", "300", "-q", "--"]
 
 EXPOSE 8080
 STOPSIGNAL SIGINT
