@@ -213,9 +213,9 @@ func (a *InventoryAttribute) SetVal(val interface{}) *InventoryAttribute {
 func (d *Device) MarshalJSON() ([]byte, error) {
 	// TODO: smarter encoding, without explicit rewrites?
 	m := make(map[string]interface{})
-	m[AttrNameID] = d.ID
-	m[AttrNameTenantID] = d.TenantID
-	m[AttrNameUpdatedAt] = d.UpdatedAt
+	m[FieldNameID] = d.ID
+	m[FieldNameTenantID] = d.TenantID
+	m[FieldNameUpdatedAt] = d.UpdatedAt
 
 	attributes := append(d.IdentityAttributes, d.InventoryAttributes...)
 	attributes = append(attributes, d.MonitorAttributes...)
