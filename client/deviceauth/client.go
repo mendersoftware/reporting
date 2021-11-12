@@ -26,6 +26,7 @@ import (
 
 	"github.com/mendersoftware/go-lib-micro/log"
 
+	"github.com/mendersoftware/reporting/model"
 	"github.com/mendersoftware/reporting/utils"
 )
 
@@ -78,7 +79,7 @@ func (c *client) GetDevices(
 
 	q := req.URL.Query()
 	for _, deviceID := range deviceIDs {
-		q.Add("id", deviceID)
+		q.Add(model.AttrNameID, deviceID)
 	}
 	q.Add("page", "1")
 	q.Add("per_page", strconv.Itoa(len(deviceIDs)))

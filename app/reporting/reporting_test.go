@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
+	"github.com/mendersoftware/reporting/client/inventory"
 	"github.com/mendersoftware/reporting/model"
 	mstore "github.com/mendersoftware/reporting/store/mocks"
 )
@@ -35,7 +36,7 @@ func TestInventorySearchDevices(t *testing.T) {
 		Params *model.SearchParams
 		Store  func(*testing.T, testCase) *mstore.Store
 
-		Result     []model.InvDevice
+		Result     []inventory.Device
 		TotalCount int
 		Error      error
 	}
@@ -74,9 +75,9 @@ func TestInventorySearchDevices(t *testing.T) {
 			return store
 		},
 		TotalCount: 1,
-		Result: []model.InvDevice{{
+		Result: []inventory.Device{{
 			ID: "194d1060-1717-44dc-a783-00038f4a8013",
-			Attributes: model.DeviceAttributes{{
+			Attributes: inventory.DeviceAttributes{{
 				Name:  "foo",
 				Value: []string{"bar"},
 				Scope: "inventory",
@@ -100,7 +101,7 @@ func TestInventorySearchDevices(t *testing.T) {
 				}, nil)
 			return store
 		},
-		Result: []model.InvDevice{},
+		Result: []inventory.Device{},
 	}, {
 		Name: "error, internal storage-layer error",
 
@@ -112,7 +113,7 @@ func TestInventorySearchDevices(t *testing.T) {
 				Return(nil, errors.New("internal error"))
 			return store
 		},
-		Result: []model.InvDevice{},
+		Result: []inventory.Device{},
 		Error:  errors.New("internal error"),
 	}, {
 		Name: "error, parsing elastic result",
@@ -132,7 +133,7 @@ func TestInventorySearchDevices(t *testing.T) {
 				}, nil)
 			return store
 		},
-		Result: []model.InvDevice{},
+		Result: []inventory.Device{},
 		Error:  errors.New("can't process total hits value"),
 	}, {
 		Name: "error, invalid search parameters",

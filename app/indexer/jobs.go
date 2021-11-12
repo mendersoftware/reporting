@@ -25,6 +25,7 @@ import (
 	"github.com/mendersoftware/go-lib-micro/log"
 
 	"github.com/mendersoftware/reporting/client/deviceauth"
+	"github.com/mendersoftware/reporting/client/inventory"
 	rconfig "github.com/mendersoftware/reporting/config"
 	"github.com/mendersoftware/reporting/model"
 )
@@ -92,7 +93,7 @@ func (i *indexer) ProcessJobs(ctx context.Context, jobs []*model.Job) {
 	tenantsDevicesServices := groupJobsIntoTenantDeviceServices(jobs)
 	for tenant, deviceServices := range tenantsDevicesServices {
 		deviceIDs := make([]string, 0, len(deviceServices))
-		for deviceID, _ := range deviceServices {
+		for deviceID := range deviceServices {
 			deviceIDs = append(deviceIDs, deviceID)
 		}
 		// get devices from deviceauth
@@ -112,7 +113,7 @@ func (i *indexer) ProcessJobs(ctx context.Context, jobs []*model.Job) {
 		removedDevices = removedDevices[:0]
 		for _, deviceID := range deviceIDs {
 			var deviceAuthDevice *deviceauth.DeviceAuthDevice
-			var inventoryDevice *model.InvDevice
+			var inventoryDevice *inventory.Device
 			for _, d := range deviceAuthDevices {
 				if d.ID == deviceID {
 					deviceAuthDevice = &d
@@ -120,7 +121,7 @@ func (i *indexer) ProcessJobs(ctx context.Context, jobs []*model.Job) {
 				}
 			}
 			for _, d := range inventoryDevices {
-				if d.ID == model.DeviceID(deviceID) {
+				if d.ID == inventory.DeviceID(deviceID) {
 					inventoryDevice = &d
 					break
 				}
@@ -132,29 +133,35 @@ func (i *indexer) ProcessJobs(ctx context.Context, jobs []*model.Job) {
 				})
 				continue
 			}
-			device, err := model.NewDeviceFromInv(tenant, inventoryDevice)
-			if err != nil {
-				err = errors.Wrapf(err,
-					"failed to convert the inventory device for tenant %s, "+
-						"device %s", tenant, deviceID)
-				l.Error(err)
+			device := model.NewDevice(tenant, string(inventoryDevice.ID))
+			// data from inventory
+			device.SetUpdatedAt(inventoryDevice.UpdatedTs)
+			for _, invattr := range inventoryDevice.Attributes {
+				attr := model.NewInventoryAttribute(invattr.Scope).
+					SetName(invattr.Name).
+					SetVal(invattr.Value)
+				if err := device.AppendAttr(attr); err != nil {
+					err = errors.Wrapf(err,
+						"failed to convert inventory data for tenant %s, "+
+							"device %s", tenant, deviceID)
+					l.Warn(err)
+				}
 			}
 			// data from device auth
 			_ = device.AppendAttr(&model.InventoryAttribute{
-				Scope:  model.AttrScopeIdentity,
-				Name:   "status",
+				Scope:  model.ScopeIdentity,
+				Name:   model.AttrNameStatus,
 				String: []string{deviceAuthDevice.Status},
 			})
 			for name, value := range deviceAuthDevice.IdDataStruct {
-				if err := device.AppendAttr(&model.InventoryAttribute{
-					Scope:  model.AttrScopeIdentity,
-					Name:   name,
-					String: []string{value},
-				}); err != nil {
+				attr := model.NewInventoryAttribute(model.ScopeIdentity).
+					SetName(name).
+					SetVal(value)
+				if err := device.AppendAttr(attr); err != nil {
 					err = errors.Wrapf(err,
 						"failed to convert identity data for tenant %s, "+
 							"device %s", tenant, deviceID)
-					l.Error(err)
+					l.Warn(err)
 				}
 			}
 			// append the device

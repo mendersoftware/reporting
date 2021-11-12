@@ -20,26 +20,16 @@ import (
 
 	"github.com/mendersoftware/go-lib-micro/log"
 
+	"github.com/mendersoftware/reporting/client/inventory"
 	"github.com/mendersoftware/reporting/model"
 	"github.com/mendersoftware/reporting/store"
-)
-
-const (
-	SvcInventory  = "inventory"
-	SvcDeviceauth = "deviceauth"
-)
-
-var (
-	knownServices = []string{SvcInventory, SvcDeviceauth}
-
-	ErrUnknownService = errors.New("unknown service name")
 )
 
 //nolint:lll
 //go:generate ../../x/mockgen.sh
 type App interface {
-	GetSearchableInvAttrs(ctx context.Context, tid string) ([]model.InvFilterAttr, error)
-	InventorySearchDevices(ctx context.Context, searchParams *model.SearchParams) ([]model.InvDevice, int, error)
+	GetSearchableInvAttrs(ctx context.Context, tid string) ([]model.FilterAttribute, error)
+	InventorySearchDevices(ctx context.Context, searchParams *model.SearchParams) ([]inventory.Device, int, error)
 }
 
 type app struct {
@@ -55,7 +45,7 @@ func NewApp(store store.Store) App {
 func (app *app) InventorySearchDevices(
 	ctx context.Context,
 	searchParams *model.SearchParams,
-) ([]model.InvDevice, int, error) {
+) ([]inventory.Device, int, error) {
 	query, err := model.BuildQuery(*searchParams)
 	if err != nil {
 		return nil, 0, err
@@ -64,7 +54,7 @@ func (app *app) InventorySearchDevices(
 	if searchParams.TenantID != "" {
 		query = query.Must(model.M{
 			"term": model.M{
-				"tenantID": searchParams.TenantID,
+				model.AttrNameTenantID: searchParams.TenantID,
 			},
 		})
 	}
@@ -72,7 +62,7 @@ func (app *app) InventorySearchDevices(
 	if len(searchParams.DeviceIDs) > 0 {
 		query = query.Must(model.M{
 			"terms": model.M{
-				"id": searchParams.DeviceIDs,
+				model.AttrNameID: searchParams.DeviceIDs,
 			},
 		})
 	}
@@ -94,8 +84,8 @@ func (app *app) InventorySearchDevices(
 // storeToInventoryDevs translates ES results directly to iventory devices
 func (a *app) storeToInventoryDevs(
 	storeRes map[string]interface{},
-) ([]model.InvDevice, int, error) {
-	devs := []model.InvDevice{}
+) ([]inventory.Device, int, error) {
+	devs := []inventory.Device{}
 
 	hitsM, ok := storeRes["hits"].(map[string]interface{})
 	if !ok {
@@ -129,7 +119,7 @@ func (a *app) storeToInventoryDevs(
 	return devs, int(total), nil
 }
 
-func (a *app) storeToInventoryDev(storeRes interface{}) (*model.InvDevice, error) {
+func (a *app) storeToInventoryDev(storeRes interface{}) (*inventory.Device, error) {
 	resM, ok := storeRes.(map[string]interface{})
 	if !ok {
 		return nil, errors.New("can't process individual hit")
@@ -162,11 +152,11 @@ func (a *app) storeToInventoryDev(storeRes interface{}) (*model.InvDevice, error
 		}
 	}
 
-	ret := &model.InvDevice{
-		ID: model.DeviceID(id),
+	ret := &inventory.Device{
+		ID: inventory.DeviceID(id),
 	}
 
-	attrs := []model.InvDeviceAttribute{}
+	attrs := []inventory.DeviceAttribute{}
 
 	for k, v := range sourceM {
 		s, n, err := model.MaybeParseAttr(k)
@@ -176,7 +166,7 @@ func (a *app) storeToInventoryDev(storeRes interface{}) (*model.InvDevice, error
 		}
 
 		if n != "" {
-			a := model.InvDeviceAttribute{
+			a := inventory.DeviceAttribute{
 				Name:  model.Redot(n),
 				Scope: s,
 				Value: v,
@@ -194,7 +184,7 @@ func (a *app) storeToInventoryDev(storeRes interface{}) (*model.InvDevice, error
 func (app *app) GetSearchableInvAttrs(
 	ctx context.Context,
 	tid string,
-) ([]model.InvFilterAttr, error) {
+) ([]model.FilterAttribute, error) {
 	l := log.FromContext(ctx)
 
 	index, err := app.store.GetDevicesIndexMapping(ctx, tid)
@@ -223,7 +213,7 @@ func (app *app) GetSearchableInvAttrs(
 		return nil, errors.New("can't parse index properties")
 	}
 
-	ret := []model.InvFilterAttr{}
+	ret := []model.FilterAttribute{}
 
 	for k := range propsM {
 		s, n, err := model.MaybeParseAttr(k)
@@ -233,7 +223,7 @@ func (app *app) GetSearchableInvAttrs(
 		}
 
 		if n != "" {
-			ret = append(ret, model.InvFilterAttr{Name: n, Scope: s, Count: 1})
+			ret = append(ret, model.FilterAttribute{Name: n, Scope: s, Count: 1})
 		}
 	}
 

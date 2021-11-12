@@ -26,7 +26,6 @@ import (
 
 	"github.com/mendersoftware/go-lib-micro/log"
 
-	"github.com/mendersoftware/reporting/model"
 	"github.com/mendersoftware/reporting/utils"
 )
 
@@ -38,7 +37,7 @@ const (
 //go:generate ../../x/mockgen.sh
 type Client interface {
 	//GetDevices uses the search endpoint to get devices just by ids (not filters)
-	GetDevices(ctx context.Context, tid string, deviceIDs []string) ([]model.InvDevice, error)
+	GetDevices(ctx context.Context, tid string, deviceIDs []string) ([]Device, error)
 }
 
 type client struct {
@@ -63,7 +62,7 @@ func (c *client) GetDevices(
 	ctx context.Context,
 	tid string,
 	deviceIDs []string,
-) ([]model.InvDevice, error) {
+) ([]Device, error) {
 	l := log.FromContext(ctx)
 
 	getReq := &GetDevsReq{
@@ -107,7 +106,7 @@ func (c *client) GetDevices(
 	}
 
 	dec := json.NewDecoder(rsp.Body)
-	var invDevs []model.InvDevice
+	var invDevs []Device
 	if err = dec.Decode(&invDevs); err != nil {
 		return nil, errors.Wrap(err, "failed to parse request body")
 	}
