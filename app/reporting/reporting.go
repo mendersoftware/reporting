@@ -54,7 +54,7 @@ func (app *app) InventorySearchDevices(
 	if searchParams.TenantID != "" {
 		query = query.Must(model.M{
 			"term": model.M{
-				model.AttrNameTenantID: searchParams.TenantID,
+				model.FieldNameTenantID: searchParams.TenantID,
 			},
 		})
 	}
@@ -62,7 +62,7 @@ func (app *app) InventorySearchDevices(
 	if len(searchParams.DeviceIDs) > 0 {
 		query = query.Must(model.M{
 			"terms": model.M{
-				model.AttrNameID: searchParams.DeviceIDs,
+				model.FieldNameID: searchParams.DeviceIDs,
 			},
 		})
 	}
