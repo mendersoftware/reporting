@@ -45,6 +45,20 @@ func (_m *Client) IsConnected() bool {
 	return r0
 }
 
+// JetStreamCreateStream provides a mock function with given fields: streamName
+func (_m *Client) JetStreamCreateStream(streamName string) error {
+	ret := _m.Called(streamName)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string) error); ok {
+		r0 = rf(streamName)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // JetStreamPublish provides a mock function with given fields: _a0, _a1
 func (_m *Client) JetStreamPublish(_a0 string, _a1 []byte) error {
 	ret := _m.Called(_a0, _a1)
