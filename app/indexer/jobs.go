@@ -38,6 +38,11 @@ func (i *indexer) GetJobs(ctx context.Context, jobs chan *model.Job) error {
 	l := log.FromContext(ctx)
 
 	streamName := config.Config.GetString(rconfig.SettingNatsStreamName)
+	err := i.nats.JetStreamCreateStream(streamName)
+	if err != nil {
+		return errors.Wrap(err, "failed to create the nats JetStream stream")
+	}
+
 	topic := config.Config.GetString(rconfig.SettingNatsSubscriberTopic)
 	subject := streamName + "." + topic
 	durableName := config.Config.GetString(rconfig.SettingNatsSubscriberDurable)

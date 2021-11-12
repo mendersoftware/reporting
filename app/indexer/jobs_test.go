@@ -48,6 +48,10 @@ func TestGetJobsSubscriptionError(t *testing.T) {
 	subscriptionError := errors.New("subscription error")
 
 	nats := &nats_mocks.Client{}
+	nats.On("JetStreamCreateStream",
+		mock.AnythingOfType("string"),
+	).Return(nil)
+
 	nats.On("JetStreamSubscribe",
 		ctx,
 		mock.AnythingOfType("string"),
@@ -74,6 +78,10 @@ func TestGetJobs(t *testing.T) {
 	}
 
 	nats := &nats_mocks.Client{}
+	nats.On("JetStreamCreateStream",
+		mock.AnythingOfType("string"),
+	).Return(nil)
+
 	nats.On("JetStreamSubscribe",
 		ctx,
 		mock.AnythingOfType("string"),
@@ -113,6 +121,10 @@ func TestGetJobsError(t *testing.T) {
 	}
 
 	nats := &nats_mocks.Client{}
+	nats.On("JetStreamCreateStream",
+		mock.AnythingOfType("string"),
+	).Return(nil)
+
 	nats.On("JetStreamSubscribe",
 		ctx,
 		mock.AnythingOfType("string"),

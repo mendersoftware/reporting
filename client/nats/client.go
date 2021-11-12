@@ -43,6 +43,7 @@ type Client interface {
 	WithStreamName(streamName string) Client
 	StreamName() string
 	IsConnected() bool
+	JetStreamCreateStream(streamName string) error
 	JetStreamSubscribe(ctx context.Context, subj, durable string,
 		q chan *nats.Msg) (UnsubscribeFunc, error)
 	JetStreamPublish(string, []byte) error
@@ -101,6 +102,28 @@ func (c *client) Close() {
 // IsConnected returns true if the client is connected to nats
 func (c *client) IsConnected() bool {
 	return c.nats.IsConnected()
+}
+
+// JetStreamCreateStream creates a stream
+func (c *client) JetStreamCreateStream(streamName string) error {
+	stream, err := c.js.StreamInfo(streamName)
+	if err != nil && err != nats.ErrStreamNotFound {
+		return err
+	}
+	if stream == nil {
+		_, err = c.js.AddStream(&nats.StreamConfig{
+			Name:      streamName,
+			NoAck:     false,
+			MaxAge:    24 * time.Hour,
+			Retention: nats.WorkQueuePolicy,
+			Storage:   nats.FileStorage,
+			Subjects:  []string{streamName + ".>"},
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func noop() error {
