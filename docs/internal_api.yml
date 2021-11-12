@@ -251,10 +251,6 @@ components:
           type: string
         name:
           type: string
-        groupName:
-          type: string
-        status:
-          type: string
         attributes:
           type: array
           items:

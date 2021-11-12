@@ -162,7 +162,8 @@ func (bi BulkItem) Marshal() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (s *store) BulkIndexDevices(ctx context.Context, devices []*model.Device, removedDevices []*model.Device) error {
+func (s *store) BulkIndexDevices(ctx context.Context, devices []*model.Device,
+	removedDevices []*model.Device) error {
 	data := ""
 	for _, device := range devices {
 		actionJSON, err := json.Marshal(BulkAction{
@@ -326,7 +327,8 @@ func (s *store) Search(ctx context.Context, query interface{}) (model.M, error) 
 // GetDevicesIndexMapping retrieves the "devices*" index definition for tenant 'tid'
 // existing fields, incl. inventory attributes, are found under 'properties'
 // see: https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-get-index.html
-func (s *store) GetDevicesIndexMapping(ctx context.Context, tid string) (map[string]interface{}, error) {
+func (s *store) GetDevicesIndexMapping(ctx context.Context,
+	tid string) (map[string]interface{}, error) {
 	l := log.FromContext(ctx)
 	idx := s.GetDevicesIndex(tid)
 

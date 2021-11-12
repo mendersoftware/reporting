@@ -11,7 +11,7 @@
 //    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
-package model
+package inventory
 
 import (
 	"encoding/json"
@@ -24,27 +24,21 @@ const (
 	AttrScopeInventory = "inventory"
 	AttrScopeIdentity  = "identity"
 	AttrScopeSystem    = "system"
-
-	AttrNameID      = "id"
-	AttrNameGroup   = "group"
-	AttrNameStatus  = "status"
-	AttrNameUpdated = "updated_ts"
-	AttrNameCreated = "created_ts"
 )
 
 type DeviceID string
 type GroupName string
-type DeviceAttributes []InvDeviceAttribute
+type DeviceAttributes []DeviceAttribute
 
-type InvDeviceAttribute struct {
+type DeviceAttribute struct {
 	Name        string      `json:"name" bson:",omitempty"`
 	Description *string     `json:"description,omitempty" bson:",omitempty"`
 	Value       interface{} `json:"value" bson:",omitempty"`
 	Scope       string      `json:"scope" bson:",omitempty"`
 }
 
-// InvDevice is a wrapper for inventory devices
-type InvDevice struct {
+// Device is a wrapper for inventory devices
+type Device struct {
 	// ID is the system-generated device ID
 	ID DeviceID `json:"id" bson:"_id,omitempty"`
 
@@ -65,7 +59,7 @@ type InvDevice struct {
 }
 
 func (d *DeviceAttributes) UnmarshalJSON(b []byte) error {
-	err := json.Unmarshal(b, (*[]InvDeviceAttribute)(d))
+	err := json.Unmarshal(b, (*[]DeviceAttribute)(d))
 	if err != nil {
 		return err
 	}

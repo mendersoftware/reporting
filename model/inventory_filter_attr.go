@@ -13,7 +13,7 @@
 //    limitations under the License.
 package model
 
-type InvFilterAttr struct {
+type FilterAttribute struct {
 	Scope string `json:"scope"`
 	Name  string `json:"name"`
 	Count int    `json:"count"`

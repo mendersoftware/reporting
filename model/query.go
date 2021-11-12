@@ -526,7 +526,7 @@ func BuildQuery(params SearchParams) (Query, error) {
 
 	if len(params.Groups) > 0 {
 		fp := FilterPredicate{
-			Scope:     scopeSystem,
+			Scope:     ScopeSystem,
 			Attribute: AttrNameGroup,
 			Type:      "$in",
 			Value:     params.Groups,

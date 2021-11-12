@@ -26,6 +26,7 @@ import (
 
 	"github.com/mendersoftware/reporting/client/deviceauth"
 	deviceauth_mocks "github.com/mendersoftware/reporting/client/deviceauth/mocks"
+	"github.com/mendersoftware/reporting/client/inventory"
 	inventory_mocks "github.com/mendersoftware/reporting/client/inventory/mocks"
 	"github.com/mendersoftware/reporting/client/nats"
 	nats_mocks "github.com/mendersoftware/reporting/client/nats/mocks"
@@ -157,7 +158,7 @@ func TestProcessJobs(t *testing.T) {
 		deviceauthErr       error
 
 		inventoryDeviceIDs []string
-		inventoryDevices   []model.InvDevice
+		inventoryDevices   []inventory.Device
 		inventoryErr       error
 
 		bulkIndexDevices       []*model.Device
@@ -205,7 +206,7 @@ func TestProcessJobs(t *testing.T) {
 			},
 
 			inventoryDeviceIDs: []string{"1", "2"},
-			inventoryDevices: []model.InvDevice{
+			inventoryDevices: []inventory.Device{
 				{
 					ID: "1",
 				},
@@ -218,14 +219,14 @@ func TestProcessJobs(t *testing.T) {
 				{
 					ID:       strptr("1"),
 					TenantID: strptr(tenantID),
-					IdentityAttributes: model.DeviceInventory{
+					IdentityAttributes: model.InventoryAttributes{
 						{
-							Scope:  model.AttrScopeIdentity,
-							Name:   "status",
+							Scope:  model.ScopeIdentity,
+							Name:   model.AttrNameStatus,
 							String: []string{"active"},
 						},
 						{
-							Scope:  model.AttrScopeIdentity,
+							Scope:  model.ScopeIdentity,
 							Name:   "mac",
 							String: []string{"00:11:22:33:44"},
 						},
@@ -234,14 +235,14 @@ func TestProcessJobs(t *testing.T) {
 				{
 					ID:       strptr("2"),
 					TenantID: strptr(tenantID),
-					IdentityAttributes: model.DeviceInventory{
+					IdentityAttributes: model.InventoryAttributes{
 						{
-							Scope:  model.AttrScopeIdentity,
-							Name:   "status",
+							Scope:  model.ScopeIdentity,
+							Name:   model.AttrNameStatus,
 							String: []string{"pending"},
 						},
 						{
-							Scope:  model.AttrScopeIdentity,
+							Scope:  model.ScopeIdentity,
 							Name:   "mac",
 							String: []string{"00:11:22:33:55"},
 						},
@@ -364,7 +365,7 @@ func TestProcessJobs(t *testing.T) {
 			},
 
 			inventoryDeviceIDs: []string{"1", "2"},
-			inventoryDevices: []model.InvDevice{
+			inventoryDevices: []inventory.Device{
 				{
 					ID: "1",
 				},
@@ -377,14 +378,14 @@ func TestProcessJobs(t *testing.T) {
 				{
 					ID:       strptr("1"),
 					TenantID: strptr(tenantID),
-					IdentityAttributes: model.DeviceInventory{
+					IdentityAttributes: model.InventoryAttributes{
 						{
-							Scope:  model.AttrScopeIdentity,
-							Name:   "status",
+							Scope:  model.ScopeIdentity,
+							Name:   model.AttrNameStatus,
 							String: []string{"active"},
 						},
 						{
-							Scope:  model.AttrScopeIdentity,
+							Scope:  model.ScopeIdentity,
 							Name:   "mac",
 							String: []string{"00:11:22:33:44"},
 						},
@@ -393,14 +394,14 @@ func TestProcessJobs(t *testing.T) {
 				{
 					ID:       strptr("2"),
 					TenantID: strptr(tenantID),
-					IdentityAttributes: model.DeviceInventory{
+					IdentityAttributes: model.InventoryAttributes{
 						{
-							Scope:  model.AttrScopeIdentity,
-							Name:   "status",
+							Scope:  model.ScopeIdentity,
+							Name:   model.AttrNameStatus,
 							String: []string{"pending"},
 						},
 						{
-							Scope:  model.AttrScopeIdentity,
+							Scope:  model.ScopeIdentity,
 							Name:   "mac",
 							String: []string{"00:11:22:33:55"},
 						},
