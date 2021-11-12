@@ -11,10 +11,22 @@
 //    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
+
 package model
 
-type FilterAttribute struct {
-	Scope string `json:"scope"`
-	Name  string `json:"name"`
-	Count int    `json:"count"`
+import (
+	"strings"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestRedot(t *testing.T) {
+	const value = "test.value"
+	v := Dedot(value)
+	assert.NotEqual(t, value, v)
+	assert.False(t, strings.Contains(v, "."))
+
+	v = Redot(v)
+	assert.Equal(t, value, v)
 }
