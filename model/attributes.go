@@ -35,15 +35,16 @@ const (
 
 // attributes
 const (
-	AttrNameID     = "id"
-	AttrNameGroup  = "group"
-	AttrNameStatus = "status"
+	AttrNameID        = "id"
+	AttrNameGroup     = "group"
+	AttrNameStatus    = "status"
+	AttrNameCreatedAt = "created_ts"
+	AttrNameUpdatedAt = "updated_ts"
 )
 
 const (
-	FieldNameID        = "id"
-	FieldNameTenantID  = "tenantID"
-	FieldNameUpdatedAt = "updatedAt"
+	FieldNameID       = "id"
+	FieldNameTenantID = "tenantID"
 )
 
 // type enum/suffixes

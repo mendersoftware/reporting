@@ -49,10 +49,10 @@ type Device struct {
 	Group GroupName `json:"-" bson:"group,omitempty"`
 
 	// CreatedTs contains the timestamp of the creation time
-	CreatedTs time.Time `json:"-" bson:"created_ts,omitempty"`
+	CreatedTs time.Time `json:"created_ts,omitempty" bson:"created_ts,omitempty"`
 
 	// UpdatedTs contains the timestamp of the latest attribute update
-	UpdatedTs time.Time `json:"updated_ts" bson:"updated_ts,omitempty"`
+	UpdatedTs time.Time `json:"updated_ts,omitempty" bson:"updated_ts,omitempty"`
 
 	// Revision is the device object revision
 	Revision uint `json:"-" bson:"revision,omitempty"`

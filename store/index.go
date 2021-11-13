@@ -38,12 +38,6 @@ const indexDevicesTemplate = `{
 				},
 				"name": {
 					"type": "keyword"
-				},
-				"createdAt": {
-					"type": "date"
-				},
-				"updatedAt": {
-					"type": "date"
 				}
 			},
 			"dynamic_templates": [
