@@ -138,17 +138,14 @@ class TestManagementSearch:
                 http_code=200,
                 result=[
                     internal_api.models.InternalDevice(
-                        id="d8b04e01-690d-41ce-8c6d-ab079a04d488",
+                        id="ad707aab-916b-4ec9-a43f-0031b2bcf9ad",
                         tenant_id="123456789012345678901234",
-                        name="blueberryPi",
+                        name="birch32",
                         attributes=[
                             management_api.models.Attribute(
                                 name="string",
-                                value=["consectetur adipiscing elit"],
+                                value="sed do eiusmod tempor",
                                 scope="inventory",
-                            ),
-                            management_api.models.Attribute(
-                                name="number", value=[420.69], scope="inventory"
                             ),
                         ],
                     ),
@@ -159,23 +156,26 @@ class TestManagementSearch:
                         attributes=[
                             management_api.models.Attribute(
                                 name="string",
-                                value=["incididunt ut labore"],
+                                value="incididunt ut labore",
                                 scope="inventory",
                             ),
                             management_api.models.Attribute(
-                                name="number", value=[0.0], scope="inventory"
+                                name="number", value=0.0, scope="inventory"
                             ),
                         ],
                     ),
                     internal_api.models.InternalDevice(
-                        id="ad707aab-916b-4ec9-a43f-0031b2bcf9ad",
+                        id="d8b04e01-690d-41ce-8c6d-ab079a04d488",
                         tenant_id="123456789012345678901234",
-                        name="birch32",
+                        name="blueberryPi",
                         attributes=[
                             management_api.models.Attribute(
                                 name="string",
-                                value=["sed do eiusmod tempor"],
+                                value="consectetur adipiscing elit",
                                 scope="inventory",
+                            ),
+                            management_api.models.Attribute(
+                                name="number", value=420.69, scope="inventory"
                             ),
                         ],
                     ),
@@ -199,11 +199,11 @@ class TestManagementSearch:
                         id="463e12dd-1adb-4f62-965e-b0a9ba2c93ff",
                         attributes=[
                             management_api.models.Attribute(
-                                name="number", value=[2 ** 47], scope="inventory"
+                                name="number", value=2 ** 47, scope="inventory"
                             ),
                             management_api.models.Attribute(
                                 name="string",
-                                value=["Lorem ipsum dolor sit amet"],
+                                value="Lorem ipsum dolor sit amet",
                                 scope="inventory",
                             ),
                         ],
@@ -237,11 +237,11 @@ class TestManagementSearch:
                         attributes=[
                             management_api.models.Attribute(
                                 name="string",
-                                value=["incididunt ut labore"],
+                                value="incididunt ut labore",
                                 scope="inventory",
                             ),
                             management_api.models.Attribute(
-                                name="number", value=[0.0], scope="inventory"
+                                name="number", value=0.0, scope="inventory"
                             ),
                         ],
                     ),
@@ -250,7 +250,7 @@ class TestManagementSearch:
                         attributes=[
                             management_api.models.Attribute(
                                 name="string",
-                                value=["sed do eiusmod tempor"],
+                                value="sed do eiusmod tempor",
                                 scope="inventory",
                             ),
                         ],
@@ -281,11 +281,11 @@ class TestManagementSearch:
                         attributes=[
                             management_api.models.Attribute(
                                 name="string",
-                                value=["incididunt ut labore"],
+                                value="incididunt ut labore",
                                 scope="inventory",
                             ),
                             management_api.models.Attribute(
-                                name="number", value=[0.0], scope="inventory"
+                                name="number", value=0.0, scope="inventory"
                             ),
                         ],
                     ),
@@ -294,11 +294,11 @@ class TestManagementSearch:
                         attributes=[
                             management_api.models.Attribute(
                                 name="string",
-                                value=["consectetur adipiscing elit"],
+                                value="consectetur adipiscing elit",
                                 scope="inventory",
                             ),
                             management_api.models.Attribute(
-                                name="number", value=[420.69], scope="inventory"
+                                name="number", value=420.69, scope="inventory"
                             ),
                         ],
                     ),
@@ -309,11 +309,11 @@ class TestManagementSearch:
                         attributes=[
                             management_api.models.Attribute(
                                 name="string",
-                                value=["Lorem ipsum dolor sit amet"],
+                                value="Lorem ipsum dolor sit amet",
                                 scope="inventory",
                             ),
                             management_api.models.Attribute(
-                                name="number", value=[2 ** 47], scope="inventory"
+                                name="number", value=2 ** 47, scope="inventory"
                             ),
                         ],
                     ),
@@ -343,11 +343,11 @@ class TestManagementSearch:
                         attributes=[
                             management_api.models.Attribute(
                                 name="string",
-                                value=["Lorem ipsum dolor sit amet"],
+                                value="Lorem ipsum dolor sit amet",
                                 scope="inventory",
                             ),
                             management_api.models.Attribute(
-                                name="number", value=[2 ** 47], scope="inventory"
+                                name="number", value=2 ** 47, scope="inventory"
                             ),
                         ],
                     ),
@@ -356,11 +356,11 @@ class TestManagementSearch:
                         attributes=[
                             management_api.models.Attribute(
                                 name="string",
-                                value=["incididunt ut labore"],
+                                value="incididunt ut labore",
                                 scope="inventory",
                             ),
                             management_api.models.Attribute(
-                                name="number", value=[0.0], scope="inventory"
+                                name="number", value=0.0, scope="inventory"
                             ),
                         ],
                     ),
@@ -369,7 +369,7 @@ class TestManagementSearch:
                         attributes=[
                             management_api.models.Attribute(
                                 name="string",
-                                value=["sed do eiusmod tempor"],
+                                value="sed do eiusmod tempor",
                                 scope="inventory",
                             ),
                         ],
@@ -395,7 +395,7 @@ class TestManagementSearch:
                         attributes=[
                             management_api.models.Attribute(
                                 name="string",
-                                value=["sed do eiusmod tempor"],
+                                value="sed do eiusmod tempor",
                                 scope="inventory",
                             ),
                         ],
@@ -426,11 +426,11 @@ class TestManagementSearch:
                         attributes=[
                             management_api.models.Attribute(
                                 name="string",
-                                value=["Lorem ipsum dolor sit amet"],
+                                value="Lorem ipsum dolor sit amet",
                                 scope="inventory",
                             ),
                             management_api.models.Attribute(
-                                name="number", value=[2 ** 47], scope="inventory"
+                                name="number", value=2 ** 47, scope="inventory"
                             ),
                         ],
                     ),
@@ -439,11 +439,11 @@ class TestManagementSearch:
                         attributes=[
                             management_api.models.Attribute(
                                 name="string",
-                                value=["consectetur adipiscing elit"],
+                                value="consectetur adipiscing elit",
                                 scope="inventory",
                             ),
                             management_api.models.Attribute(
-                                name="number", value=[420.69], scope="inventory"
+                                name="number", value=420.69, scope="inventory"
                             ),
                         ],
                     ),

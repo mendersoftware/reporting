@@ -141,11 +141,11 @@ class TestInternalSearch:
                         id="463e12dd-1adb-4f62-965e-b0a9ba2c93ff",
                         attributes=[
                             internal_api.models.Attribute(
-                                name="number", value=[2 ** 47], scope="inventory"
+                                name="number", value=2 ** 47, scope="inventory"
                             ),
                             internal_api.models.Attribute(
                                 name="string",
-                                value=["Lorem ipsum dolor sit amet"],
+                                value="Lorem ipsum dolor sit amet",
                                 scope="inventory",
                             ),
                         ],
@@ -170,11 +170,11 @@ class TestInternalSearch:
                         id="463e12dd-1adb-4f62-965e-b0a9ba2c93ff",
                         attributes=[
                             internal_api.models.Attribute(
-                                name="number", value=[2 ** 47], scope="inventory"
+                                name="number", value=2 ** 47, scope="inventory"
                             ),
                             internal_api.models.Attribute(
                                 name="string",
-                                value=["Lorem ipsum dolor sit amet"],
+                                value="Lorem ipsum dolor sit amet",
                                 scope="inventory",
                             ),
                         ],
@@ -207,11 +207,11 @@ class TestInternalSearch:
                         id="d8b04e01-690d-41ce-8c6d-ab079a04d488",
                         attributes=[
                             internal_api.models.Attribute(
-                                name="number", value=[420.69], scope="inventory"
+                                name="number", value=420.69, scope="inventory"
                             ),
                             internal_api.models.Attribute(
                                 name="string",
-                                value=["consectetur adipiscing elit"],
+                                value="consectetur adipiscing elit",
                                 scope="inventory",
                             ),
                         ],
@@ -220,11 +220,11 @@ class TestInternalSearch:
                         id="463e12dd-1adb-4f62-965e-b0a9ba2c93ff",
                         attributes=[
                             internal_api.models.Attribute(
-                                name="number", value=[2 ** 47], scope="inventory"
+                                name="number", value=2 ** 47, scope="inventory"
                             ),
                             internal_api.models.Attribute(
                                 name="string",
-                                value=["Lorem ipsum dolor sit amet"],
+                                value="Lorem ipsum dolor sit amet",
                                 scope="inventory",
                             ),
                         ],
@@ -255,11 +255,11 @@ class TestInternalSearch:
                         attributes=[
                             internal_api.models.Attribute(
                                 name="string",
-                                value=["incididunt ut labore"],
+                                value="incididunt ut labore",
                                 scope="inventory",
                             ),
                             internal_api.models.Attribute(
-                                name="number", value=[0.0], scope="inventory"
+                                name="number", value=0.0, scope="inventory"
                             ),
                         ],
                     ),
@@ -268,11 +268,11 @@ class TestInternalSearch:
                         attributes=[
                             internal_api.models.Attribute(
                                 name="string",
-                                value=["consectetur adipiscing elit"],
+                                value="consectetur adipiscing elit",
                                 scope="inventory",
                             ),
                             internal_api.models.Attribute(
-                                name="number", value=[420.69], scope="inventory"
+                                name="number", value=420.69, scope="inventory"
                             ),
                         ],
                     ),
@@ -302,11 +302,11 @@ class TestInternalSearch:
                         attributes=[
                             internal_api.models.Attribute(
                                 name="string",
-                                value=["Lorem ipsum dolor sit amet"],
+                                value="Lorem ipsum dolor sit amet",
                                 scope="inventory",
                             ),
                             internal_api.models.Attribute(
-                                name="number", value=[2 ** 47], scope="inventory"
+                                name="number", value=2 ** 47, scope="inventory"
                             ),
                         ],
                     ),
@@ -315,11 +315,11 @@ class TestInternalSearch:
                         attributes=[
                             internal_api.models.Attribute(
                                 name="string",
-                                value=["incididunt ut labore"],
+                                value="incididunt ut labore",
                                 scope="inventory",
                             ),
                             internal_api.models.Attribute(
-                                name="number", value=[0.0], scope="inventory"
+                                name="number", value=0.0, scope="inventory"
                             ),
                         ],
                     ),
@@ -328,7 +328,7 @@ class TestInternalSearch:
                         attributes=[
                             internal_api.models.Attribute(
                                 name="string",
-                                value=["sed do eiusmod tempor"],
+                                value="sed do eiusmod tempor",
                                 scope="inventory",
                             ),
                         ],
@@ -354,7 +354,7 @@ class TestInternalSearch:
                         attributes=[
                             internal_api.models.Attribute(
                                 name="string",
-                                value=["sed do eiusmod tempor"],
+                                value="sed do eiusmod tempor",
                                 scope="inventory",
                             ),
                         ],
@@ -385,11 +385,11 @@ class TestInternalSearch:
                         attributes=[
                             internal_api.models.Attribute(
                                 name="string",
-                                value=["Lorem ipsum dolor sit amet"],
+                                value="Lorem ipsum dolor sit amet",
                                 scope="inventory",
                             ),
                             internal_api.models.Attribute(
-                                name="number", value=[2 ** 47], scope="inventory"
+                                name="number", value=2 ** 47, scope="inventory"
                             ),
                         ],
                     ),
@@ -398,11 +398,11 @@ class TestInternalSearch:
                         attributes=[
                             internal_api.models.Attribute(
                                 name="string",
-                                value=["consectetur adipiscing elit"],
+                                value="consectetur adipiscing elit",
                                 scope="inventory",
                             ),
                             internal_api.models.Attribute(
-                                name="number", value=[420.69], scope="inventory"
+                                name="number", value=420.69, scope="inventory"
                             ),
                         ],
                     ),

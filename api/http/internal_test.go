@@ -91,15 +91,15 @@ func TestInternalSearch(t *testing.T) {
 			PerPage: 10,
 			Page:    2,
 			Filters: []model.FilterPredicate{{
-				Scope:     "inventory",
+				Scope:     model.ScopeInventory,
 				Attribute: "ip4",
 				Type:      "$exists",
 				Value:     true,
 			}},
 			Sort: []model.SortCriteria{{
-				Scope:     "inventory",
+				Scope:     model.ScopeInventory,
 				Attribute: "ip4",
-				Order:     "asc",
+				Order:     model.SortOrderAsc,
 			}},
 			TenantID: "123456789012345678901234",
 		},
@@ -108,7 +108,7 @@ func TestInternalSearch(t *testing.T) {
 		Response: []inventory.Device{{
 			ID: inventory.DeviceID("5975e1e6-49a6-4218-a46d-f181154a98cc"),
 			Attributes: inventory.DeviceAttributes{{
-				Scope: "inventory",
+				Scope: model.ScopeInventory,
 				Name:  "ip4",
 				Value: "10.0.0.2",
 			}, {
@@ -124,7 +124,7 @@ func TestInternalSearch(t *testing.T) {
 			ID: inventory.DeviceID("83bce0e4-c4c0-4995-b8b7-f056da7fc8f6"),
 
 			Attributes: inventory.DeviceAttributes{{
-				Scope: "inventory",
+				Scope: model.ScopeInventory,
 				Name:  "ip4",
 				Value: "10.0.0.2",
 			}, {
@@ -188,15 +188,15 @@ func TestInternalSearch(t *testing.T) {
 			PerPage: 10,
 			Page:    2,
 			Filters: []model.FilterPredicate{{
-				Scope:     "inventory",
+				Scope:     model.ScopeInventory,
 				Attribute: "ip4",
 				Type:      "$exists",
 				Value:     true,
 			}},
 			Sort: []model.SortCriteria{{
-				Scope:     "inventory",
+				Scope:     model.ScopeInventory,
 				Attribute: "ip4",
-				Order:     "asc",
+				Order:     model.SortOrderAsc,
 			}},
 			TenantID: "123456789012345678901234",
 		},
