@@ -215,7 +215,6 @@ func (d *Device) MarshalJSON() ([]byte, error) {
 	m := make(map[string]interface{})
 	m[FieldNameID] = d.ID
 	m[FieldNameTenantID] = d.TenantID
-	m[FieldNameUpdatedAt] = d.UpdatedAt
 
 	attributes := append(d.IdentityAttributes, d.InventoryAttributes...)
 	attributes = append(attributes, d.MonitorAttributes...)

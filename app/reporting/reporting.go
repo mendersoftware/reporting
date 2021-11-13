@@ -17,6 +17,7 @@ import (
 	"context"
 	"errors"
 	"sort"
+	"time"
 
 	"github.com/mendersoftware/go-lib-micro/log"
 
@@ -160,9 +161,12 @@ func (a *app) storeToInventoryDev(storeRes interface{}) (*inventory.Device, erro
 
 	for k, v := range sourceM {
 		s, n, err := model.MaybeParseAttr(k)
-
 		if err != nil {
 			return nil, err
+		}
+
+		if vArray, ok := v.([]interface{}); ok && len(vArray) == 1 {
+			v = vArray[0]
 		}
 
 		if n != "" {
@@ -172,6 +176,14 @@ func (a *app) storeToInventoryDev(storeRes interface{}) (*inventory.Device, erro
 				Value: v,
 			}
 
+			if a.Scope == model.ScopeSystem &&
+				a.Name == model.AttrNameUpdatedAt {
+				ret.UpdatedTs = parseTime(v)
+			} else if a.Scope == model.ScopeSystem &&
+				a.Name == model.AttrNameCreatedAt {
+				ret.CreatedTs = parseTime(v)
+			}
+
 			attrs = append(attrs, a)
 		}
 	}
@@ -179,6 +191,14 @@ func (a *app) storeToInventoryDev(storeRes interface{}) (*inventory.Device, erro
 	ret.Attributes = attrs
 
 	return ret, nil
+}
+
+func parseTime(v interface{}) time.Time {
+	val, _ := v.(string)
+	if t, err := time.Parse(time.RFC3339, val); err == nil {
+		return t
+	}
+	return time.Time{}
 }
 
 func (app *app) GetSearchableInvAttrs(
