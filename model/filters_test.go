@@ -43,7 +43,7 @@ func TestSearchParamsValidate(t *testing.T) {
 					{
 						Scope:     ScopeIdentity,
 						Attribute: "mac",
-						Order:     "asc",
+						Order:     SortOrderAsc,
 					},
 				},
 				Attributes: []SelectAttribute{

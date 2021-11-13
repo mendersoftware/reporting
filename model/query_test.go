@@ -274,10 +274,12 @@ func TestBuildQuery(t *testing.T) {
 			},
 			outQuery: NewQuery().WithSort(M{
 				"identity_mac_str": M{
+					"order":         "asc",
 					"unmapped_type": "keyword",
 				},
 			}).WithSort(M{
 				"identity_mac_num": M{
+					"order":         "asc",
 					"unmapped_type": "double",
 				},
 			}),

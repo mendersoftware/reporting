@@ -34,7 +34,12 @@ var validSelectors = []interface{}{
 	"$regex",
 }
 
-var validSortOrders = []interface{}{"asc", "desc"}
+const (
+	SortOrderAsc  = "asc"
+	SortOrderDesc = "desc"
+)
+
+var validSortOrders = []interface{}{SortOrderAsc, SortOrderDesc}
 
 type SearchParams struct {
 	Page       int               `json:"page"`
