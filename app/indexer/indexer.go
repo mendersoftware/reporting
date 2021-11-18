@@ -16,6 +16,7 @@ package indexer
 
 import (
 	"github.com/mendersoftware/go-lib-micro/config"
+
 	"github.com/mendersoftware/reporting/store"
 )
 

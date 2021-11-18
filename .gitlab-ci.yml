@@ -14,7 +14,7 @@ stages:
 
 include:
   - project: 'Northern.tech/Mender/mendertesting'
-    file: '.gitlab-ci-check-golang-static.yml'
+    file: '.gitlab-ci-check-golang-lint.yml'
   - project: 'Northern.tech/Mender/mendertesting'
     file: '.gitlab-ci-check-golang-unittests.yml'
   - project: 'Northern.tech/Mender/mendertesting'
@@ -27,14 +27,6 @@ include:
     file: '.gitlab-ci-github-status-updates.yml'
   - project: 'Northern.tech/Mender/mendertesting'
     file: '.gitlab-ci-check-docker-build.yml'
-
-test:static:
-  image: golangci/golangci-lint:v1.42.0
-  needs: []
-  after_script: []
-  before_script: []
-  script:
-    - golangci-lint run -v
 
 test:acceptance:
   stage: test
