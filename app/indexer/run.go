@@ -40,12 +40,10 @@ func InitAndRun(conf config.Reader, store store.Store, nats nats.Client) error {
 
 	invClient := inventory.NewClient(
 		conf.GetString(rconfig.SettingInventoryAddr),
-		false,
 	)
 
 	devClient := deviceauth.NewClient(
 		conf.GetString(rconfig.SettingDeviceAuthAddr),
-		false,
 	)
 
 	indexer := NewIndexer(store, nats, devClient, invClient)

@@ -15,7 +15,6 @@ package deviceauth
 
 import (
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -46,15 +45,9 @@ type client struct {
 	urlBase string
 }
 
-func NewClient(urlBase string, skipVerify bool) Client {
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: skipVerify},
-	}
-
+func NewClient(urlBase string) Client {
 	return &client{
-		client: &http.Client{
-			Transport: tr,
-		},
+		client:  &http.Client{},
 		urlBase: urlBase,
 	}
 }
