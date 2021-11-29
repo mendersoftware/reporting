@@ -24,7 +24,6 @@ import (
 	"github.com/mendersoftware/reporting/store"
 )
 
-//nolint:lll
 //go:generate ../../x/mockgen.sh
 type Indexer interface {
 	GetJobs(ctx context.Context, jobs chan *model.Job) error
