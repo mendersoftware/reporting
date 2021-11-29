@@ -30,6 +30,7 @@ import (
 
 const (
 	urlSearch      = "/api/internal/v2/inventory/tenants/:tid/filters/search"
+	defaultPage    = 1
 	defaultTimeout = 10 * time.Second
 )
 
@@ -58,10 +59,11 @@ func (c *client) GetDevices(
 ) ([]Device, error) {
 	l := log.FromContext(ctx)
 
+	perPage := uint(len(deviceIDs))
 	getReq := &GetDevsReq{
 		DeviceIDs: deviceIDs,
-		Page:      1,
-		PerPage:   uint(len(deviceIDs)),
+		Page:      defaultPage,
+		PerPage:   perPage,
 	}
 
 	body, err := json.Marshal(getReq)

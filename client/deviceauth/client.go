@@ -31,6 +31,7 @@ import (
 
 const (
 	urlSearch      = "/api/internal/v1/devauth/tenants/:tid/devices"
+	defaultPage    = 1
 	defaultTimeout = 10 * time.Second
 )
 
@@ -74,8 +75,10 @@ func (c *client) GetDevices(
 	for _, deviceID := range deviceIDs {
 		q.Add(model.AttrNameID, deviceID)
 	}
-	q.Add("page", "1")
-	q.Add("per_page", strconv.Itoa(len(deviceIDs)))
+	page := strconv.Itoa(defaultPage)
+	perPage := strconv.Itoa(len(deviceIDs))
+	q.Add("page", page)
+	q.Add("per_page", perPage)
 	req.URL.RawQuery = q.Encode()
 
 	rsp, err := c.client.Do(req)
