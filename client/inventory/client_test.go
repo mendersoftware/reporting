@@ -162,7 +162,7 @@ func TestGetDevices(t *testing.T) {
 			srv := newTestServer(rspChan, nil)
 			defer srv.Close()
 
-			client := NewClient(srv.URL+tc.URLNoise, false)
+			client := NewClient(srv.URL + tc.URLNoise)
 
 			rsp := &http.Response{
 				StatusCode: tc.ResponseCode,
