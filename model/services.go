@@ -14,6 +14,8 @@
 
 package model
 
-const ServiceDeviceauth = "deviceauth"
-const ServiceMonitor = "devicemonitor"
-const ServiceInventory = "inventory"
+const (
+	ServiceDeviceauth = "deviceauth"
+	ServiceMonitor    = "devicemonitor"
+	ServiceInventory  = "inventory"
+)
