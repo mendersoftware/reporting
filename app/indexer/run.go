@@ -20,8 +20,9 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/mendersoftware/go-lib-micro/config"
 	"golang.org/x/sys/unix"
+
+	"github.com/mendersoftware/go-lib-micro/config"
 
 	"github.com/mendersoftware/reporting/client/deviceauth"
 	"github.com/mendersoftware/reporting/client/inventory"
