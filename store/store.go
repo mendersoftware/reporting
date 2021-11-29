@@ -164,7 +164,8 @@ func (bi BulkItem) Marshal() ([]byte, error) {
 
 func (s *store) BulkIndexDevices(ctx context.Context, devices []*model.Device,
 	removedDevices []*model.Device) error {
-	data := ""
+	var data strings.Builder
+
 	for _, device := range devices {
 		actionJSON, err := json.Marshal(BulkAction{
 			Type: "index",
@@ -181,7 +182,7 @@ func (s *store) BulkIndexDevices(ctx context.Context, devices []*model.Device,
 		if err != nil {
 			return err
 		}
-		data += string(actionJSON) + "\n" + string(deviceJSON) + "\n"
+		data.WriteString(string(actionJSON) + "\n" + string(deviceJSON) + "\n")
 	}
 	for _, device := range removedDevices {
 		actionJSON, err := json.Marshal(BulkAction{
@@ -195,14 +196,16 @@ func (s *store) BulkIndexDevices(ctx context.Context, devices []*model.Device,
 		if err != nil {
 			return err
 		}
-		data += string(actionJSON) + "\n"
+		data.WriteString(string(actionJSON) + "\n")
 	}
 
+	dataString := data.String()
+
 	l := log.FromContext(ctx)
-	l.Debugf("es request: %s", data)
+	l.Debugf("es request: %s", dataString)
 
 	req := esapi.BulkRequest{
-		Body: strings.NewReader(data),
+		Body: strings.NewReader(dataString),
 	}
 	res, err := req.Do(ctx, s.client)
 	if err != nil {
