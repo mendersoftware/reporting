@@ -26,11 +26,11 @@ import (
 	"github.com/mendersoftware/reporting/store"
 )
 
-//nolint:lll
 //go:generate ../../x/mockgen.sh
 type App interface {
 	GetSearchableInvAttrs(ctx context.Context, tid string) ([]model.FilterAttribute, error)
-	InventorySearchDevices(ctx context.Context, searchParams *model.SearchParams) ([]inventory.Device, int, error)
+	InventorySearchDevices(ctx context.Context, searchParams *model.SearchParams) (
+		[]inventory.Device, int, error)
 }
 
 type app struct {
