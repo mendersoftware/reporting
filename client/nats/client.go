@@ -25,13 +25,14 @@ const (
 	// Set reconnect buffer size in bytes (10 MB)
 	reconnectBufSize = 10 * 1024 * 1024
 	// Set reconnect interval to 1 second
-	reconnectWaitTime = 1 * time.Second
+	reconnectWaitTimeSeconds = 1 * time.Second
 	// Set the number of redeliveries for a message
-	maxDeliver = 3
-	// Set the number of inflight messages
+	maxRedeliverCount = 3
+	// Set the number of inflight messages; setting it to 1 we explicitly
+	// tell the NATS server that we want to process jobs serially, one by one
 	maxAckPending = 1
 	// Set the ACK wait
-	ackWait = 30 * time.Second
+	ackWaitSeconds = 30 * time.Second
 )
 
 type UnsubscribeFunc func() error
@@ -49,7 +50,7 @@ type Client interface {
 	JetStreamPublish(string, []byte) error
 }
 
-// NewClient returns a new nats client
+// NewClient returns a new connected NATS client
 func NewClient(url string, opts ...nats.Option) (Client, error) {
 	natsClient, err := nats.Connect(url, opts...)
 	if err != nil {
@@ -69,7 +70,7 @@ func NewClient(url string, opts ...nats.Option) (Client, error) {
 func NewClientWithDefaults(url string) (Client, error) {
 	natsClient, err := NewClient(url,
 		nats.ReconnectBufSize(reconnectBufSize),
-		nats.ReconnectWait(reconnectWaitTime),
+		nats.ReconnectWait(reconnectWaitTimeSeconds),
 	)
 	if err != nil {
 		return nil, err
@@ -138,10 +139,10 @@ func (c *client) JetStreamSubscribe(
 ) (UnsubscribeFunc, error) {
 	sub, err := c.js.ChanQueueSubscribe(subj, durable, q,
 		nats.AckExplicit(),
-		nats.AckWait(ackWait),
+		nats.AckWait(ackWaitSeconds),
 		nats.ManualAck(),
 		nats.MaxAckPending(maxAckPending),
-		nats.MaxDeliver(maxDeliver),
+		nats.MaxDeliver(maxRedeliverCount),
 	)
 	if err != nil {
 		return noop, err
