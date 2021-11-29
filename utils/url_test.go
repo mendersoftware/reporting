@@ -25,4 +25,10 @@ func TestJoinURL(t *testing.T) {
 
 	out = JoinURL("http://localhost/", "foo/bar")
 	assert.Equal(t, out, "http://localhost/foo/bar")
+
+	out = JoinURL("http://localhost/", "")
+	assert.Equal(t, out, "http://localhost/")
+
+	out = JoinURL("http://localhost", "")
+	assert.Equal(t, out, "http://localhost/")
 }
