@@ -20,18 +20,14 @@ import (
 
 // DeviceAuthDevice is a wrapper for device auth devices
 type DeviceAuthDevice struct {
-	ID              string                    `json:"id"`
-	PubKey          string                    `json:"pub_key"`
-	IdData          string                    `json:"id_data"`
-	IdDataStruct    map[string]string         `bson:"id_data_struct,omitempty"`
-	IdDataSha256    []byte                    `bson:"id_data_sha256,omitempty"`
-	Status          string                    `json:"status"`
-	Decommissioning bool                      `json:"decommissioning"`
-	CreatedTs       time.Time                 `json:"created_ts"`
-	UpdatedTs       time.Time                 `json:"updated_ts"`
-	AuthSets        []DeviceAuthAuthSet       `json:"auth_sets"`
-	External        *DeviceAuthExternalDevice `json:"external,omitempty"`
-	Revision        uint                      `json:"revision"`
+	ID           string                    `json:"id"`
+	IdDataStruct map[string]string         `bson:"id_data_struct,omitempty"`
+	Status       string                    `json:"status"`
+	CreatedTs    time.Time                 `json:"created_ts"`
+	UpdatedTs    time.Time                 `json:"updated_ts"`
+	AuthSets     []DeviceAuthAuthSet       `json:"auth_sets"`
+	External     *DeviceAuthExternalDevice `json:"external,omitempty"`
+	Revision     uint                      `json:"revision"`
 }
 
 // DeviceAuthExternalDevice stores the external ID for the device
