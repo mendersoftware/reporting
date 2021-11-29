@@ -10,7 +10,6 @@ require (
 	github.com/mendersoftware/go-lib-micro v0.0.0-20210705093343-c14ca951acc5
 	github.com/nats-io/nats-server/v2 v2.6.3 // indirect
 	github.com/nats-io/nats.go v1.13.1-0.20211018182449-f2416a8b1483
-	github.com/panjf2000/ants/v2 v2.4.6
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.7.0
 	github.com/urfave/cli v1.22.5

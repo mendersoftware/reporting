@@ -10,7 +10,6 @@ github.com/davecgh/go-spew/spew
 github.com/elastic/go-elasticsearch/v7
 github.com/elastic/go-elasticsearch/v7/esapi
 github.com/elastic/go-elasticsearch/v7/estransport
-github.com/elastic/go-elasticsearch/v7/esutil
 github.com/elastic/go-elasticsearch/v7/internal/version
 # github.com/fsnotify/fsnotify v1.4.9
 github.com/fsnotify/fsnotify
@@ -85,10 +84,6 @@ github.com/nats-io/nats.go/util
 github.com/nats-io/nkeys
 # github.com/nats-io/nuid v1.0.1
 github.com/nats-io/nuid
-# github.com/panjf2000/ants/v2 v2.4.6
-## explicit
-github.com/panjf2000/ants/v2
-github.com/panjf2000/ants/v2/internal
 # github.com/pelletier/go-toml v1.9.3
 github.com/pelletier/go-toml
 # github.com/pkg/errors v0.9.1
