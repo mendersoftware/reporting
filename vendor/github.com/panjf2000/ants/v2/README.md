@@ -322,15 +322,33 @@ Source code in `ants` is available under the [MIT License](/LICENSE).
 -  [Goroutine 并发调度模型深度解析之手撸一个高性能 goroutine 池](https://taohuawu.club/high-performance-implementation-of-goroutine-pool)
 -  [Visually Understanding Worker Pool](https://medium.com/coinmonks/visually-understanding-worker-pool-48a83b7fc1f5)
 -  [The Case For A Go Worker Pool](https://brandur.org/go-worker-pool)
--  [Go Concurrency - GoRoutines, Worker Pools and Throttling Made Simple](https://twinnation.org/articles/39/go-concurrency-goroutines-worker-pools-and-throttling-made-simple)
+-  [Go Concurrency - GoRoutines, Worker Pools and Throttling Made Simple](https://twin.sh/articles/39/go-concurrency-goroutines-worker-pools-and-throttling-made-simple)
 
-## 🖥 User cases
+## 🖥 Use cases
+
+### business companies
 
 The following companies/organizations use `ants` in production.
 
-<a href="https://www.tencent.com"><img src="https://img.taohuawu.club/gallery/tencent_logo.png" width="250" align="middle"/></a>&nbsp;&nbsp;<a href="https://www.bytedance.com/" target="_blank"><img src="https://img.taohuawu.club/gallery/ByteDance_Logo.png" width="250" align="middle"/></a>&nbsp;&nbsp;<a href="https://tieba.baidu.com/" target="_blank"><img src="https://img.taohuawu.club/gallery/baidu-tieba-logo.png" width="300" align="middle"/></a>&nbsp;&nbsp;<a href="https://www.sina.com.cn/" target="_blank"><img src="https://img.taohuawu.club/gallery/sina-logo.png" width="200" align="middle"/></a>&nbsp;&nbsp;<a href="https://www.163.com/" target="_blank"><img src="https://img.taohuawu.club/gallery/netease-logo.png" width="150" align="middle"/></a>&nbsp;&nbsp;<a href="https://www.tencentmusic.com/" target="_blank"><img src="https://img.taohuawu.club/gallery/tencent-music-logo.png" width="250" align="middle"/></a>&nbsp;&nbsp;<a href="https://www.futuhk.com/" target="_blank"><img src="https://img.taohuawu.club/gallery/futu-logo.png" width="250" align="middle"/></a>
+<a href="https://www.tencent.com"><img src="https://img.taohuawu.club/gallery/tencent_logo.png" width="250" align="middle"/></a>&nbsp;&nbsp;<a href="https://www.bytedance.com/" target="_blank"><img src="https://img.taohuawu.club/gallery/ByteDance_Logo.png" width="250" align="middle"/></a>&nbsp;&nbsp;<a href="https://tieba.baidu.com/" target="_blank"><img src="https://img.taohuawu.club/gallery/baidu-tieba-logo.png" width="300" align="middle"/></a>&nbsp;&nbsp;<a href="https://www.sina.com.cn/" target="_blank"><img src="https://img.taohuawu.club/gallery/sina-logo.png" width="200" align="middle"/></a>&nbsp;&nbsp;<a href="https://www.163.com/" target="_blank"><img src="https://img.taohuawu.club/gallery/netease-logo.png" width="150" align="middle"/></a>&nbsp;&nbsp;<a href="https://www.tencentmusic.com/" target="_blank"><img src="https://img.taohuawu.club/gallery/tencent-music-logo.png" width="250" align="middle"/></a>&nbsp;&nbsp;<a href="https://www.futuhk.com/" target="_blank"><img src="https://img.taohuawu.club/gallery/futu-logo.png" width="250" align="middle"/></a>&nbsp;&nbsp;<a href="https://www.shopify.com/" target="_blank"><img src="https://img.taohuawu.club/gallery/shopify-logo.png" width="250" align="middle"/></a>
 
-If you have `ants` integrated into projects, feel free to open a pull request refreshing this list of user cases.
+### open-source software
+
+- [gnet](https://github.com/panjf2000/gnet):  A high-performance, lightweight, non-blocking, event-driven networking framework written in pure Go.
+- [nps](https://github.com/ehang-io/nps): A lightweight, high-performance, powerful intranet penetration proxy server, with a powerful web management terminal.
+- [jitsu](https://github.com/jitsucom/jitsu): An open-source Segment alternative. Fully-scriptable data ingestion engine for modern data teams. Set-up a real-time data pipeline in minutes, not days.
+- [triangula](https://github.com/RH12503/triangula): Generate high-quality triangulated and polygonal art from images.
+- [bsc](https://github.com/binance-chain/bsc): A Binance Smart Chain client based on the go-ethereum fork.
+- [jaeles](https://github.com/jaeles-project/jaeles): The Swiss Army knife for automated Web Application Testing.
+- [lake](https://github.com/merico-dev/lake): The open source data lake & dashboard for your DevOps tools.
+
+#### All use cases:
+
+- [Repositories that depend on ants/v2](https://github.com/panjf2000/ants/network/dependents?package_id=UGFja2FnZS0yMjY2ODgxMjg2)
+
+- [Repositories that depend on ants/v1](https://github.com/panjf2000/ants/network/dependents?package_id=UGFja2FnZS0yMjY0ODMzNjEw)
+
+If you have `ants` integrated into projects, feel free to open a pull request refreshing this list of use cases.
 
 ## 🔋 JetBrains OS licenses
 
@@ -352,12 +370,20 @@ Become a bronze sponsor with a monthly donation of $10 and get your logo on our 
 
 ## ☕️ Buy me a coffee
 
-> Please be sure to leave your name, Github account or other social media accounts when you donate by the following means so that I can add it to the list of donors as a token of my appreciation.
+> Please be sure to leave your name, GitHub account or other social media accounts when you donate by the following means so that I can add it to the list of donors as a token of my appreciation.
 
 <img src="https://raw.githubusercontent.com/panjf2000/illustrations/master/payments/WeChatPay.JPG" width="250" align="middle"/>&nbsp;&nbsp;
 <img src="https://raw.githubusercontent.com/panjf2000/illustrations/master/payments/AliPay.JPG" width="250" align="middle"/>&nbsp;&nbsp;
 <a href="https://www.paypal.me/R136a1X" target="_blank"><img src="https://raw.githubusercontent.com/panjf2000/illustrations/master/payments/PayPal.JPG" width="250" align="middle"/></a>&nbsp;&nbsp;
 
-### Donors
+## 💵 Patrons
 
-<a target="_blank" href="https://github.com/patrick-othmer"><img src="https://avatars1.githubusercontent.com/u/8964313" width="100" alt="Patrick Othmer" /></a>&nbsp;<a target="_blank" href="https://github.com/panjf2000/gnet"><img src="https://avatars2.githubusercontent.com/u/50285334" width="100" alt="Jimmy" /></a>&nbsp;<a target="_blank" href="https://github.com/cafra"><img src="https://avatars0.githubusercontent.com/u/13758306" width="100" alt="ChenZhen" /></a>&nbsp;<a target="_blank" href="https://github.com/yangwenmai"><img src="https://avatars0.githubusercontent.com/u/1710912" width="100" alt="Mai Yang" /></a>&nbsp;<a target="_blank" href="https://github.com/BeijingWks"><img src="https://avatars3.githubusercontent.com/u/33656339" width="100" alt="王开帅" /></a>&nbsp;<a target="_blank" href="https://github.com/refs"><img src="https://avatars3.githubusercontent.com/u/6905948" width="100" alt="Unger Alejandro" /></a>
+<a target="_blank" href="https://github.com/patrick-othmer"><img src="https://avatars1.githubusercontent.com/u/8964313" width="100" alt="Patrick Othmer" /></a>&nbsp;<a target="_blank" href="https://github.com/panjf2000/gnet"><img src="https://avatars2.githubusercontent.com/u/50285334" width="100" alt="Jimmy" /></a>&nbsp;<a target="_blank" href="https://github.com/cafra"><img src="https://avatars0.githubusercontent.com/u/13758306" width="100" alt="ChenZhen" /></a>&nbsp;<a target="_blank" href="https://github.com/yangwenmai"><img src="https://avatars0.githubusercontent.com/u/1710912" width="100" alt="Mai Yang" /></a>&nbsp;<a target="_blank" href="https://github.com/BeijingWks"><img src="https://avatars3.githubusercontent.com/u/33656339" width="100" alt="王开帅" /></a>&nbsp;<a target="_blank" href="https://github.com/refs"><img src="https://avatars3.githubusercontent.com/u/6905948" width="100" alt="Unger Alejandro" /></a>&nbsp;<a target="_blank" href="https://github.com/Wuvist"><img src="https://avatars.githubusercontent.com/u/657796" width="100" alt="Weng Wei" /></a>
+
+## 🔋 Sponsorship
+
+<p>
+  <a href="https://www.digitalocean.com/">
+    <img src="https://opensource.nyc3.cdn.digitaloceanspaces.com/attribution/assets/PoweredByDO/DO_Powered_by_Badge_blue.svg" width="201px">
+  </a>
+</p>

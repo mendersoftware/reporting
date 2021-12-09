@@ -48,13 +48,13 @@ type PoolWithFunc struct {
 	// state is used to notice the pool to closed itself.
 	state int32
 
-	// cond for waiting to get a idle worker.
+	// cond for waiting to get an idle worker.
 	cond *sync.Cond
 
 	// poolFunc is the function for processing tasks.
 	poolFunc func(interface{})
 
-	// workerCache speeds up the obtainment of the an usable worker in function:retrieveWorker.
+	// workerCache speeds up the obtainment of a usable worker in function:retrieveWorker.
 	workerCache sync.Pool
 
 	// blockingNum is the number of the goroutines already been blocked on pool.Submit, protected by pool.lock
@@ -99,7 +99,7 @@ func (p *PoolWithFunc) purgePeriodically() {
 			expiredWorkers[i] = nil
 		}
 
-		// There might be a situation that all workers have been cleaned up(no any worker is running)
+		// There might be a situation that all workers have been cleaned up(no worker is running)
 		// while some invokers still get stuck in "p.cond.Wait()",
 		// then it ought to wake all those invokers.
 		if p.Running() == 0 {
@@ -159,6 +159,11 @@ func NewPoolWithFunc(size int, pf func(interface{}), options ...Option) (*PoolWi
 //---------------------------------------------------------------------------
 
 // Invoke submits a task to pool.
+//
+// Note that you are allowed to call Pool.Invoke() from the current Pool.Invoke(),
+// but what calls for special attention is that you will get blocked with the latest
+// Pool.Invoke() call once the current Pool runs out of its capacity, and to avoid this,
+// you should instantiate a PoolWithFunc with ants.WithNonblocking(true).
 func (p *PoolWithFunc) Invoke(args interface{}) error {
 	if p.IsClosed() {
 		return ErrPoolClosed
@@ -171,12 +176,12 @@ func (p *PoolWithFunc) Invoke(args interface{}) error {
 	return nil
 }
 
-// Running returns the number of the currently running goroutines.
+// Running returns the amount of the currently running goroutines.
 func (p *PoolWithFunc) Running() int {
 	return int(atomic.LoadInt32(&p.running))
 }
 
-// Free returns a available goroutines to work, -1 indicates this pool is unlimited.
+// Free returns the amount of available goroutines to work, -1 indicates this pool is unlimited.
 func (p *PoolWithFunc) Free() int {
 	c := p.Cap()
 	if c < 0 {
@@ -237,7 +242,7 @@ func (p *PoolWithFunc) decRunning() {
 	atomic.AddInt32(&p.running, -1)
 }
 
-// retrieveWorker returns a available worker to run the tasks.
+// retrieveWorker returns an available worker to run the tasks.
 func (p *PoolWithFunc) retrieveWorker() (w *goWorkerWithFunc) {
 	spawnWorker := func() {
 		w = p.workerCache.Get().(*goWorkerWithFunc)

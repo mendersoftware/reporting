@@ -49,10 +49,10 @@ type Pool struct {
 	// state is used to notice the pool to closed itself.
 	state int32
 
-	// cond for waiting to get a idle worker.
+	// cond for waiting to get an idle worker.
 	cond *sync.Cond
 
-	// workerCache speeds up the obtainment of the an usable worker in function:retrieveWorker.
+	// workerCache speeds up the obtainment of a usable worker in function:retrieveWorker.
 	workerCache sync.Pool
 
 	// blockingNum is the number of the goroutines already been blocked on pool.Submit, protected by pool.lock
@@ -142,6 +142,11 @@ func NewPool(size int, options ...Option) (*Pool, error) {
 // ---------------------------------------------------------------------------
 
 // Submit submits a task to this pool.
+//
+// Note that you are allowed to call Pool.Submit() from the current Pool.Submit(),
+// but what calls for special attention is that you will get blocked with the latest
+// Pool.Submit() call once the current Pool runs out of its capacity, and to avoid this,
+// you should instantiate a Pool with ants.WithNonblocking(true).
 func (p *Pool) Submit(task func()) error {
 	if p.IsClosed() {
 		return ErrPoolClosed
@@ -154,12 +159,12 @@ func (p *Pool) Submit(task func()) error {
 	return nil
 }
 
-// Running returns the number of the currently running goroutines.
+// Running returns the amount of the currently running goroutines.
 func (p *Pool) Running() int {
 	return int(atomic.LoadInt32(&p.running))
 }
 
-// Free returns the available goroutines to work, -1 indicates this pool is unlimited.
+// Free returns the amount of available goroutines to work, -1 indicates this pool is unlimited.
 func (p *Pool) Free() int {
 	c := p.Cap()
 	if c < 0 {
@@ -216,7 +221,7 @@ func (p *Pool) decRunning() {
 	atomic.AddInt32(&p.running, -1)
 }
 
-// retrieveWorker returns a available worker to run the tasks.
+// retrieveWorker returns an available worker to run the tasks.
 func (p *Pool) retrieveWorker() (w *goWorker) {
 	spawnWorker := func() {
 		w = p.workerCache.Get().(*goWorker)

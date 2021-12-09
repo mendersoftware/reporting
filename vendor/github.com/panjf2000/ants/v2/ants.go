@@ -48,12 +48,8 @@ const (
 )
 
 var (
-	// Error types for the Ants API.
-	//---------------------------------------------------------------------------
-
-	// ErrInvalidPoolSize will be returned when setting a negative number as pool capacity, this error will be only used
-	// by pool with func because pool without func can be infinite by setting up a negative capacity.
-	ErrInvalidPoolSize = errors.New("invalid size for pool")
+	//
+	//--------------------------Error types for the Ants API------------------------------
 
 	// ErrLackPoolFunc will be returned when invokers don't provide function for pool.
 	ErrLackPoolFunc = errors.New("must provide function for pool")
@@ -90,7 +86,7 @@ var (
 
 	defaultLogger = Logger(log.New(os.Stderr, "", log.LstdFlags))
 
-	// Init a instance pool when importing ants.
+	// Init an instance pool when importing ants.
 	defaultAntsPool, _ = NewPool(DefaultAntsPoolSize)
 )
 
