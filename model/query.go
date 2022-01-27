@@ -433,13 +433,19 @@ type sort struct {
 	attrStr  string
 	attrNum  string
 	attrBool string
+	order    string
 }
 
 func NewSort(sc SortCriteria) *sort {
+	order := sc.Order
+	if order == "" {
+		order = SortOrderAsc
+	}
 	return &sort{
 		attrStr:  ToAttr(sc.Scope, sc.Attribute, TypeStr),
 		attrNum:  ToAttr(sc.Scope, sc.Attribute, TypeNum),
 		attrBool: ToAttr(sc.Scope, sc.Attribute, TypeBool),
+		order:    order,
 	}
 }
 
@@ -448,12 +454,14 @@ func (s *sort) AddTo(q Query) Query {
 		WithSort(
 			M{
 				s.attrStr: M{
+					"order":         s.order,
 					"unmapped_type": "keyword",
 				},
 			},
 		).WithSort(
 		M{
 			s.attrNum: M{
+				"order":         s.order,
 				"unmapped_type": "double",
 			},
 		},
@@ -526,7 +534,7 @@ func BuildQuery(params SearchParams) (Query, error) {
 
 	if len(params.Groups) > 0 {
 		fp := FilterPredicate{
-			Scope:     scopeSystem,
+			Scope:     ScopeSystem,
 			Attribute: AttrNameGroup,
 			Type:      "$in",
 			Value:     params.Groups,

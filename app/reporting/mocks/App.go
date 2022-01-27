@@ -18,6 +18,7 @@ package mocks
 import (
 	context "context"
 
+	inventory "github.com/mendersoftware/reporting/client/inventory"
 	model "github.com/mendersoftware/reporting/model"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -28,15 +29,15 @@ type App struct {
 }
 
 // GetSearchableInvAttrs provides a mock function with given fields: ctx, tid
-func (_m *App) GetSearchableInvAttrs(ctx context.Context, tid string) ([]model.InvFilterAttr, error) {
+func (_m *App) GetSearchableInvAttrs(ctx context.Context, tid string) ([]model.FilterAttribute, error) {
 	ret := _m.Called(ctx, tid)
 
-	var r0 []model.InvFilterAttr
-	if rf, ok := ret.Get(0).(func(context.Context, string) []model.InvFilterAttr); ok {
+	var r0 []model.FilterAttribute
+	if rf, ok := ret.Get(0).(func(context.Context, string) []model.FilterAttribute); ok {
 		r0 = rf(ctx, tid)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]model.InvFilterAttr)
+			r0 = ret.Get(0).([]model.FilterAttribute)
 		}
 	}
 
@@ -51,15 +52,15 @@ func (_m *App) GetSearchableInvAttrs(ctx context.Context, tid string) ([]model.I
 }
 
 // InventorySearchDevices provides a mock function with given fields: ctx, searchParams
-func (_m *App) InventorySearchDevices(ctx context.Context, searchParams *model.SearchParams) ([]model.InvDevice, int, error) {
+func (_m *App) InventorySearchDevices(ctx context.Context, searchParams *model.SearchParams) ([]inventory.Device, int, error) {
 	ret := _m.Called(ctx, searchParams)
 
-	var r0 []model.InvDevice
-	if rf, ok := ret.Get(0).(func(context.Context, *model.SearchParams) []model.InvDevice); ok {
+	var r0 []inventory.Device
+	if rf, ok := ret.Get(0).(func(context.Context, *model.SearchParams) []inventory.Device); ok {
 		r0 = rf(ctx, searchParams)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]model.InvDevice)
+			r0 = ret.Get(0).([]inventory.Device)
 		}
 	}
 
@@ -78,18 +79,4 @@ func (_m *App) InventorySearchDevices(ctx context.Context, searchParams *model.S
 	}
 
 	return r0, r1, r2
-}
-
-// Reindex provides a mock function with given fields: ctx, tenantID, devID, service
-func (_m *App) Reindex(ctx context.Context, tenantID string, devID string, service string) error {
-	ret := _m.Called(ctx, tenantID, devID, service)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) error); ok {
-		r0 = rf(ctx, tenantID, devID, service)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
 }

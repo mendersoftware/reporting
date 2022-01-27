@@ -141,11 +141,11 @@ class TestInternalSearch:
                         id="463e12dd-1adb-4f62-965e-b0a9ba2c93ff",
                         attributes=[
                             internal_api.models.Attribute(
-                                name="number", value=[2 ** 47], scope="inventory"
+                                name="number", value=2 ** 47, scope="inventory"
                             ),
                             internal_api.models.Attribute(
                                 name="string",
-                                value=["Lorem ipsum dolor sit amet"],
+                                value="Lorem ipsum dolor sit amet",
                                 scope="inventory",
                             ),
                         ],
@@ -170,11 +170,11 @@ class TestInternalSearch:
                         id="463e12dd-1adb-4f62-965e-b0a9ba2c93ff",
                         attributes=[
                             internal_api.models.Attribute(
-                                name="number", value=[2 ** 47], scope="inventory"
+                                name="number", value=2 ** 47, scope="inventory"
                             ),
                             internal_api.models.Attribute(
                                 name="string",
-                                value=["Lorem ipsum dolor sit amet"],
+                                value="Lorem ipsum dolor sit amet",
                                 scope="inventory",
                             ),
                         ],
@@ -207,11 +207,11 @@ class TestInternalSearch:
                         id="d8b04e01-690d-41ce-8c6d-ab079a04d488",
                         attributes=[
                             internal_api.models.Attribute(
-                                name="number", value=[420.69], scope="inventory"
+                                name="number", value=420.69, scope="inventory"
                             ),
                             internal_api.models.Attribute(
                                 name="string",
-                                value=["consectetur adipiscing elit"],
+                                value="consectetur adipiscing elit",
                                 scope="inventory",
                             ),
                         ],
@@ -220,11 +220,11 @@ class TestInternalSearch:
                         id="463e12dd-1adb-4f62-965e-b0a9ba2c93ff",
                         attributes=[
                             internal_api.models.Attribute(
-                                name="number", value=[2 ** 47], scope="inventory"
+                                name="number", value=2 ** 47, scope="inventory"
                             ),
                             internal_api.models.Attribute(
                                 name="string",
-                                value=["Lorem ipsum dolor sit amet"],
+                                value="Lorem ipsum dolor sit amet",
                                 scope="inventory",
                             ),
                         ],
@@ -255,11 +255,11 @@ class TestInternalSearch:
                         attributes=[
                             internal_api.models.Attribute(
                                 name="string",
-                                value=["incididunt ut labore"],
+                                value="incididunt ut labore",
                                 scope="inventory",
                             ),
                             internal_api.models.Attribute(
-                                name="number", value=[0.0], scope="inventory"
+                                name="number", value=0.0, scope="inventory"
                             ),
                         ],
                     ),
@@ -268,11 +268,11 @@ class TestInternalSearch:
                         attributes=[
                             internal_api.models.Attribute(
                                 name="string",
-                                value=["consectetur adipiscing elit"],
+                                value="consectetur adipiscing elit",
                                 scope="inventory",
                             ),
                             internal_api.models.Attribute(
-                                name="number", value=[420.69], scope="inventory"
+                                name="number", value=420.69, scope="inventory"
                             ),
                         ],
                     ),
@@ -302,11 +302,11 @@ class TestInternalSearch:
                         attributes=[
                             internal_api.models.Attribute(
                                 name="string",
-                                value=["Lorem ipsum dolor sit amet"],
+                                value="Lorem ipsum dolor sit amet",
                                 scope="inventory",
                             ),
                             internal_api.models.Attribute(
-                                name="number", value=[2 ** 47], scope="inventory"
+                                name="number", value=2 ** 47, scope="inventory"
                             ),
                         ],
                     ),
@@ -315,11 +315,11 @@ class TestInternalSearch:
                         attributes=[
                             internal_api.models.Attribute(
                                 name="string",
-                                value=["incididunt ut labore"],
+                                value="incididunt ut labore",
                                 scope="inventory",
                             ),
                             internal_api.models.Attribute(
-                                name="number", value=[0.0], scope="inventory"
+                                name="number", value=0.0, scope="inventory"
                             ),
                         ],
                     ),
@@ -328,7 +328,7 @@ class TestInternalSearch:
                         attributes=[
                             internal_api.models.Attribute(
                                 name="string",
-                                value=["sed do eiusmod tempor"],
+                                value="sed do eiusmod tempor",
                                 scope="inventory",
                             ),
                         ],
@@ -354,7 +354,7 @@ class TestInternalSearch:
                         attributes=[
                             internal_api.models.Attribute(
                                 name="string",
-                                value=["sed do eiusmod tempor"],
+                                value="sed do eiusmod tempor",
                                 scope="inventory",
                             ),
                         ],
@@ -385,11 +385,11 @@ class TestInternalSearch:
                         attributes=[
                             internal_api.models.Attribute(
                                 name="string",
-                                value=["Lorem ipsum dolor sit amet"],
+                                value="Lorem ipsum dolor sit amet",
                                 scope="inventory",
                             ),
                             internal_api.models.Attribute(
-                                name="number", value=[2 ** 47], scope="inventory"
+                                name="number", value=2 ** 47, scope="inventory"
                             ),
                         ],
                     ),
@@ -398,11 +398,11 @@ class TestInternalSearch:
                         attributes=[
                             internal_api.models.Attribute(
                                 name="string",
-                                value=["consectetur adipiscing elit"],
+                                value="consectetur adipiscing elit",
                                 scope="inventory",
                             ),
                             internal_api.models.Attribute(
-                                name="number", value=[420.69], scope="inventory"
+                                name="number", value=420.69, scope="inventory"
                             ),
                         ],
                     ),
@@ -444,149 +444,3 @@ class TestInternalSearch:
                 actual = body[i]
                 for attr in expected.attributes:
                     assert attr in actual.attributes
-
-
-class TestReindex:
-    class _TestCase:
-        def __init__(
-            self,
-            tenant_id: str,
-            device_id: str,
-            service: str = "inventory",
-            http_code: int = 202,
-            http_body: Union[str, None] = None,
-            inv_http_code: int = 200,
-            inv_response: Union[
-                list[internal_api.models.DeviceInventory], str, None
-            ] = None,
-        ):
-            self.tenant_id = tenant_id
-            self.device_id = device_id
-            self.service = service
-            self.http_code = http_code
-            self.http_body = http_body
-            self.inv_http_code = inv_http_code
-            self.inv_response = inv_response
-
-    @pytest.mark.parametrize(
-        "test_case",
-        [
-            _TestCase(
-                tenant_id="123456789012345678901234",
-                device_id="92173184-1c33-491c-be36-93adba31c2c1",
-                inv_response=[
-                    internal_api.models.DeviceInventory(
-                        id="92173184-1c33-491c-be36-93adba31c2c1",
-                        attributes=[
-                            internal_api.models.Attribute(
-                                name="foo", value="bar", scope="inventory"
-                            ),
-                            internal_api.models.Attribute(
-                                name="group", value="develop", scope="system"
-                            ),
-                        ],
-                        updated_ts=datetime.utcnow().isoformat("T") + "Z",
-                    )
-                ],
-            ),
-            pytest.param(
-                _TestCase(
-                    tenant_id="123456789012345678901234",
-                    device_id="85388603-5852-437f-89c4-7549502893d5",
-                    inv_response=[
-                        internal_api.models.DeviceInventory(
-                            id="85388603-5852-437f-89c4-7549502893d5",
-                            attributes=[
-                                internal_api.models.Attribute(
-                                    name="foo", value="bar", scope="inventory"
-                                ),
-                                internal_api.models.Attribute(
-                                    name="group", value="develop", scope="system"
-                                ),
-                            ],
-                            updated_ts=datetime.utcnow().isoformat("T") + "Z",
-                        )
-                    ],
-                ),
-            ),
-            _TestCase(
-                tenant_id="123456789012345678901234",
-                device_id="92173184-1c33-491c-be36-93adba31c2c1",
-                inv_response=[],
-                http_code=202,
-            ),
-            _TestCase(
-                tenant_id="123456789012345678901234",
-                device_id="92173184-1c33-491c-be36-93adba31c2c1",
-                service="unknown",
-                http_code=400,
-                http_body="unknown service name",
-            ),
-        ],
-        ids=[
-            "ok, index new device",
-            "ok, update existing device",
-            "ok, device has no inventory",
-            "error, unknown service",
-        ],
-    )
-    def test_reindex(self, test_case, setup_test_context, elasticsearch):
-        client = internal_api.InternalAPIClient()
-        inv_rsp = None
-        device_before = None
-
-        if isinstance(test_case.inv_response, list):
-            inv_rsp = json.dumps([dev.to_dict() for dev in test_case.inv_response])
-        elif isinstance(test_case.inv_response, str):
-            inv_rsp = test_case.inv_response
-        with utils.MockAPI(
-            "POST",
-            f"/api/internal/v2/inventory/tenants/{test_case.tenant_id}/filters/search",
-            rsp_code=test_case.inv_http_code,
-            rsp_body=inv_rsp,
-        ):
-            try:
-                body, status, headers = client.start_re_indexing_with_http_info(
-                    test_case.device_id, test_case.tenant_id, service=test_case.service
-                )
-            except internal_api.ApiException as r:
-                body = r.body
-                status = r.status
-                headers = r.headers
-            assert status == test_case.http_code
-            if test_case.http_body is not None:
-                assert test_case.http_body in body
-
-            if (
-                isinstance(test_case.inv_response, list)
-                and len(test_case.inv_response) > 0
-                and status == 202
-            ):
-                time.sleep(3.0)
-                res, status, _ = client.device_search_with_http_info(
-                    test_case.tenant_id,
-                    search_terms=internal_api.models.SearchTerms(
-                        filters=[
-                            internal_api.models.FilterTerm(
-                                attribute="id",
-                                value=test_case.device_id,
-                                type="$eq",
-                                scope="system",
-                            )
-                        ]
-                    ),
-                )
-                assert status < 300
-                assert len(res) == 1, (
-                    "did not find the expected number of device documents, found: %s"
-                    % repr(res)
-                )
-                # Check that new attributes exists
-                attrs = test_case.inv_response[0].attributes
-                res_attrs = res[0].attributes
-                for attr in attrs:
-                    if not isinstance(attr.value, list):
-                        # This information is lost on reindex
-                        attr.value = [attr.value]
-                    assert attr in res_attrs
-                # TODO: compare with the old document if any

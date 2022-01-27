@@ -21,126 +21,44 @@ import (
 	"time"
 )
 
-const (
-	StatusAccepted = "accepted"
-	StatusPending  = "pending"
-)
-
 type Device struct {
-	ID                  *string         `json:"id"`
-	TenantID            *string         `json:"tenantID,omitempty"`
-	Name                *string         `json:"name,omitempty"`
-	GroupName           *string         `json:"groupName,omitempty"`
-	Status              *string         `json:"status,omitempty"`
-	IdentityAttributes  DeviceInventory `json:"identityAttributes,omitempty"`
-	InventoryAttributes DeviceInventory `json:"inventoryAttributes,omitempty"`
-	MonitorAttributes   DeviceInventory `json:"monitorAttributes,omitempty"`
-	SystemAttributes    DeviceInventory `json:"systemAttributes,omitempty"`
-	TagsAttributes      DeviceInventory `json:"tagsAttributes,omitempty"`
-	CreatedAt           *time.Time      `json:"createdAt,omitempty"`
-	UpdatedAt           *time.Time      `json:"updatedAt,omitempty"`
-	Meta                *DeviceMeta     `json:"-"`
+	ID                  *string             `json:"id"`
+	TenantID            *string             `json:"tenantID,omitempty"`
+	IdentityAttributes  InventoryAttributes `json:"identityAttributes,omitempty"`
+	InventoryAttributes InventoryAttributes `json:"inventoryAttributes,omitempty"`
+	MonitorAttributes   InventoryAttributes `json:"monitorAttributes,omitempty"`
+	SystemAttributes    InventoryAttributes `json:"systemAttributes,omitempty"`
+	TagsAttributes      InventoryAttributes `json:"tagsAttributes,omitempty"`
+	UpdatedAt           *time.Time          `json:"updatedAt,omitempty"`
 }
 
-type DeviceMeta struct {
-	SeqNo       int64
-	PrimaryTerm int64
-}
-
-func (d *Device) WithMeta(m *DeviceMeta) *Device {
-	d.Meta = m
-	return d
-}
-
-func NewDevice(id string) *Device {
+func NewDevice(tenantID, id string) *Device {
 	return &Device{
-		ID: &id,
-	}
-}
-
-func NewDeviceFromInv(tenant string, invdev *InvDevice) (*Device, error) {
-	dev := NewDevice(string(invdev.ID))
-	dev.SetTenantID(tenant)
-
-	// rewrite attributes
-	// special treatment for some attributes which become fields as well
-	for _, invattr := range invdev.Attributes {
-		attr := NewInventoryAttribute(invattr.Scope)
-
-		attr.SetName(invattr.Name).
-			SetVal(invattr.Value)
-
-		if err := dev.AppendAttr(attr); err != nil {
-			return nil, err
-		}
-
-		dev.handleSpecialAttr(attr)
-	}
-
-	return dev, nil
-}
-
-// NewDeviceFromEsSource parses the ES '_source' into a new Device
-func NewDeviceFromEsSource(source map[string]interface{}) (*Device, error) {
-
-	// for simplicity, let any type assertions just panic
-	dev := NewDevice(source["id"].(string))
-	dev.SetTenantID(source["tenantID"].(string))
-
-	for k, v := range source {
-		s, n, err := MaybeParseAttr(k)
-
-		if err != nil {
-			return nil, err
-		}
-
-		if n != "" {
-			attr := NewInventoryAttribute(s).
-				SetName(Redot(n)).
-				SetVal(v)
-
-			dev.handleSpecialAttr(attr)
-			if err := dev.AppendAttr(attr); err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	return dev, nil
-}
-
-// setSpecialAttr detects if the attribute should be promoted to a Device field
-func (a *Device) handleSpecialAttr(attr *InventoryAttribute) {
-	if attr.Scope == scopeIdentity && attr.Name == AttrNameStatus {
-		a.SetStatus(attr.GetString())
-	}
-
-	if attr.Scope == scopeSystem && attr.Name == AttrNameGroup {
-		a.SetGroupName(attr.GetString())
+		ID:       &id,
+		TenantID: &tenantID,
 	}
 }
 
 func (a *Device) AppendAttr(attr *InventoryAttribute) error {
 	switch attr.Scope {
-	case scopeIdentity:
+	case ScopeIdentity:
 		a.IdentityAttributes = append(a.IdentityAttributes, attr)
 		return nil
-	case scopeInventory:
+	case ScopeInventory:
 		a.InventoryAttributes = append(a.InventoryAttributes, attr)
 		return nil
-	case scopeMonitor:
+	case ScopeMonitor:
 		a.MonitorAttributes = append(a.MonitorAttributes, attr)
 		return nil
-	case scopeSystem:
+	case ScopeSystem:
 		a.SystemAttributes = append(a.SystemAttributes, attr)
 		return nil
-	case scopeTags:
+	case ScopeTags:
 		a.TagsAttributes = append(a.TagsAttributes, attr)
 		return nil
 	default:
 		return errors.New("unknown attribute scope " + attr.Scope)
 	}
-
 }
 
 func (a *Device) GetID() string {
@@ -152,18 +70,6 @@ func (a *Device) GetID() string {
 
 func (a *Device) SetID(val string) *Device {
 	a.ID = &val
-	return a
-}
-
-func (a *Device) GetName() string {
-	if a.Name != nil {
-		return *a.Name
-	}
-	return ""
-}
-
-func (a *Device) SetName(val string) *Device {
-	a.Name = &val
 	return a
 }
 
@@ -179,42 +85,6 @@ func (a *Device) SetTenantID(val string) *Device {
 	return a
 }
 
-func (a *Device) GetGroupName() string {
-	if a.GroupName != nil {
-		return *a.GroupName
-	}
-	return ""
-}
-
-func (a *Device) SetGroupName(val string) *Device {
-	a.GroupName = &val
-	return a
-}
-
-func (a *Device) GetStatus() string {
-	if a.Status != nil {
-		return *a.Status
-	}
-	return ""
-}
-
-func (a *Device) SetStatus(val string) *Device {
-	a.Status = &val
-	return a
-}
-
-func (a *Device) GetCreatedAt() time.Time {
-	if a.CreatedAt != nil {
-		return *a.CreatedAt
-	}
-	return time.Time{}
-}
-
-func (a *Device) SetCreatedAt(val time.Time) *Device {
-	a.CreatedAt = &val
-	return a
-}
-
 func (a *Device) GetUpdatedAt() time.Time {
 	if a.UpdatedAt != nil {
 		return *a.UpdatedAt
@@ -223,11 +93,13 @@ func (a *Device) GetUpdatedAt() time.Time {
 }
 
 func (a *Device) SetUpdatedAt(val time.Time) *Device {
-	a.UpdatedAt = &val
+	if !val.IsZero() {
+		a.UpdatedAt = &val
+	}
 	return a
 }
 
-type DeviceInventory []*InventoryAttribute
+type InventoryAttributes []*InventoryAttribute
 
 type InventoryAttribute struct {
 	Scope   string
@@ -235,6 +107,12 @@ type InventoryAttribute struct {
 	String  []string
 	Numeric []float64
 	Boolean []bool
+}
+
+func NewInventoryAttribute(s string) *InventoryAttribute {
+	return &InventoryAttribute{
+		Scope: s,
+	}
 }
 
 func (a *InventoryAttribute) IsStr() bool {
@@ -249,26 +127,9 @@ func (a *InventoryAttribute) IsBool() bool {
 	return a.Boolean != nil
 }
 
-func NewInventoryAttribute(s string) *InventoryAttribute {
-	return &InventoryAttribute{
-		Scope: s,
-	}
-}
-
-func (a *InventoryAttribute) GetName() string {
-	return a.Name
-}
-
 func (a *InventoryAttribute) SetName(val string) *InventoryAttribute {
 	a.Name = val
 	return a
-}
-
-func (a *InventoryAttribute) GetString() string {
-	if len(a.String) > 0 {
-		return a.String[0]
-	}
-	return ""
 }
 
 func (a *InventoryAttribute) SetString(val string) *InventoryAttribute {
@@ -278,22 +139,11 @@ func (a *InventoryAttribute) SetString(val string) *InventoryAttribute {
 	return a
 }
 
-func (a *InventoryAttribute) GetStrings() []string {
-	return a.String
-}
-
 func (a *InventoryAttribute) SetStrings(val []string) *InventoryAttribute {
 	a.String = val
 	a.Boolean = nil
 	a.Numeric = nil
 	return a
-}
-
-func (a *InventoryAttribute) GetNumeric() float64 {
-	if len(a.Numeric) > 0 {
-		return a.Numeric[0]
-	}
-	return float64(0)
 }
 
 func (a *InventoryAttribute) SetNumeric(val float64) *InventoryAttribute {
@@ -363,13 +213,8 @@ func (a *InventoryAttribute) SetVal(val interface{}) *InventoryAttribute {
 func (d *Device) MarshalJSON() ([]byte, error) {
 	// TODO: smarter encoding, without explicit rewrites?
 	m := make(map[string]interface{})
-	m["id"] = d.ID
-	m["tenantID"] = d.TenantID
-	m["name"] = d.Name
-	m["groupName"] = d.GroupName
-	m["status"] = d.Status
-	m["createdAt"] = d.CreatedAt
-	m["updatedAt"] = d.UpdatedAt
+	m[FieldNameID] = d.ID
+	m[FieldNameTenantID] = d.TenantID
 
 	attributes := append(d.IdentityAttributes, d.InventoryAttributes...)
 	attributes = append(attributes, d.MonitorAttributes...)
@@ -410,8 +255,8 @@ func MaybeParseAttr(field string) (string, string, error) {
 	scope := ""
 	name := ""
 
-	for _, s := range []string{scopeIdentity, scopeInventory, scopeMonitor,
-		scopeSystem, scopeTags} {
+	for _, s := range []string{ScopeIdentity, ScopeInventory, ScopeMonitor,
+		ScopeSystem, ScopeTags} {
 		if strings.HasPrefix(field, s+"_") {
 			scope = s
 			break

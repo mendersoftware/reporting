@@ -26,11 +26,25 @@ const (
 
 // scope prefixes
 const (
-	scopeInventory = "inventory"
-	scopeIdentity  = "identity"
-	scopeSystem    = "system"
-	scopeTags      = "tags"
-	scopeMonitor   = "monitor"
+	ScopeInventory = "inventory"
+	ScopeIdentity  = "identity"
+	ScopeSystem    = "system"
+	ScopeTags      = "tags"
+	ScopeMonitor   = "monitor"
+)
+
+// attributes
+const (
+	AttrNameID        = "id"
+	AttrNameGroup     = "group"
+	AttrNameStatus    = "status"
+	AttrNameCreatedAt = "created_ts"
+	AttrNameUpdatedAt = "updated_ts"
+)
+
+const (
+	FieldNameID       = "id"
+	FieldNameTenantID = "tenantID"
 )
 
 // type enum/suffixes

@@ -13,8 +13,10 @@
 //    limitations under the License.
 package inventory
 
-//GetDevsReq is a stripped down inventory search query
+// GetDevsReq is a stripped down inventory search query
 // default max 20 devices
 type GetDevsReq struct {
 	DeviceIDs []string `json:"device_ids"`
+	Page      uint     `json:"page"`
+	PerPage   uint     `json:"per_page"`
 }

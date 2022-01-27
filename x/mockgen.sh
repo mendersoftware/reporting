@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright 2021 Northern.tech AS
+# Copyright 2020 Northern.tech AS
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ generate_mock() {
     local PACKAGE_PATH=${PWD##$REPO_ROOT}
     # Line following should contain the interface definition, i.e.
     # type $INTERFACE interface {...}
-    local INTERFACE=$(sed -n "${GOLINE}"',$s:^type\s\+\([A-Za-z]\+\)\s\+interface.*$:\1:p' ${GOFILE})
+    local INTERFACE=$(awk "NR==$(expr ${GOLINE} + 1)"'{if($0 ~ /type.*interface/){print $2}}' ${GOFILE})
     if [ -z "${INTERFACE}" ]; then
         echo "ERROR: misplaced go:generate comment: place comment on line above declaration"
         return 1
@@ -37,7 +37,7 @@ generate_mock() {
     docker run --rm -v ${REPO_ROOT}:/wd \
         -w /wd/${PACKAGE_PATH} \
         -u $(id -u):$(id -g) \
-        vektra/mockery:v2.5.1 --name "${INTERFACE}" \
+        vektra/mockery:v2.9.4 --name "${INTERFACE}" \
         --output ./mocks --print >> "mocks/${INTERFACE}.go"
 }
 generate_mock

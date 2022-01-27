@@ -34,7 +34,12 @@ var validSelectors = []interface{}{
 	"$regex",
 }
 
-var validSortOrders = []interface{}{"asc", "desc"}
+const (
+	SortOrderAsc  = "asc"
+	SortOrderDesc = "desc"
+)
+
+var validSortOrders = []interface{}{SortOrderAsc, SortOrderDesc}
 
 type SearchParams struct {
 	Page       int               `json:"page"`
@@ -45,12 +50,6 @@ type SearchParams struct {
 	DeviceIDs  []string          `json:"device_ids"`
 	Groups     []string          `json:"-"`
 	TenantID   string            `json:"-"`
-}
-
-type Filter struct {
-	Id    string            `json:"id" bson:"_id"`
-	Name  string            `json:"name" bson:"name"`
-	Terms []FilterPredicate `json:"terms" bson:"terms"`
 }
 
 type FilterPredicate struct {
@@ -100,27 +99,6 @@ func (sp SearchParams) Validate() error {
 			return err
 		}
 	}
-	return nil
-}
-
-func (f Filter) Validate() error {
-	err := validation.ValidateStruct(&f,
-		validation.Field(&f.Name, validation.Required))
-	if err != nil {
-		return err
-	}
-
-	if len(f.Terms) == 0 {
-		return errors.New("at least one filter term must be provided")
-	}
-
-	for _, fp := range f.Terms {
-		err = fp.Validate()
-		if err != nil {
-			return errors.Wrap(err, "validation failed for term")
-		}
-	}
-
 	return nil
 }
 

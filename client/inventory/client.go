@@ -16,7 +16,6 @@ package inventory
 import (
 	"bytes"
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -26,18 +25,19 @@ import (
 
 	"github.com/mendersoftware/go-lib-micro/log"
 
-	"github.com/mendersoftware/reporting/model"
+	"github.com/mendersoftware/reporting/utils"
 )
 
 const (
 	urlSearch      = "/api/internal/v2/inventory/tenants/:tid/filters/search"
+	defaultPage    = 1
 	defaultTimeout = 10 * time.Second
 )
 
 //go:generate ../../x/mockgen.sh
 type Client interface {
 	//GetDevices uses the search endpoint to get devices just by ids (not filters)
-	GetDevices(ctx context.Context, tid string, deviceIDs []string) ([]model.InvDevice, error)
+	GetDevices(ctx context.Context, tid string, deviceIDs []string) ([]Device, error)
 }
 
 type client struct {
@@ -45,15 +45,9 @@ type client struct {
 	urlBase string
 }
 
-func NewClient(urlBase string, skipVerify bool) Client {
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: skipVerify},
-	}
-
+func NewClient(urlBase string) Client {
 	return &client{
-		client: &http.Client{
-			Transport: tr,
-		},
+		client:  &http.Client{},
 		urlBase: urlBase,
 	}
 }
@@ -62,11 +56,14 @@ func (c *client) GetDevices(
 	ctx context.Context,
 	tid string,
 	deviceIDs []string,
-) ([]model.InvDevice, error) {
+) ([]Device, error) {
 	l := log.FromContext(ctx)
 
+	perPage := uint(len(deviceIDs))
 	getReq := &GetDevsReq{
 		DeviceIDs: deviceIDs,
+		Page:      defaultPage,
+		PerPage:   perPage,
 	}
 
 	body, err := json.Marshal(getReq)
@@ -76,7 +73,7 @@ func (c *client) GetDevices(
 
 	rd := bytes.NewReader(body)
 
-	url := joinURL(c.urlBase, urlSearch)
+	url := utils.JoinURL(c.urlBase, urlSearch)
 	url = strings.Replace(url, ":tid", tid, 1)
 
 	ctx, cancel := context.WithTimeout(ctx, defaultTimeout)
@@ -104,19 +101,10 @@ func (c *client) GetDevices(
 	}
 
 	dec := json.NewDecoder(rsp.Body)
-	var invDevs []model.InvDevice
+	var invDevs []Device
 	if err = dec.Decode(&invDevs); err != nil {
 		return nil, errors.Wrap(err, "failed to parse request body")
 	}
 
 	return invDevs, nil
-}
-
-func joinURL(base, url string) string {
-	url = strings.TrimPrefix(url, "/")
-	if !strings.HasSuffix(base, "/") {
-		base = base + "/"
-	}
-	return base + url
-
 }

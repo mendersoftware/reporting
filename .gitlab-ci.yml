@@ -52,6 +52,7 @@ test:acceptance:
     paths:
       - tests/acceptance.*
       - tests/coverage-acceptance.txt
+      - tests/coverage-acceptance-indexer.txt
     when: always
 
 publish:acceptance:
@@ -82,3 +83,11 @@ publish:acceptance:
       -flagname acceptance
       -parallel
       -coverprofile ./tests/coverage-acceptance.txt
+    - goveralls
+      -repotoken ${COVERALLS_TOKEN}
+      -service gitlab-ci
+      -jobid $CI_PIPELINE_ID
+      -covermode atomic
+      -flagname acceptance-indexer
+      -parallel
+      -coverprofile ./tests/coverage-acceptance-indexer.txt

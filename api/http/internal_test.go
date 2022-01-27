@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -31,8 +30,8 @@ import (
 
 	"github.com/mendersoftware/go-lib-micro/rest.utils"
 
-	"github.com/mendersoftware/reporting/app/reporting"
 	mapp "github.com/mendersoftware/reporting/app/reporting/mocks"
+	"github.com/mendersoftware/reporting/client/inventory"
 	"github.com/mendersoftware/reporting/model"
 )
 
@@ -92,24 +91,24 @@ func TestInternalSearch(t *testing.T) {
 			PerPage: 10,
 			Page:    2,
 			Filters: []model.FilterPredicate{{
-				Scope:     "inventory",
+				Scope:     model.ScopeInventory,
 				Attribute: "ip4",
 				Type:      "$exists",
 				Value:     true,
 			}},
 			Sort: []model.SortCriteria{{
-				Scope:     "inventory",
+				Scope:     model.ScopeInventory,
 				Attribute: "ip4",
-				Order:     "asc",
+				Order:     model.SortOrderAsc,
 			}},
 			TenantID: "123456789012345678901234",
 		},
 
 		Code: http.StatusOK,
-		Response: []model.InvDevice{{
-			ID: model.DeviceID("5975e1e6-49a6-4218-a46d-f181154a98cc"),
-			Attributes: model.DeviceAttributes{{
-				Scope: "inventory",
+		Response: []inventory.Device{{
+			ID: inventory.DeviceID("5975e1e6-49a6-4218-a46d-f181154a98cc"),
+			Attributes: inventory.DeviceAttributes{{
+				Scope: model.ScopeInventory,
 				Name:  "ip4",
 				Value: "10.0.0.2",
 			}, {
@@ -117,15 +116,15 @@ func TestInternalSearch(t *testing.T) {
 				Name:  "group",
 				Value: "develop",
 			}},
-			Group:     model.GroupName("dev-set"),
+			Group:     inventory.GroupName("dev-set"),
 			CreatedTs: time.Now().Add(-time.Hour),
 			UpdatedTs: time.Now().Add(-time.Minute),
 			Revision:  3,
 		}, {
-			ID: model.DeviceID("83bce0e4-c4c0-4995-b8b7-f056da7fc8f6"),
+			ID: inventory.DeviceID("83bce0e4-c4c0-4995-b8b7-f056da7fc8f6"),
 
-			Attributes: model.DeviceAttributes{{
-				Scope: "inventory",
+			Attributes: inventory.DeviceAttributes{{
+				Scope: model.ScopeInventory,
 				Name:  "ip4",
 				Value: "10.0.0.2",
 			}, {
@@ -133,7 +132,7 @@ func TestInternalSearch(t *testing.T) {
 				Name:  "group",
 				Value: "prod_horse",
 			}},
-			Group:     model.GroupName("prod_horse"),
+			Group:     inventory.GroupName("prod_horse"),
 			CreatedTs: time.Now().Add(-2 * time.Hour),
 			UpdatedTs: time.Now().Add(-5 * time.Minute),
 			Revision:  120,
@@ -147,7 +146,7 @@ func TestInternalSearch(t *testing.T) {
 			app.On("InventorySearchDevices",
 				contextMatcher,
 				newSearchParamMatcher(self.Params)).
-				Return([]model.InvDevice{}, 0, nil)
+				Return([]inventory.Device{}, 0, nil)
 			return app
 		},
 		TenantID: "123456789012345678901234",
@@ -156,7 +155,7 @@ func TestInternalSearch(t *testing.T) {
 		},
 
 		Code:     http.StatusOK,
-		Response: []model.InvDevice{},
+		Response: []inventory.Device{},
 	}, {
 		Name: "error, malformed request body",
 
@@ -189,15 +188,15 @@ func TestInternalSearch(t *testing.T) {
 			PerPage: 10,
 			Page:    2,
 			Filters: []model.FilterPredicate{{
-				Scope:     "inventory",
+				Scope:     model.ScopeInventory,
 				Attribute: "ip4",
 				Type:      "$exists",
 				Value:     true,
 			}},
 			Sort: []model.SortCriteria{{
-				Scope:     "inventory",
+				Scope:     model.ScopeInventory,
 				Attribute: "ip4",
-				Order:     "asc",
+				Order:     model.SortOrderAsc,
 			}},
 			TenantID: "123456789012345678901234",
 		},
@@ -231,7 +230,7 @@ func TestInternalSearch(t *testing.T) {
 			assert.Equal(t, tc.Code, w.Code)
 
 			switch res := tc.Response.(type) {
-			case []model.InvDevice:
+			case []inventory.Device:
 				b, _ := json.Marshal(res)
 				assert.JSONEq(t, string(b), w.Body.String())
 
@@ -251,122 +250,6 @@ func TestInternalSearch(t *testing.T) {
 				panic("[TEST ERR] Dunno what to compare!")
 			}
 
-		})
-	}
-}
-
-func TestReindex(t *testing.T) {
-	t.Parallel()
-	type testCase struct {
-		Name string
-
-		App      func(*testing.T, testCase) *mapp.App
-		TenantID string
-		DeviceID string
-		Q        url.Values
-
-		Code     int
-		Response interface{}
-	}
-	testCases := []testCase{{
-		Name: "ok",
-
-		App: func(t *testing.T, self testCase) *mapp.App {
-			app := new(mapp.App)
-			app.On("Reindex", contextMatcher, self.TenantID,
-				self.DeviceID, "inventory").
-				Return(nil)
-			return app
-		},
-		TenantID: "123456789012345678901234",
-		DeviceID: "3ff2da3a-342f-45a1-b7f7-d79c080db5f1",
-		Q: url.Values{
-			"service": []string{"inventory"},
-		},
-
-		Code:     http.StatusAccepted,
-		Response: nil,
-	}, {
-		Name: "error, service unknown",
-
-		App: func(t *testing.T, self testCase) *mapp.App {
-			app := new(mapp.App)
-			app.On("Reindex", contextMatcher, self.TenantID,
-				self.DeviceID, "elasticbogaloo").
-				Return(reporting.ErrUnknownService)
-			return app
-		},
-		TenantID: "123456789012345678901234",
-		DeviceID: "3ff2da3a-342f-45a1-b7f7-d79c080db5f1",
-		Q: url.Values{
-			"service": []string{"elasticbogaloo"},
-		},
-
-		Code: http.StatusBadRequest,
-		Response: rest.Error{
-			Err: reporting.ErrUnknownService.Error(),
-		},
-	}, {
-		Name: "error, internal error",
-
-		App: func(t *testing.T, self testCase) *mapp.App {
-			app := new(mapp.App)
-			app.On("Reindex", contextMatcher, self.TenantID,
-				self.DeviceID, "").
-				Return(errors.New("internal error"))
-			return app
-		},
-		TenantID: "123456789012345678901234",
-		DeviceID: "3ff2da3a-342f-45a1-b7f7-d79c080db5f1",
-
-		Code: http.StatusInternalServerError,
-		Response: rest.Error{
-			Err: http.StatusText(http.StatusInternalServerError),
-		},
-	}}
-	for i := range testCases {
-		tc := testCases[i]
-		t.Run(tc.Name, func(t *testing.T) {
-			t.Parallel()
-			var app *mapp.App
-			if tc.App == nil {
-				app = new(mapp.App)
-			} else {
-				app = tc.App(t, tc)
-			}
-			defer app.AssertExpectations(t)
-			router := NewRouter(app)
-
-			repl := strings.NewReplacer(
-				":tenant_id", tc.TenantID,
-				":device_id", tc.DeviceID,
-			)
-			req, _ := http.NewRequest(
-				http.MethodPost,
-				URIInternal+repl.Replace(URIReindexInternal),
-				nil,
-			)
-			req.URL.RawQuery = tc.Q.Encode()
-			w := httptest.NewRecorder()
-			router.ServeHTTP(w, req)
-
-			assert.Equal(t, tc.Code, w.Code)
-
-			switch typ := tc.Response.(type) {
-			case rest.Error:
-				var actual rest.Error
-				dec := json.NewDecoder(w.Body)
-				dec.DisallowUnknownFields()
-				err := dec.Decode(&actual)
-				if assert.NoError(t, err, "unexpected response schema") {
-					assert.EqualError(t, actual, typ.Error())
-				}
-
-			case nil:
-				assert.Empty(t, w.Body.Bytes())
-			default:
-				panic("[TEST ERR] Dunno what to compare!")
-			}
 		})
 	}
 }

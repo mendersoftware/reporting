@@ -28,7 +28,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/mendersoftware/go-lib-micro/rest.utils"
-	"github.com/mendersoftware/reporting/model"
 )
 
 func newTestServer(
@@ -90,7 +89,7 @@ func TestGetDevices(t *testing.T) {
 		DeviceID: []string{"9acfe595-78ff-456a-843a-0fa08bfd7c7a"},
 
 		ResponseCode: http.StatusOK,
-		ResponseBody: []model.InvDevice{},
+		ResponseBody: []Device{},
 	}, {
 		Name: "ok",
 
@@ -102,17 +101,17 @@ func TestGetDevices(t *testing.T) {
 		},
 
 		ResponseCode: http.StatusOK,
-		ResponseBody: []model.InvDevice{{
-			ID: model.DeviceID("9acfe595-78ff-456a-843a-0fa08bfd7c7a"),
-			Attributes: model.DeviceAttributes{{
+		ResponseBody: []Device{{
+			ID: DeviceID("9acfe595-78ff-456a-843a-0fa08bfd7c7a"),
+			Attributes: DeviceAttributes{{
 				Name:  "foo",
 				Value: "bar",
 				Scope: "baz",
 			}},
 			UpdatedTs: time.Now().Add(-time.Minute).UTC().Round(0),
 		}, {
-			ID: model.DeviceID("c5e37ef5-160e-401a-aec3-9dbef94855c0"),
-			Attributes: model.DeviceAttributes{{
+			ID: DeviceID("c5e37ef5-160e-401a-aec3-9dbef94855c0"),
+			Attributes: DeviceAttributes{{
 				Name:  "lorem",
 				Value: "ipsum",
 				Scope: "questionmark",
@@ -163,14 +162,14 @@ func TestGetDevices(t *testing.T) {
 			srv := newTestServer(rspChan, nil)
 			defer srv.Close()
 
-			client := NewClient(srv.URL+tc.URLNoise, false)
+			client := NewClient(srv.URL + tc.URLNoise)
 
 			rsp := &http.Response{
 				StatusCode: tc.ResponseCode,
 			}
 
 			switch typ := tc.ResponseBody.(type) {
-			case []model.InvDevice:
+			case []Device:
 				b, _ := json.Marshal(typ)
 				rsp.Body = io.NopCloser(bytes.NewReader(b))
 
@@ -200,7 +199,7 @@ func TestGetDevices(t *testing.T) {
 				}
 			} else {
 				assert.NoError(t, err)
-				if typ, ok := tc.ResponseBody.([]model.InvDevice); ok {
+				if typ, ok := tc.ResponseBody.([]Device); ok {
 					assert.Equal(t, typ, devs)
 				} else {
 					panic("[PROG ERR] bad test case: " +

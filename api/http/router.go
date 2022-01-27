@@ -33,7 +33,6 @@ const (
 	URIInventorySearch         = "/devices/search"
 	URIInventorySearchAttrs    = "/devices/search/attributes"
 	URIInventorySearchInternal = "/inventory/tenants/:tenant_id/search"
-	URIReindexInternal         = "/tenants/:tenant_id/devices/:device_id/reindex"
 )
 
 // NewRouter returns the gin router
@@ -49,7 +48,6 @@ func NewRouter(reporting reporting.App) *gin.Engine {
 	internalAPI := router.Group(URIInternal)
 	internalAPI.GET(URILiveliness, internal.Alive)
 	internalAPI.POST(URIInventorySearchInternal, internal.Search)
-	internalAPI.POST(URIReindexInternal, internal.Reindex)
 
 	mgmt := NewManagementController(reporting)
 	mgmtAPI := router.Group(URIManagement)

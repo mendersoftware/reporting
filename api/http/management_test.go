@@ -36,6 +36,7 @@ import (
 	"github.com/mendersoftware/go-lib-micro/rest.utils"
 
 	mapp "github.com/mendersoftware/reporting/app/reporting/mocks"
+	"github.com/mendersoftware/reporting/client/inventory"
 	"github.com/mendersoftware/reporting/model"
 )
 
@@ -100,24 +101,24 @@ func TestManagementSearch(t *testing.T) {
 			PerPage: 10,
 			Page:    2,
 			Filters: []model.FilterPredicate{{
-				Scope:     "inventory",
+				Scope:     model.ScopeInventory,
 				Attribute: "ip4",
 				Type:      "$exists",
 				Value:     true,
 			}},
 			Sort: []model.SortCriteria{{
-				Scope:     "inventory",
+				Scope:     model.ScopeInventory,
 				Attribute: "ip4",
-				Order:     "asc",
+				Order:     model.SortOrderAsc,
 			}},
 			TenantID: "123456789012345678901234",
 		},
 
 		Code: http.StatusOK,
-		Response: []model.InvDevice{{
-			ID: model.DeviceID("5975e1e6-49a6-4218-a46d-f181154a98cc"),
-			Attributes: model.DeviceAttributes{{
-				Scope: "inventory",
+		Response: []inventory.Device{{
+			ID: inventory.DeviceID("5975e1e6-49a6-4218-a46d-f181154a98cc"),
+			Attributes: inventory.DeviceAttributes{{
+				Scope: model.ScopeInventory,
 				Name:  "ip4",
 				Value: "10.0.0.2",
 			}, {
@@ -125,15 +126,15 @@ func TestManagementSearch(t *testing.T) {
 				Name:  "group",
 				Value: "develop",
 			}},
-			Group:     model.GroupName("dev-set"),
+			Group:     inventory.GroupName("dev-set"),
 			CreatedTs: time.Now().Add(-time.Hour),
 			UpdatedTs: time.Now().Add(-time.Minute),
 			Revision:  3,
 		}, {
-			ID: model.DeviceID("83bce0e4-c4c0-4995-b8b7-f056da7fc8f6"),
+			ID: inventory.DeviceID("83bce0e4-c4c0-4995-b8b7-f056da7fc8f6"),
 
-			Attributes: model.DeviceAttributes{{
-				Scope: "inventory",
+			Attributes: inventory.DeviceAttributes{{
+				Scope: model.ScopeInventory,
 				Name:  "ip4",
 				Value: "10.0.0.2",
 			}, {
@@ -141,7 +142,7 @@ func TestManagementSearch(t *testing.T) {
 				Name:  "group",
 				Value: "prod_horse",
 			}},
-			Group:     model.GroupName("prod_horse"),
+			Group:     inventory.GroupName("prod_horse"),
 			CreatedTs: time.Now().Add(-2 * time.Hour),
 			UpdatedTs: time.Now().Add(-5 * time.Minute),
 			Revision:  120,
@@ -155,7 +156,7 @@ func TestManagementSearch(t *testing.T) {
 			app.On("InventorySearchDevices",
 				contextMatcher,
 				newSearchParamMatcher(self.Params.(*model.SearchParams))).
-				Return([]model.InvDevice{}, 0, nil)
+				Return([]inventory.Device{}, 0, nil)
 			return app
 		},
 		CTX: identity.WithContext(context.Background(),
@@ -169,7 +170,7 @@ func TestManagementSearch(t *testing.T) {
 		},
 
 		Code:     http.StatusOK,
-		Response: []model.InvDevice{},
+		Response: []inventory.Device{},
 	}, {
 		Name: "ok, with scope, empty results",
 
@@ -179,7 +180,7 @@ func TestManagementSearch(t *testing.T) {
 			app.On("InventorySearchDevices",
 				contextMatcher,
 				newSearchParamMatcher(self.Params.(*model.SearchParams))).
-				Return([]model.InvDevice{}, 0, nil)
+				Return([]inventory.Device{}, 0, nil)
 			return app
 		},
 		CTX: rbac.WithContext(identity.WithContext(context.Background(),
@@ -196,7 +197,7 @@ func TestManagementSearch(t *testing.T) {
 		},
 
 		Code:     http.StatusOK,
-		Response: []model.InvDevice{},
+		Response: []inventory.Device{},
 	}, {
 		Name: "error, malformed request body",
 
@@ -239,15 +240,15 @@ func TestManagementSearch(t *testing.T) {
 			PerPage: 10,
 			Page:    2,
 			Filters: []model.FilterPredicate{{
-				Scope:     "inventory",
+				Scope:     model.ScopeInventory,
 				Attribute: "ip4",
 				Type:      "$exists",
 				Value:     true,
 			}},
 			Sort: []model.SortCriteria{{
-				Scope:     "inventory",
+				Scope:     model.ScopeInventory,
 				Attribute: "ip4",
-				Order:     "asc",
+				Order:     model.SortOrderAsc,
 			}},
 			TenantID: "123456789012345678901234",
 		},
@@ -319,7 +320,7 @@ func TestManagementSearch(t *testing.T) {
 			assert.Equal(t, tc.Code, w.Code)
 
 			switch res := tc.Response.(type) {
-			case []model.InvDevice:
+			case []inventory.Device:
 				b, _ := json.Marshal(res)
 				assert.JSONEq(t, string(b), w.Body.String())
 

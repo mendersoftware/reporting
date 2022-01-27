@@ -28,11 +28,35 @@
 
 # elasticsearch_devices_index_replicas: 0
 
+# NATS uri
+# Defauls to: "nats://localhost:4222"
+# Overwrite with environment variable: REPORTING_NATS_URI
+
+nats_uri: "nats://mender-nats:4222"
+
+# NATS stream name
+# Defauls to: "WORKFLOWS"
+# Overwrite with environment variable: REPORTING_NATS_STREAM_NAME
+
+# nats_stream_name: "WORKFLOWS"
+
+# NATS subscriber topic name
+# Defauls to: "default"
+# Overwrite with environment variable: REPORTING_NATS_SUBSCRIBER_TOPIC
+
+# nats_subscriber_topic: "reporting"
+
+# NATS subscriber durable name
+# Defauls to: "reporting"
+# Overwrite with environment variable: REPORTING_NATS_SUBSCRIBER_DURABLE
+
+# nats_subscriber_durable: "reporting"
+
 # Reindex batch size, in number of buffered requests
-# Defauls to: 20
+# Defauls to: 100
 # Overwrite with environment variable: REPORTING_REINDEX_BATCH_SIZE
 
-# reindex_batch_size: 20
+# reindex_batch_size: 100
 
 # Reindex max time, after which reindexing is triggered.
 # Defauls to: 1000
@@ -40,14 +64,14 @@
 
 # reindex_max_time_msec: 1000
 
-# Reindex input buffer length.
-# Defauls to: 100
-# Overwrite with environment variable: REPORTING_REINDEX_BUF_LEN.
+# Address of the device auth service
+# Defaults to: http://mender-device-auth:8080/
+# Overwrite with environment variable: REPORTING_DEVICEEAUTH_ADDR
 
-# reindex_buf_len: 100
+# deviceauth_addr: "http://mender-device-auth:8080/"
 
-# Number of reindexing workers in the pool
-# Defauls to: 5
-# Overwrite with environment variable: REPORTING_REINDEX_NUM_WORKERS.
+# Address of the inventory service
+# Defaults to: http://mender-inventory:8080/
+# Overwrite with environment variable: REPORTING_INVENTORY_ADDR
 
-# reindex_num_workers: 100
+# deviceauth_addr: "http://mender-inventory:8080/"
