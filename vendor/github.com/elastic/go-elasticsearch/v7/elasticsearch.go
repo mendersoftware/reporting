@@ -66,9 +66,10 @@ type Config struct {
 	Username  string   // Username for HTTP Basic Authentication.
 	Password  string   // Password for HTTP Basic Authentication.
 
-	CloudID      string // Endpoint for the Elastic Service (https://elastic.co/cloud).
-	APIKey       string // Base64-encoded token for authorization; if set, overrides username/password and service token.
-	ServiceToken string // Service token for authorization; if set, overrides username/password.
+	CloudID                string // Endpoint for the Elastic Service (https://elastic.co/cloud).
+	APIKey                 string // Base64-encoded token for authorization; if set, overrides username/password and service token.
+	ServiceToken           string // Service token for authorization; if set, overrides username/password.
+	CertificateFingerprint string // SHA256 hex fingerprint given by Elasticsearch on first launch.
 
 	Header http.Header // Global HTTP request header.
 
@@ -82,13 +83,14 @@ type Config struct {
 	EnableRetryOnTimeout bool  // Default: false.
 	MaxRetries           int   // Default: 3.
 
-	CompressRequestBody bool // Default: false.
+	CompressRequestBody  bool // Default: false.
+	DiscoverNodesOnStart bool // Discover nodes when initializing the client. Default: false.
 
-	DiscoverNodesOnStart  bool          // Discover nodes when initializing the client. Default: false.
 	DiscoverNodesInterval time.Duration // Discover nodes periodically. Default: disabled.
 
-	EnableMetrics     bool // Enable the metrics collection.
-	EnableDebugLogger bool // Enable the debug logging.
+	EnableMetrics           bool // Enable the metrics collection.
+	EnableDebugLogger       bool // Enable the debug logging.
+	EnableCompatibilityMode bool // Enable sends compatibility header
 
 	DisableMetaHeader    bool // Disable the additional "X-Elastic-Client-Meta" HTTP header.
 	UseResponseCheckOnly bool
@@ -188,11 +190,12 @@ func NewClient(cfg Config) (*Client, error) {
 	}
 
 	tp, err := estransport.New(estransport.Config{
-		URLs:         urls,
-		Username:     cfg.Username,
-		Password:     cfg.Password,
-		APIKey:       cfg.APIKey,
-		ServiceToken: cfg.ServiceToken,
+		URLs:                   urls,
+		Username:               cfg.Username,
+		Password:               cfg.Password,
+		APIKey:                 cfg.APIKey,
+		ServiceToken:           cfg.ServiceToken,
+		CertificateFingerprint: cfg.CertificateFingerprint,
 
 		Header: cfg.Header,
 		CACert: cfg.CACert,
@@ -204,6 +207,7 @@ func NewClient(cfg Config) (*Client, error) {
 		RetryBackoff:         cfg.RetryBackoff,
 
 		CompressRequestBody: cfg.CompressRequestBody,
+		CompatibilityHeader: cfg.EnableCompatibilityMode,
 
 		EnableMetrics:     cfg.EnableMetrics,
 		EnableDebugLogger: cfg.EnableDebugLogger,
@@ -300,7 +304,7 @@ func (c *Client) Perform(req *http.Request) (*http.Response, error) {
 	res, err := c.Transport.Perform(req)
 
 	// ResponseCheck path continues, we run the header check on the first answer from ES.
-	if err == nil {
+	if err == nil && (res.StatusCode >= 200 && res.StatusCode < 300){
 		checkHeader := func(context.Context) error {
 			return genuineCheckHeader(res.Header)
 		}

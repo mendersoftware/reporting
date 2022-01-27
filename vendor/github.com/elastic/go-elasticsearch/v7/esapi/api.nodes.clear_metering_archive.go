@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-// Code generated from specification version 7.15.0: DO NOT EDIT
+// Code generated from specification version 7.x: DO NOT EDIT
 
 package esapi
 
@@ -27,7 +27,7 @@ import (
 )
 
 func newNodesClearMeteringArchiveFunc(t Transport) NodesClearMeteringArchive {
-	return func(node_id []string, max_archive_version *int, o ...func(*NodesClearMeteringArchiveRequest)) (*Response, error) {
+	return func(max_archive_version *int, node_id []string, o ...func(*NodesClearMeteringArchiveRequest)) (*Response, error) {
 		var r = NodesClearMeteringArchiveRequest{NodeID: node_id, MaxArchiveVersion: max_archive_version}
 		for _, f := range o {
 			f(&r)
@@ -44,7 +44,7 @@ func newNodesClearMeteringArchiveFunc(t Transport) NodesClearMeteringArchive {
 //
 // See full documentation at https://www.elastic.co/guide/en/elasticsearch/reference/current/clear-repositories-metering-archive-api.html.
 //
-type NodesClearMeteringArchive func(node_id []string, max_archive_version *int, o ...func(*NodesClearMeteringArchiveRequest)) (*Response, error)
+type NodesClearMeteringArchive func(max_archive_version *int, node_id []string, o ...func(*NodesClearMeteringArchiveRequest)) (*Response, error)
 
 // NodesClearMeteringArchiveRequest configures the Nodes Clear Metering Archive API request.
 //
