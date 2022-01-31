@@ -1,4 +1,4 @@
-// Copyright 2021 Northern.tech AS
+// Copyright 2022 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import (
 	"github.com/mendersoftware/reporting/client/nats"
 	dconfig "github.com/mendersoftware/reporting/config"
 	"github.com/mendersoftware/reporting/store"
+	elastic "github.com/mendersoftware/reporting/store/elasticsearch"
 )
 
 func main() {
@@ -176,11 +177,11 @@ func getStore(args *cli.Context) (store.Store, error) {
 	deviceesIndexShards := config.Config.GetInt(dconfig.SettingElasticsearchDevicesIndexShards)
 	deviceesIndexReplicas := config.Config.GetInt(
 		dconfig.SettingElasticsearchDevicesIndexReplicas)
-	store, err := store.NewStore(
-		store.WithServerAddresses(addresses),
-		store.WithDevicesIndexName(devicesIndexName),
-		store.WithDevicesIndexShards(deviceesIndexShards),
-		store.WithDevicesIndexReplicas(deviceesIndexReplicas),
+	store, err := elastic.NewStore(
+		elastic.WithServerAddresses(addresses),
+		elastic.WithDevicesIndexName(devicesIndexName),
+		elastic.WithDevicesIndexShards(deviceesIndexShards),
+		elastic.WithDevicesIndexReplicas(deviceesIndexReplicas),
 	)
 	if err != nil {
 		return nil, err
