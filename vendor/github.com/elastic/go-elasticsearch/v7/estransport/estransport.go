@@ -20,7 +20,10 @@ package estransport
 import (
 	"bytes"
 	"compress/gzip"
+	"crypto/sha256"
+	"crypto/tls"
 	"crypto/x509"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -92,6 +95,7 @@ type Config struct {
 	RetryBackoff         func(attempt int) time.Duration
 
 	CompressRequestBody bool
+	CompatibilityHeader bool
 
 	EnableMetrics     bool
 	EnableDebugLogger bool
@@ -105,6 +109,8 @@ type Config struct {
 	Selector  Selector
 
 	ConnectionPoolFunc func([]*Connection, Selector) ConnectionPool
+
+	CertificateFingerprint string
 }
 
 // Client represents the HTTP client.
@@ -117,6 +123,7 @@ type Client struct {
 	password     string
 	apikey       string
 	servicetoken string
+	fingerprint  string
 	header       http.Header
 
 	retryOnStatus         []int
@@ -129,6 +136,7 @@ type Client struct {
 	discoverNodesTimer    *time.Timer
 
 	compressRequestBody bool
+	compatibilityHeader bool
 
 	metrics *metrics
 
@@ -146,6 +154,32 @@ type Client struct {
 func New(cfg Config) (*Client, error) {
 	if cfg.Transport == nil {
 		cfg.Transport = http.DefaultTransport
+	}
+
+	if transport, ok := cfg.Transport.(*http.Transport); ok {
+		if cfg.CertificateFingerprint != "" {
+			transport.DialTLS = func(network, addr string) (net.Conn, error) {
+				fingerprint, _ := hex.DecodeString(cfg.CertificateFingerprint)
+
+				c, err := tls.Dial(network, addr, &tls.Config{InsecureSkipVerify: true})
+				if err != nil {
+					return nil, err
+				}
+
+				// Retrieve the connection state from the remote server.
+				cState := c.ConnectionState()
+				for _, cert := range cState.PeerCertificates {
+					// Compute digest for each certificate.
+					digest := sha256.Sum256(cert.Raw)
+
+					// Provided fingerprint should match at least one certificate from remote before we continue.
+					if bytes.Compare(digest[0:], fingerprint) == 0 {
+						return c, nil
+					}
+				}
+				return nil, fmt.Errorf("fingerprint mismatch, provided: %s", cfg.CertificateFingerprint)
+			}
+		}
 	}
 
 	if cfg.CACert != nil {
@@ -194,6 +228,7 @@ func New(cfg Config) (*Client, error) {
 		discoverNodesInterval: cfg.DiscoverNodesInterval,
 
 		compressRequestBody: cfg.CompressRequestBody,
+		compatibilityHeader: cfg.CompatibilityHeader,
 
 		transport: cfg.Transport,
 		logger:    cfg.Logger,
@@ -240,7 +275,7 @@ func (c *Client) Perform(req *http.Request) (*http.Response, error) {
 	)
 
 	// Compatibility Header
-	if compatibilityHeader {
+	if compatibilityHeader || c.compatibilityHeader {
 		if req.Body != nil {
 			req.Header.Set("Content-Type", "application/vnd.elasticsearch+json;compatible-with=7")
 		}

@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-// Code generated from specification version 7.15.0: DO NOT EDIT
+// Code generated from specification version 7.16.0: DO NOT EDIT
 
 package esapi
 
@@ -39,8 +39,6 @@ func newTermsEnumFunc(t Transport) TermsEnum {
 // ----- API Definition -------------------------------------------------------
 
 // TermsEnum the terms enum API  can be used to discover terms in the index that begin with the provided string. It is designed for low-latency look-ups used in auto-complete scenarios.
-//
-// This API is beta.
 //
 // See full documentation at https://www.elastic.co/guide/en/elasticsearch/reference/current/search-terms-enum.html.
 //

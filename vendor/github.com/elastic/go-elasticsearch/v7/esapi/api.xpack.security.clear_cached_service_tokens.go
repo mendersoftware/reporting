@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-// Code generated from specification version 7.15.0: DO NOT EDIT
+// Code generated from specification version 7.16.0: DO NOT EDIT
 
 package esapi
 
@@ -38,8 +38,6 @@ func newSecurityClearCachedServiceTokensFunc(t Transport) SecurityClearCachedSer
 // ----- API Definition -------------------------------------------------------
 
 // SecurityClearCachedServiceTokens - Evicts tokens from the service account token caches.
-//
-// This API is beta.
 //
 // See full documentation at https://www.elastic.co/guide/en/elasticsearch/reference/current/security-api-clear-service-token-caches.html.
 //
