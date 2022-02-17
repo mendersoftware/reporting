@@ -17,7 +17,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
@@ -36,10 +35,10 @@ import (
 )
 
 func main() {
-	doMain(os.Args)
+	os.Exit(doMain(os.Args))
 }
 
-func doMain(args []string) {
+func doMain(args []string) int {
 	var configPath string
 
 	app := &cli.App{
@@ -106,8 +105,10 @@ func doMain(args []string) {
 
 	err := app.Run(args)
 	if err != nil {
-		log.Fatal(err)
+		mlog.NewEmpty().Fatal(err)
+		return 1
 	}
+	return 0
 }
 
 func cmdServer(args *cli.Context) error {

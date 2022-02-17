@@ -44,22 +44,18 @@ test:acceptance:
     - apk add docker-compose make
   script:
     - make acceptance-tests
-  after_script:
-    - make acceptance-tests-logs
-    - make acceptance-tests-down
   artifacts:
     expire_in: 2w
     paths:
       - tests/acceptance.*
-      - tests/coverage-acceptance.txt
-      - tests/coverage-acceptance-indexer.txt
+      - tests/coverage*.txt
     when: always
 
 publish:acceptance:
   stage: publish
   except:
     - /^saas-[a-zA-Z0-9.-]+$/
-  image: golang:1.15
+  image: golang:1.17
   needs:
     - job: test:acceptance
       artifacts: true
@@ -82,12 +78,4 @@ publish:acceptance:
       -covermode atomic
       -flagname acceptance
       -parallel
-      -coverprofile ./tests/coverage-acceptance.txt
-    - goveralls
-      -repotoken ${COVERALLS_TOKEN}
-      -service gitlab-ci
-      -jobid $CI_PIPELINE_ID
-      -covermode atomic
-      -flagname acceptance-indexer
-      -parallel
-      -coverprofile ./tests/coverage-acceptance-indexer.txt
+      -coverprofile $(ls -m tests/coverage*.txt | tr -d ' \n')

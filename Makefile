@@ -37,7 +37,7 @@ $(BINFILE): $(SRCFILES)
 	$(GO) build -o $@ .
 
 $(BINFILE).test: $(GOFILES)
-	go test -c -o $(BINFILE).test \
+	go test -c -o $(BINFILE).test -tags main \
 		-cover -covermode atomic \
 		-coverpkg $(PACKAGES)
 
@@ -70,30 +70,28 @@ docker: bin/reporting.docker
 .PHONY: docker-test
 docker-test: bin/reporting.acceptance.docker
 
-PYTEST_ARGS ?=
-.PHONY: acceptance-tests
-acceptance-tests: docker-test docs
+.PHONY: acceptance-tests-run
+acceptance-tests-run: docker-test docs
 	docker-compose \
-		-f tests/docker-compose-acceptance.yml \
 		-p acceptance \
-		up --scale acceptance=0 -d
-	docker-compose \
-	    -f tests/docker-compose-acceptance.yml \
-		-p acceptance \
-		run --rm -v $(shell pwd)/tests:/tests acceptance $(PYTEST_ARGS)
+		-f tests/docker-compose.yml \
+		run tester
 
 .PHONY: acceptance-tests-logs
-acceptance-tests-logs:
-	for service in $(shell docker-compose -f tests/docker-compose-acceptance.yml -p acceptance ps -a --services); do \
-		docker-compose -p acceptance -f tests/docker-compose-acceptance.yml \
-   			logs --no-color $$service > "tests/acceptance.$${service}.logs"; \
+acceptance-tests-logs: acceptance-tests-run
+	for service in $(shell docker-compose -f tests/docker-compose.yml -p acceptance ps -a --services); do \
+		docker-compose -p acceptance -f tests/docker-compose.yml \
+				logs --no-color $$service > "tests/acceptance.$${service}.logs"; \
 	done
 
 .PHONY: acceptance-tests-down
 acceptance-tests-down:
 	docker-compose \
-		-f tests/docker-compose-acceptance.yml \
-		-p acceptance down
+		-f tests/docker-compose.yml \
+		-p acceptance down --remove-orphans
+
+.PHONY: acceptance-tests
+acceptance-tests: acceptance-tests-logs acceptance-tests-down
 
 .PHONY: fmt
 fmt:
