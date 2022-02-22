@@ -15,10 +15,13 @@
 package http
 
 import (
-	"context"
-
 	"github.com/gin-gonic/gin"
-	"github.com/mendersoftware/go-lib-micro/log"
+
+	"github.com/mendersoftware/go-lib-micro/accesslog"
+	"github.com/mendersoftware/go-lib-micro/identity"
+	"github.com/mendersoftware/go-lib-micro/rbac"
+
+	"github.com/mendersoftware/reporting/app/reporting"
 )
 
 // API URL used by the HTTP router
@@ -26,24 +29,32 @@ const (
 	URIInternal   = "/api/internal/v1/reporting"
 	URIManagement = "/api/management/v1/reporting"
 
-	URILiveliness = "/alive"
+	URILiveliness              = "/alive"
+	URIInventorySearch         = "/devices/search"
+	URIInventorySearchAttrs    = "/devices/search/attributes"
+	URIInventorySearchInternal = "/inventory/tenants/:tenant_id/search"
 )
 
 // NewRouter returns the gin router
-func NewRouter() *gin.Engine {
+func NewRouter(reporting reporting.App) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	gin.DisableConsoleColor()
 
 	router := gin.New()
-	ctx := context.Background()
-	l := log.FromContext(ctx)
-
-	router.Use(routerLogger(l))
+	router.Use(accesslog.Middleware())
 	router.Use(gin.Recovery())
 
-	internal := NewInternalController()
+	internal := NewInternalController(reporting)
 	internalAPI := router.Group(URIInternal)
 	internalAPI.GET(URILiveliness, internal.Alive)
+	internalAPI.POST(URIInventorySearchInternal, internal.Search)
+
+	mgmt := NewManagementController(reporting)
+	mgmtAPI := router.Group(URIManagement)
+	mgmtAPI.Use(identity.Middleware())
+	mgmtAPI.Use(rbac.Middleware())
+	mgmtAPI.POST(URIInventorySearch, mgmt.Search)
+	mgmtAPI.GET(URIInventorySearchAttrs, mgmt.SearchAttrs)
 
 	return router
 }

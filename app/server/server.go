@@ -23,22 +23,35 @@ import (
 
 	"golang.org/x/sys/unix"
 
+	"github.com/gin-gonic/gin"
+
 	"github.com/mendersoftware/go-lib-micro/config"
 	"github.com/mendersoftware/go-lib-micro/log"
 
 	api "github.com/mendersoftware/reporting/api/http"
+	"github.com/mendersoftware/reporting/app/reporting"
 	dconfig "github.com/mendersoftware/reporting/config"
+	"github.com/mendersoftware/reporting/store"
 )
 
+func init() {
+	if mode := os.Getenv(gin.EnvGinMode); mode != "" {
+		gin.SetMode(mode)
+	} else {
+		gin.SetMode(gin.ReleaseMode)
+	}
+}
+
 // InitAndRun initializes the server and runs it
-func InitAndRun(conf config.Reader) error {
+func InitAndRun(conf config.Reader, store store.Store) error {
 	ctx := context.Background()
 
-	log.Setup(conf.GetBool(dconfig.SettingDebugLog))
 	l := log.FromContext(ctx)
 
+	reporting := reporting.NewApp(store)
+
 	var listen = conf.GetString(dconfig.SettingListen)
-	var router = api.NewRouter()
+	var router = api.NewRouter(reporting)
 	srv := &http.Server{
 		Addr:    listen,
 		Handler: router,

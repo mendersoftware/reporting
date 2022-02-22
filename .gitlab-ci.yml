@@ -14,7 +14,7 @@ stages:
 
 include:
   - project: 'Northern.tech/Mender/mendertesting'
-    file: '.gitlab-ci-check-golang-static.yml'
+    file: '.gitlab-ci-check-golang-lint.yml'
   - project: 'Northern.tech/Mender/mendertesting'
     file: '.gitlab-ci-check-golang-unittests.yml'
   - project: 'Northern.tech/Mender/mendertesting'
@@ -28,16 +28,6 @@ include:
   - project: 'Northern.tech/Mender/mendertesting'
     file: '.gitlab-ci-check-docker-build.yml'
 
-test:static:
-  image: golang:1.15
-  needs: []
-  before_script:
-    - |
-      curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | \
-           sh -s -- -b $(go env GOPATH)/bin v1.31.0
-  script:
-    - golangci-lint run -v
-
 test:acceptance:
   stage: test
   needs: []
@@ -45,10 +35,11 @@ test:acceptance:
     - /^saas-[a-zA-Z0-9.-]+$/
   tags:
     - docker
-  image: docker:19.03.13
+  image: docker:20.10.8
   services:
-    - name: docker:19.03.13-dind
+    - name: docker:20.10.8-dind
       alias: docker
+      command: ["--mtu=1440"]
   before_script:
     - apk add docker-compose make
   script:
@@ -61,6 +52,7 @@ test:acceptance:
     paths:
       - tests/acceptance.*
       - tests/coverage-acceptance.txt
+      - tests/coverage-acceptance-indexer.txt
     when: always
 
 publish:acceptance:
@@ -91,3 +83,11 @@ publish:acceptance:
       -flagname acceptance
       -parallel
       -coverprofile ./tests/coverage-acceptance.txt
+    - goveralls
+      -repotoken ${COVERALLS_TOKEN}
+      -service gitlab-ci
+      -jobid $CI_PIPELINE_ID
+      -covermode atomic
+      -flagname acceptance-indexer
+      -parallel
+      -coverprofile ./tests/coverage-acceptance-indexer.txt
