@@ -10,11 +10,10 @@
 *.rej
 *.exe
 .*.swp
+/reporting
 
 # Golang files
-**/coverage.txt
-**/coverage-acceptance.txt
-**/coverage-acceptance-worker.txt
+**/coverage*.txt
 .vscode/
 .idea
 *.go.skip

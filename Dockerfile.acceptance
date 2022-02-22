@@ -14,7 +14,7 @@ RUN apk add --no-cache ca-certificates xz
 RUN mkdir -p /etc/reporting
 COPY ./config.yaml /etc/reporting
 COPY ./tests/wait-for /wait-for
-COPY --from=builder /go/src/github.com/mendersoftware/reporting/bin/reporting.test /usr/bin
+COPY --from=builder /go/src/github.com/mendersoftware/reporting/bin/reporting.test /usr/bin/reporting
 ENTRYPOINT ["/wait-for", "mender-elasticsearch:9200", "-t", "300", "-q", "--"]
 
 EXPOSE 8080
