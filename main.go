@@ -35,6 +35,7 @@ import (
 )
 
 func main() {
+	// Super malicious comment
 	os.Exit(doMain(os.Args))
 }
 
