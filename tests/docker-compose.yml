@@ -1,0 +1,105 @@
+version: "2.1"
+services:
+
+    tester:
+        image: "mendersoftware/mender-test-containers:acceptance-testing"
+        networks:
+            - mender
+        volumes:
+            - ".:/testing"
+            - "/var/run/docker.sock:/var/run/docker.sock"
+        environment:
+            TESTING_HOST: "mender-reporting:8080"
+            REPORTING_URL: "http://mender-reporting:8080"
+            ELASTICSEARCH_URL: "http://mender-elasticsearch:9200"
+            MMOCK_CONTROL_URL: "http://mmock:8081"
+            MMOCK_API_URL: "http://mmock:8080"
+        depends_on:
+            - mender-reporting
+            - mender-reporting-indexer
+            - mmock
+
+    mender-reporting:
+        image: "mendersoftware/reporting:prtest"
+        command:
+            - "/usr/bin/reporting"
+            - "--config=/etc/reporting/config.yaml"
+            - "server"
+            - "--automigrate"
+        networks:
+            mender:
+                aliases:
+                    - mender-reporting
+        volumes:
+            - ".:/testing"
+        working_dir: /testing
+        depends_on:
+            - mender-elasticsearch
+            - mender-nats
+        environment:
+            REPORTING_ELASTICSEARCH_ADDRESSES: "http://mender-elasticsearch:9200"
+            REPORTING_DEVICEAUTH_ADDR: "http://mender-device-auth:8080"
+            REPORTING_INVENTORY_ADDR: "http://mender-inventory:8080"
+            REPORTING_NATS_URI: "nats://mender-nats:4222"
+            REPORTING_DEBUG_LOG: "true"
+
+    mender-reporting-indexer:
+        image: "mendersoftware/reporting:prtest"
+        command:
+            - "/usr/bin/reporting.test"
+            - "--config=/etc/reporting/config.yaml"
+            - "indexer"
+        networks:
+            mender:
+                aliases:
+                    - mender-reporting
+        volumes:
+            - ".:/testing"
+        working_dir: /testing
+        depends_on:
+            - mender-elasticsearch
+            - mender-nats
+        environment:
+            REPORTING_ELASTICSEARCH_ADDRESSES: "http://mender-elasticsearch:9200"
+            REPORTING_DEVICEAUTH_ADDR: "http://mender-device-auth:8080"
+            REPORTING_INVENTORY_ADDR: "http://mender-inventory:8080"
+            REPORTING_NATS_URI: "nats://mender-nats:4222"
+            REPORTING_DEBUG_LOG: "true"
+
+    mmock:
+        image: "jordimartin/mmock:v2.7.9"
+        command:
+            - "-config-path=/config"
+            - "-console-ip=0.0.0.0"
+            - "-console-port=8081"
+            - "-server-ip=0.0.0.0"
+            - "-server-port=8080"
+            - "-server-statistics=false"
+        volumes:
+            - "./mmock:/config"
+        networks:
+            mender:
+                aliases:
+                    - mmock
+                    - mender-inventory
+                    - mender-device-auth
+
+    mender-elasticsearch:
+        image: "elasticsearch:7.13.1"
+        networks:
+            - mender
+        environment:
+            - network.host=0.0.0.0
+            - discovery.type=single-node
+            - ES_JAVA_OPTS=-Xms512m -Xmx512m
+        ports:
+            - "9200:9200"
+
+    mender-nats:
+        image: "nats:2.6.2-alpine3.14"
+        command: "-js"
+        networks:
+            - mender
+
+networks:
+    mender: {}
