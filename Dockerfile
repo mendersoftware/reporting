@@ -7,7 +7,7 @@ RUN mkdir -p /go/src/github.com/mendersoftware/reporting
 COPY . /go/src/github.com/mendersoftware/reporting
 RUN cd /go/src/github.com/mendersoftware/reporting && env CGO_ENABLED=1 go build
 
-FROM alpine:3.15.0
+FROM alpine:3.15.4
 RUN apk add --no-cache ca-certificates xz
 RUN mkdir -p /etc/reporting
 COPY ./config.yaml /etc/reporting
