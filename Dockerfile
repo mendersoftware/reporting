@@ -1,8 +1,9 @@
-FROM golang:1.17.6-alpine3.15 as builder
+FROM golang:1.18.1-alpine3.15 as builder
 RUN apk add --no-cache \
     xz-dev \
     musl-dev \
-    gcc
+    gcc \
+    git
 RUN mkdir -p /go/src/github.com/mendersoftware/reporting
 COPY . /go/src/github.com/mendersoftware/reporting
 RUN cd /go/src/github.com/mendersoftware/reporting && env CGO_ENABLED=1 go build
