@@ -5,7 +5,7 @@ github.com/ant0ine/go-json-rest/rest/trie
 github.com/cpuguy83/go-md2man/v2/md2man
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
-# github.com/elastic/go-elasticsearch/v7 v7.16.0
+# github.com/elastic/go-elasticsearch/v7 v7.17.1
 ## explicit
 github.com/elastic/go-elasticsearch/v7
 github.com/elastic/go-elasticsearch/v7/esapi
