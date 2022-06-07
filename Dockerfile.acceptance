@@ -13,10 +13,9 @@ RUN apk add --no-cache \
     ca-certificates \
     make
 COPY ./ .
-RUN make build-test
+RUN env CGO_ENABLED=0 make build-test
 
-FROM alpine:3.15.4
-RUN apk add --no-cache xz
+FROM scratch
 EXPOSE 8080
 COPY --from=builder /etc_extra/ /etc/
 USER 65534
