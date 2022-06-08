@@ -14,7 +14,7 @@ RUN apk add --no-cache \
 COPY ./ .
 RUN env CGO_ENABLED=1 go build
 
-FROM alpine:3.15.4
+FROM alpine:3.16.0
 RUN apk add --no-cache xz
 EXPOSE 8080
 COPY --from=builder /etc_extra/ /etc/
