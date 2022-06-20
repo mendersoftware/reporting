@@ -12,8 +12,7 @@ require (
 	github.com/nats-io/nats-server/v2 v2.6.3 // indirect
 	github.com/nats-io/nats.go v1.13.1-0.20211018182449-f2416a8b1483
 	github.com/pkg/errors v0.9.1
-	github.com/stretchr/objx v0.3.0 // indirect
-	github.com/stretchr/testify v1.7.2
+	github.com/stretchr/testify v1.7.3
 	github.com/ugorji/go v1.2.7 // indirect
 	github.com/urfave/cli v1.22.9
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292 // indirect
