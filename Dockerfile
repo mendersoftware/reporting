@@ -12,10 +12,9 @@ RUN apk add --no-cache \
     git \
     ca-certificates
 COPY ./ .
-RUN env CGO_ENABLED=1 go build
+RUN env CGO_ENABLED=0 go build
 
-FROM alpine:3.16.2
-RUN apk add --no-cache xz
+FROM scratch
 EXPOSE 8080
 COPY --from=builder /etc_extra/ /etc/
 USER 65534
