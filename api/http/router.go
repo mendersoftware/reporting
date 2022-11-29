@@ -1,4 +1,4 @@
-// Copyright 2021 Northern.tech AS
+// Copyright 2022 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import (
 	"github.com/mendersoftware/go-lib-micro/accesslog"
 	"github.com/mendersoftware/go-lib-micro/identity"
 	"github.com/mendersoftware/go-lib-micro/rbac"
+	"github.com/mendersoftware/go-lib-micro/requestid"
 
 	"github.com/mendersoftware/reporting/app/reporting"
 )
@@ -43,6 +44,7 @@ func NewRouter(reporting reporting.App) *gin.Engine {
 	router := gin.New()
 	router.Use(accesslog.Middleware())
 	router.Use(gin.Recovery())
+	router.Use(requestid.Middleware())
 
 	internal := NewInternalController(reporting)
 	internalAPI := router.Group(URIInternal)
