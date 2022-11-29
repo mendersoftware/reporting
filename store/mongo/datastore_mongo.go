@@ -27,6 +27,12 @@ import (
 	mstore "github.com/mendersoftware/go-lib-micro/store/v2"
 )
 
+const (
+	collNameMapping   = "mapping"
+	keyNameTenantID   = "tenant_id"
+	indexNameTenantID = "tenant_id_ndx"
+)
+
 type MongoStoreConfig struct {
 	// MongoURL holds the URL to the MongoDB server.
 	MongoURL *url.URL

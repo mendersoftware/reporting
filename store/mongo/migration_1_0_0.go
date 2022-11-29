@@ -15,7 +15,11 @@
 package mongo
 
 import (
+	"context"
+
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/mendersoftware/go-lib-micro/mongo/migrate"
 )
@@ -26,7 +30,22 @@ type migration_1_0_0 struct {
 }
 
 func (m *migration_1_0_0) Up(from migrate.Version) error {
-	return nil
+	ctx := context.Background()
+	indexModels := []mongo.IndexModel{{
+		Keys: bson.D{
+			{Key: keyNameTenantID, Value: 1},
+		},
+		Options: options.Index().
+			SetName(indexNameTenantID).
+			SetUnique(true),
+	}}
+	indexes := m.client.
+		Database(m.db).
+		Collection(collNameMapping).
+		Indexes()
+
+	_, err := indexes.CreateMany(ctx, indexModels)
+	return err
 }
 
 func (m *migration_1_0_0) Version() migrate.Version {

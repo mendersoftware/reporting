@@ -15,12 +15,20 @@
 package mongo
 
 import (
+	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/mendersoftware/go-lib-micro/mongo/migrate"
 )
+
+type index struct {
+	Keys bson.D `bson:"key"`
+	Name string `bson:"name"`
+}
 
 func TestMigration_1_0_0(t *testing.T) {
 	m := &migration_1_0_0{
@@ -31,4 +39,31 @@ func TestMigration_1_0_0(t *testing.T) {
 
 	err := m.Up(from)
 	require.NoError(t, err)
+
+	iv := client.Database(DbName).
+		Collection(collNameMapping).
+		Indexes()
+	ctx := context.Background()
+	cur, err := iv.List(ctx)
+	require.NoError(t, err)
+
+	var idxes []index
+	err = cur.All(ctx, &idxes)
+	require.NoError(t, err)
+	require.Len(t, idxes, 2)
+	for _, idx := range idxes {
+		if len(idx.Keys) == 1 {
+			if idx.Keys[0].Key == "_id" {
+				continue
+			}
+		}
+		switch idx.Name {
+		case indexNameTenantID:
+			assert.EqualValues(t, bson.D{
+				{Key: keyNameTenantID, Value: int32(1)},
+			}, idx.Keys)
+		default:
+			assert.Failf(t, "Index name \"%s\" not recognized", idx.Name)
+		}
+	}
 }
