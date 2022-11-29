@@ -15,8 +15,7 @@ RUN apk add --no-cache \
 COPY ./ .
 RUN make build-test
 
-FROM alpine:3.16.2
-RUN apk add --no-cache xz
+FROM scratch
 EXPOSE 8080
 COPY --from=builder /etc_extra/ /etc/
 USER 65534
@@ -24,8 +23,5 @@ WORKDIR /etc/reporting
 COPY --from=builder --chown=nobody /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --chown=nobody ./config.yaml .
 COPY --from=builder --chown=nobody /go/src/github.com/mendersoftware/reporting/bin/reporting.test /usr/bin/reporting
-COPY --chown=nobody ./tests/wait-for /wait-for
-
-ENTRYPOINT ["/wait-for", "mender-elasticsearch:9200", "-t", "300", "-q", "--"]
 
 STOPSIGNAL SIGINT
