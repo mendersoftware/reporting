@@ -1,4 +1,4 @@
-// Copyright 2021 Northern.tech AS
+// Copyright 20221 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -12,15 +12,19 @@
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
 
-package indexer
+package store
 
 import (
-	"testing"
-
-	"github.com/stretchr/testify/assert"
+	"context"
 )
 
-func TestNewIndexer(t *testing.T) {
-	indexer := NewIndexer(nil, nil, nil, nil, nil)
-	assert.NotNil(t, indexer)
+// DataStore interface for DataStore services
+//nolint:lll - skip line length check for interface declaration.
+//go:generate ../x/mockgen.sh
+type DataStore interface {
+	Ping(ctx context.Context) error
+	Close(ctx context.Context) error
+	DropDatabase(ctx context.Context) error
+	Migrate(ctx context.Context, version string, automigrate bool) error
+	MigrateLatest(ctx context.Context) error
 }

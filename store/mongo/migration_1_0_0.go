@@ -1,4 +1,4 @@
-// Copyright 2021 Northern.tech AS
+// Copyright 2022 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -12,15 +12,23 @@
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
 
-package indexer
+package mongo
 
 import (
-	"testing"
+	"go.mongodb.org/mongo-driver/mongo"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/mendersoftware/go-lib-micro/mongo/migrate"
 )
 
-func TestNewIndexer(t *testing.T) {
-	indexer := NewIndexer(nil, nil, nil, nil, nil)
-	assert.NotNil(t, indexer)
+type migration_1_0_0 struct {
+	client *mongo.Client
+	db     string
+}
+
+func (m *migration_1_0_0) Up(from migrate.Version) error {
+	return nil
+}
+
+func (m *migration_1_0_0) Version() migrate.Version {
+	return migrate.MakeVersion(1, 0, 0)
 }

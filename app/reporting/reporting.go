@@ -36,11 +36,13 @@ type App interface {
 
 type app struct {
 	store store.Store
+	ds    store.DataStore
 }
 
-func NewApp(store store.Store) App {
+func NewApp(store store.Store, ds store.DataStore) App {
 	return &app{
 		store: store,
+		ds:    ds,
 	}
 }
 

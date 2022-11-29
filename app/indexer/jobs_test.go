@@ -61,7 +61,7 @@ func TestGetJobsSubscriptionError(t *testing.T) {
 
 	defer nats.AssertExpectations(t)
 
-	indexer := NewIndexer(nil, nats, nil, nil)
+	indexer := NewIndexer(nil, nil, nats, nil, nil)
 	err := indexer.GetJobs(ctx, jobs)
 	assert.Equal(t, "failed to subscribe to the nats JetStream: subscription error", err.Error())
 
@@ -99,7 +99,7 @@ func TestGetJobs(t *testing.T) {
 
 	defer nats.AssertExpectations(t)
 
-	indexer := NewIndexer(nil, nats, nil, nil)
+	indexer := NewIndexer(nil, nil, nats, nil, nil)
 	err := indexer.GetJobs(ctx, jobs)
 	assert.Nil(t, err)
 
@@ -140,7 +140,7 @@ func TestGetJobsError(t *testing.T) {
 
 	defer nats.AssertExpectations(t)
 
-	indexer := NewIndexer(nil, nats, nil, nil)
+	indexer := NewIndexer(nil, nil, nats, nil, nil)
 	err := indexer.GetJobs(ctx, jobs)
 	assert.Nil(t, err)
 
@@ -475,7 +475,7 @@ func TestProcessJobs(t *testing.T) {
 				).Return(tc.inventoryDevices, tc.inventoryErr)
 			}
 
-			indexer := NewIndexer(store, nil, devClient, invClient)
+			indexer := NewIndexer(store, nil, nil, devClient, invClient)
 
 			indexer.ProcessJobs(ctx, tc.jobs)
 		})

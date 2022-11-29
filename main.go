@@ -17,6 +17,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -34,6 +35,7 @@ import (
 	dconfig "github.com/mendersoftware/reporting/config"
 	"github.com/mendersoftware/reporting/store"
 	elastic "github.com/mendersoftware/reporting/store/elasticsearch"
+	"github.com/mendersoftware/reporting/store/mongo"
 )
 
 const (
@@ -130,7 +132,17 @@ func cmdServer(args *cli.Context) error {
 			return err
 		}
 	}
-	return server.InitAndRun(config.Config, store)
+	ctx := context.Background()
+	ds, err := getDatastore(args)
+	if err != nil {
+		return err
+	}
+	defer ds.Close(ctx)
+	err = ds.Migrate(ctx, mongo.DbVersion, args.Bool("automigrate"))
+	if err != nil {
+		return err
+	}
+	return server.InitAndRun(config.Config, store, ds)
 }
 
 func getNatsClient() (nats.Client, error) {
@@ -160,14 +172,22 @@ func cmdIndexer(args *cli.Context) error {
 			return err
 		}
 	}
-
 	nats, err := getNatsClient()
 	if err != nil {
 		return err
 	}
 	defer nats.Close()
-
-	return indexer.InitAndRun(config.Config, store, nats)
+	ctx := context.Background()
+	ds, err := getDatastore(args)
+	if err != nil {
+		return err
+	}
+	defer ds.Close(ctx)
+	err = ds.Migrate(ctx, mongo.DbVersion, args.Bool("automigrate"))
+	if err != nil {
+		return err
+	}
+	return indexer.InitAndRun(config.Config, store, ds, nats)
 }
 
 func cmdMigrate(args *cli.Context) error {
@@ -176,7 +196,16 @@ func cmdMigrate(args *cli.Context) error {
 		return err
 	}
 	ctx := context.Background()
-	return store.Migrate(ctx)
+	err = store.Migrate(ctx)
+	if err != nil {
+		return err
+	}
+	ds, err := getDatastore(args)
+	if err != nil {
+		return err
+	}
+	defer ds.Close(ctx)
+	return ds.Migrate(ctx, mongo.DbVersion, true)
 }
 
 func getStore(args *cli.Context) (store.Store, error) {
@@ -210,4 +239,20 @@ func getStore(args *cli.Context) (store.Store, error) {
 	}
 	l.Info("successfully connected to Elasticsearch")
 	return store, nil
+}
+
+func getDatastore(args *cli.Context) (store.DataStore, error) {
+	mgoURL, err := url.Parse(config.Config.GetString(dconfig.SettingMongo))
+	if err != nil {
+		return nil, err
+	}
+
+	storeConfig := mongo.MongoStoreConfig{
+		MongoURL: mgoURL,
+		Username: config.Config.GetString(dconfig.SettingDbUsername),
+		Password: config.Config.GetString(dconfig.SettingDbPassword),
+		DbName:   mongo.DbName,
+	}
+
+	return mongo.NewMongoStore(context.Background(), storeConfig)
 }

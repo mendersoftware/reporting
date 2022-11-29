@@ -1,4 +1,4 @@
-// Copyright 2021 Northern.tech AS
+// Copyright 2022 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -60,6 +60,32 @@ const (
 	// SettingInventoryAddrDefault is the default value for the inventory service address
 	SettingInventoryAddrDefault = "http://mender-inventory:8080/"
 
+	// SettingMongo is the config key for the mongo URL
+	SettingMongo = "mongo_url"
+	// SettingMongoDefault is the default value for the mongo URL
+	SettingMongoDefault = "mongodb://mender-mongo:27017"
+
+	// SettingDbName is the config key for the mongo database name
+	SettingDbName = "mongo_dbname"
+	// SettingDbNameDefault is the default value for the mongo database name
+	SettingDbNameDefault = "reporting"
+
+	// SettingDbSSL is the config key for the mongo SSL setting
+	SettingDbSSL = "mongo_ssl"
+	// SettingDbSSLDefault is the default value for the mongo SSL setting
+	SettingDbSSLDefault = false
+
+	// SettingDbSSLSkipVerify is the config key for the mongo SSL skip verify setting
+	SettingDbSSLSkipVerify = "mongo_ssl_skipverify"
+	// SettingDbSSLSkipVerifyDefault is the default value for the mongo SSL skip verify setting
+	SettingDbSSLSkipVerifyDefault = false
+
+	// SettingDbUsername is the config key for the mongo username
+	SettingDbUsername = "mongo_username"
+
+	// SettingDbPassword is the config key for the mongo password
+	SettingDbPassword = "mongo_password"
+
 	// SettingNatsURI is the config key for the nats uri
 	SettingNatsURI = "nats_uri"
 	// SettingNatsURIDefault is the default value for the nats uri
@@ -110,6 +136,8 @@ var (
 		{Key: SettingDebugLog, Value: SettingDebugLogDefault},
 		{Key: SettingDeviceAuthAddr, Value: SettingDeviceAuthAddrDefault},
 		{Key: SettingInventoryAddr, Value: SettingInventoryAddrDefault},
+		{Key: SettingMongo, Value: SettingMongoDefault},
+		{Key: SettingDbName, Value: SettingDbNameDefault},
 		{Key: SettingNatsURI, Value: SettingNatsURIDefault},
 		{Key: SettingNatsStreamName, Value: SettingNatsStreamNameDefault},
 		{Key: SettingNatsSubscriberTopic, Value: SettingNatsSubscriberTopicDefault},

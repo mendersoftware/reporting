@@ -32,6 +32,7 @@ type Indexer interface {
 
 type indexer struct {
 	store     store.Store
+	datastore store.DataStore
 	nats      nats.Client
 	devClient deviceauth.Client
 	invClient inventory.Client
@@ -39,12 +40,14 @@ type indexer struct {
 
 func NewIndexer(
 	store store.Store,
+	ds store.DataStore,
 	nats nats.Client,
 	devClient deviceauth.Client,
 	invClient inventory.Client,
 ) Indexer {
 	return &indexer{
 		store:     store,
+		datastore: ds,
 		nats:      nats,
 		devClient: devClient,
 		invClient: invClient,
