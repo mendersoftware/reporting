@@ -33,6 +33,7 @@ services:
         working_dir: /testing
         depends_on:
             - mender-elasticsearch
+            - mender-mongo
             - mender-nats
         environment:
             REPORTING_ELASTICSEARCH_ADDRESSES: "http://mender-elasticsearch:9200"
@@ -54,6 +55,7 @@ services:
         working_dir: /testing
         depends_on:
             - mender-elasticsearch
+            - mender-mongo
             - mender-nats
         environment:
             REPORTING_ELASTICSEARCH_ADDRESSES: "http://mender-elasticsearch:9200"
@@ -81,7 +83,7 @@ services:
                     - mender-device-auth
 
     mender-elasticsearch:
-        image: "elasticsearch:7.13.1"
+        image: "elasticsearch:7.17.7"
         networks:
             - mender
         environment:
@@ -90,6 +92,11 @@ services:
             - ES_JAVA_OPTS=-Xms512m -Xmx512m
         ports:
             - "9200:9200"
+
+    mender-mongo:
+        image: mongo:4.4
+        networks:
+            - mender
 
     mender-nats:
         image: "nats:2.6.2-alpine3.14"
