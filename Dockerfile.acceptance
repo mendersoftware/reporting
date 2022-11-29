@@ -13,7 +13,7 @@ RUN apk add --no-cache \
     ca-certificates \
     make
 COPY ./ .
-RUN make build-test
+RUN env CGO_ENABLED=0 make build-test
 
 FROM scratch
 EXPOSE 8080
@@ -25,3 +25,5 @@ COPY --chown=nobody ./config.yaml .
 COPY --from=builder --chown=nobody /go/src/github.com/mendersoftware/reporting/bin/reporting.test /usr/bin/reporting
 
 STOPSIGNAL SIGINT
+
+ENTRYPOINT ["/usr/bin/reporting", "--config", "/etc/reporting/config.yaml"]

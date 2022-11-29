@@ -22,8 +22,6 @@ services:
     mender-reporting:
         image: "mendersoftware/reporting:prtest"
         command:
-            - "/usr/bin/reporting"
-            - "--config=/etc/reporting/config.yaml"
             - "server"
             - "--automigrate"
         networks:
@@ -46,8 +44,6 @@ services:
     mender-reporting-indexer:
         image: "mendersoftware/reporting:prtest"
         command:
-            - "/usr/bin/reporting.test"
-            - "--config=/etc/reporting/config.yaml"
             - "indexer"
         networks:
             mender:
