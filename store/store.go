@@ -28,4 +28,5 @@ type Store interface {
 	GetDevicesIndexMapping(ctx context.Context, tid string) (map[string]interface{}, error)
 	Migrate(ctx context.Context) error
 	Search(ctx context.Context, query interface{}) (model.M, error)
+	Ping(ctx context.Context) error
 }

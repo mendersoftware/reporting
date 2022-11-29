@@ -58,11 +58,6 @@ func NewStore(opts ...StoreOption) (store.Store, error) {
 		return nil, errors.Wrap(err, "invalid Elasticsearch configuration")
 	}
 
-	_, err = esClient.Ping()
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to connect to Elasticsearch")
-	}
-
 	store.client = esClient
 	return store, nil
 }
@@ -275,6 +270,12 @@ func (s *elasticStore) migrateCreateIndex(ctx context.Context, indexName string)
 	}
 
 	return nil
+}
+
+func (s *elasticStore) Ping(ctx context.Context) error {
+	pingRequest := s.client.Ping.WithContext(ctx)
+	_, err := s.client.Ping(pingRequest)
+	return errors.Wrap(err, "failed to ping elasticsearch")
 }
 
 func (s *elasticStore) Search(ctx context.Context, query interface{}) (model.M, error) {

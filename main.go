@@ -19,11 +19,13 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 
 	"github.com/mendersoftware/go-lib-micro/config"
+	"github.com/mendersoftware/go-lib-micro/log"
 	mlog "github.com/mendersoftware/go-lib-micro/log"
 
 	"github.com/mendersoftware/reporting/app/indexer"
@@ -32,6 +34,11 @@ import (
 	dconfig "github.com/mendersoftware/reporting/config"
 	"github.com/mendersoftware/reporting/store"
 	elastic "github.com/mendersoftware/reporting/store/elasticsearch"
+)
+
+const (
+	elasticsearchMaxWaitingTime      = 300
+	elasticsearchRetryDelayInSeconds = 1
 )
 
 func main() {
@@ -187,5 +194,20 @@ func getStore(args *cli.Context) (store.Store, error) {
 	if err != nil {
 		return nil, err
 	}
+	ctx := context.Background()
+	l := log.FromContext(ctx)
+	for i := 0; i < elasticsearchMaxWaitingTime; i++ {
+		err = store.Ping(ctx)
+		if err == nil {
+			break
+		}
+		l.Warn(err)
+		time.Sleep(elasticsearchRetryDelayInSeconds * time.Second)
+	}
+	if err != nil {
+		l.Error(err)
+		return nil, err
+	}
+	l.Info("successfully connected to Elasticsearch")
 	return store, nil
 }
