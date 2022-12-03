@@ -1,4 +1,4 @@
-// Copyright 20221 Northern.tech AS
+// Copyright 2022 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -16,9 +16,12 @@ package store
 
 import (
 	"context"
+
+	"github.com/mendersoftware/reporting/model"
 )
 
 // DataStore interface for DataStore services
+//
 //nolint:lll - skip line length check for interface declaration.
 //go:generate ../x/mockgen.sh
 type DataStore interface {
@@ -27,4 +30,7 @@ type DataStore interface {
 	DropDatabase(ctx context.Context) error
 	Migrate(ctx context.Context, version string, automigrate bool) error
 	MigrateLatest(ctx context.Context) error
+	GetMapping(ctx context.Context, tenantID string) (*model.Mapping, error)
+	UpdateAndGetMapping(ctx context.Context, tenantID string, inventory []string) (
+		*model.Mapping, error)
 }

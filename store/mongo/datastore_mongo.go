@@ -17,14 +17,17 @@ package mongo
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"net/url"
 
+	mstore "github.com/mendersoftware/go-lib-micro/store/v2"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	mopts "go.mongodb.org/mongo-driver/mongo/options"
 
-	mstore "github.com/mendersoftware/go-lib-micro/store/v2"
+	"github.com/mendersoftware/reporting/model"
 )
 
 const (
@@ -132,4 +135,63 @@ func (db *MongoStore) DropDatabase(ctx context.Context) error {
 		Database(mstore.DbFromContext(ctx, db.config.DbName)).
 		Drop(ctx)
 	return err
+}
+
+// GetMapping returns the mapping
+func (db *MongoStore) GetMapping(ctx context.Context, tenantID string) (*model.Mapping, error) {
+	query := bson.M{
+		keyNameTenantID: tenantID,
+	}
+	res := db.client.
+		Database(mstore.DbFromContext(ctx, db.config.DbName)).
+		Collection(collNameMapping).
+		FindOne(ctx, query)
+
+	mapping := &model.Mapping{}
+	err := res.Decode(mapping)
+	if err == mongo.ErrNoDocuments {
+		mapping = &model.Mapping{
+			TenantID:  tenantID,
+			Inventory: []string{},
+		}
+	} else if err != nil {
+		return nil, errors.Wrap(err, "failed to update and get the mapping")
+	}
+	return mapping, nil
+}
+
+// UpdateAndGetMapping updates the mapping and returns it
+func (db *MongoStore) UpdateAndGetMapping(ctx context.Context, tenantID string,
+	inventory []string) (*model.Mapping, error) {
+	inventoryLastField := fmt.Sprintf("inventory.%d", model.MaxMappingInventoryAttributes-1)
+	query := bson.M{
+		keyNameTenantID: tenantID,
+		inventoryLastField: bson.M{
+			"$exists": false,
+		},
+	}
+	update := bson.M{
+		"$addToSet": bson.M{
+			"inventory": bson.M{
+				"$each": inventory,
+			},
+		},
+	}
+	upsert := true
+	after := options.After
+	opts := &mopts.FindOneAndUpdateOptions{
+		ReturnDocument: &after,
+		Upsert:         &upsert,
+	}
+	res := db.client.
+		Database(mstore.DbFromContext(ctx, db.config.DbName)).
+		Collection(collNameMapping).
+		FindOneAndUpdate(ctx, query, update, opts)
+
+	mapping := &model.Mapping{}
+	err := res.Decode(mapping)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to update and get the mapping")
+	}
+	return mapping, nil
 }

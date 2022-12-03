@@ -17,10 +17,12 @@ package mongo
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"net/url"
 	"testing"
 	"time"
 
+	"github.com/mendersoftware/reporting/model"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -150,4 +152,74 @@ func TestNewMongoStore(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestUpdateAndGetMapping(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping TestPing in short mode.")
+	}
+	ds := GetTestDataStore(t)
+
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second*10)
+	defer cancel()
+
+	// apply migrations to add the indexes
+	ds.MigrateLatest(ctx)
+
+	tenantID := "tenant"
+
+	// set mapping to f1, f2
+	mapping, err := ds.UpdateAndGetMapping(ctx, tenantID, []string{"f1", "f2"})
+	assert.NoError(t, err)
+	assert.NotNil(t, mapping)
+
+	assert.Equal(t, tenantID, mapping.TenantID)
+	assert.Equal(t, []string{"f1", "f2"}, mapping.Inventory)
+
+	// set mapping to f1, f2 again
+	mapping, err = ds.UpdateAndGetMapping(ctx, tenantID, []string{"f1", "f2"})
+	assert.NoError(t, err)
+	assert.NotNil(t, mapping)
+
+	assert.Equal(t, tenantID, mapping.TenantID)
+	assert.Equal(t, []string{"f1", "f2"}, mapping.Inventory)
+
+	// update the mapping to f1, f2, f3
+	mapping, err = ds.UpdateAndGetMapping(ctx, tenantID, []string{"f3"})
+	assert.NoError(t, err)
+	assert.NotNil(t, mapping)
+
+	assert.Equal(t, tenantID, mapping.TenantID)
+	assert.Equal(t, []string{"f1", "f2", "f3"}, mapping.Inventory)
+
+	// update with empty list
+	mapping, err = ds.UpdateAndGetMapping(ctx, tenantID, []string{})
+	assert.NoError(t, err)
+	assert.NotNil(t, mapping)
+
+	// fill up the mapping with 100 attributes
+	attributes := make([]string, model.MaxMappingInventoryAttributes)
+	for i := 0; i < model.MaxMappingInventoryAttributes; i++ {
+		attributes[i] = fmt.Sprintf("e%d", i)
+	}
+
+	mapping, err = ds.UpdateAndGetMapping(ctx, tenantID, attributes)
+	assert.NoError(t, err)
+	assert.NotNil(t, mapping)
+
+	assert.Equal(t, tenantID, mapping.TenantID)
+	assert.Len(t, mapping.Inventory, 3+model.MaxMappingInventoryAttributes)
+
+	// adding d1 to the mapping will fail
+	const d1 = "d1"
+	mapping, err = ds.UpdateAndGetMapping(ctx, tenantID, []string{d1})
+	assert.Error(t, err)
+	assert.Nil(t, mapping)
+
+	// get the mapping
+	mapping, err = ds.GetMapping(ctx, tenantID)
+	assert.NoError(t, err)
+	assert.NotNil(t, mapping)
+	assert.Equal(t, tenantID, mapping.TenantID)
+	assert.Len(t, mapping.Inventory, 3+model.MaxMappingInventoryAttributes)
 }
