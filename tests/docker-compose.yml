@@ -21,6 +21,7 @@ services:
 
     mender-reporting:
         image: "mendersoftware/reporting:prtest"
+        restart: always
         command:
             - "server"
             - "--automigrate"
@@ -44,8 +45,10 @@ services:
 
     mender-reporting-indexer:
         image: "mendersoftware/reporting:prtest"
+        restart: always
         command:
             - "indexer"
+            - "--automigrate"
         networks:
             mender:
                 aliases:
