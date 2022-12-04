@@ -23,6 +23,7 @@ import (
 	"github.com/mendersoftware/go-lib-micro/log"
 
 	"github.com/mendersoftware/reporting/client/inventory"
+	"github.com/mendersoftware/reporting/mapping"
 	"github.com/mendersoftware/reporting/model"
 	"github.com/mendersoftware/reporting/store"
 )
@@ -36,14 +37,17 @@ type App interface {
 }
 
 type app struct {
-	store store.Store
-	ds    store.DataStore
+	store  store.Store
+	mapper mapping.Mapper
+	ds     store.DataStore
 }
 
 func NewApp(store store.Store, ds store.DataStore) App {
+	mapper := mapping.NewMapper(ds)
 	return &app{
-		store: store,
-		ds:    ds,
+		store:  store,
+		mapper: mapper,
+		ds:     ds,
 	}
 }
 
@@ -60,6 +64,9 @@ func (app *app) InventorySearchDevices(
 	ctx context.Context,
 	searchParams *model.SearchParams,
 ) ([]inventory.Device, int, error) {
+	if err := app.mapSearchParamsAttributes(ctx, searchParams); err != nil {
+		return nil, 0, err
+	}
 	query, err := model.BuildQuery(*searchParams)
 	if err != nil {
 		return nil, 0, err
@@ -82,12 +89,11 @@ func (app *app) InventorySearchDevices(
 	}
 
 	esRes, err := app.store.Search(ctx, query)
-
 	if err != nil {
 		return nil, 0, err
 	}
 
-	res, total, err := app.storeToInventoryDevs(esRes)
+	res, total, err := app.storeToInventoryDevs(ctx, searchParams.TenantID, esRes)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -95,9 +101,35 @@ func (app *app) InventorySearchDevices(
 	return res, total, err
 }
 
+func (app *app) mapSearchParamsAttributes(ctx context.Context,
+	searchParams *model.SearchParams) error {
+	if len(searchParams.Attributes) > 0 {
+		attributes := make(inventory.DeviceAttributes, 0, len(searchParams.Attributes))
+		for i := 0; i < len(searchParams.Attributes); i++ {
+			attributes = append(attributes, inventory.DeviceAttribute{
+				Name:  searchParams.Attributes[i].Attribute,
+				Scope: searchParams.Attributes[i].Scope,
+			})
+		}
+		attributes, err := app.mapper.MapInventoryAttributes(ctx, searchParams.TenantID,
+			attributes, false)
+		if err != nil {
+			return err
+		}
+		searchParams.Attributes = make([]model.SelectAttribute, 0, len(searchParams.Attributes))
+		for _, attribute := range attributes {
+			searchParams.Attributes = append(searchParams.Attributes, model.SelectAttribute{
+				Attribute: attribute.Name,
+				Scope:     attribute.Scope,
+			})
+		}
+	}
+	return nil
+}
+
 // storeToInventoryDevs translates ES results directly to iventory devices
 func (a *app) storeToInventoryDevs(
-	storeRes map[string]interface{},
+	ctx context.Context, tenantID string, storeRes map[string]interface{},
 ) ([]inventory.Device, int, error) {
 	devs := []inventory.Device{}
 
@@ -122,7 +154,7 @@ func (a *app) storeToInventoryDevs(
 	}
 
 	for _, v := range hitsS {
-		res, err := a.storeToInventoryDev(v)
+		res, err := a.storeToInventoryDev(ctx, tenantID, v)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -133,7 +165,8 @@ func (a *app) storeToInventoryDevs(
 	return devs, int(total), nil
 }
 
-func (a *app) storeToInventoryDev(storeRes interface{}) (*inventory.Device, error) {
+func (a *app) storeToInventoryDev(ctx context.Context, tenantID string,
+	storeRes interface{}) (*inventory.Device, error) {
 	resM, ok := storeRes.(map[string]interface{})
 	if !ok {
 		return nil, errors.New("can't process individual hit")
@@ -201,7 +234,11 @@ func (a *app) storeToInventoryDev(storeRes interface{}) (*inventory.Device, erro
 		}
 	}
 
-	ret.Attributes = attrs
+	attributes, err := a.mapper.ReverseInventoryAttributes(ctx, tenantID, attrs)
+	if err != nil {
+		return nil, err
+	}
+	ret.Attributes = attributes
 
 	return ret, nil
 }

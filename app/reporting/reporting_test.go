@@ -34,8 +34,9 @@ func TestInventorySearchDevices(t *testing.T) {
 	type testCase struct {
 		Name string
 
-		Params *model.SearchParams
-		Store  func(*testing.T, testCase) *mstore.Store
+		Params  *model.SearchParams
+		Store   func(*testing.T, testCase) *mstore.Store
+		Mapping model.Mapping
 
 		Result     []inventory.Device
 		TotalCount int
@@ -67,13 +68,17 @@ func TestInventorySearchDevices(t *testing.T) {
 					map[string]interface{}{"_source": map[string]interface{}{
 						"id":       "194d1060-1717-44dc-a783-00038f4a8013",
 						"tenantID": "123456789012345678901234",
-						model.ToAttr("inventory", "foo", model.TypeStr): []string{"bar"},
+						model.ToAttr("inventory", "attribute1", model.TypeStr): []string{"bar"},
 					}}},
 					"total": map[string]interface{}{
 						"value": float64(1),
 					}},
 				}, nil)
 			return store
+		},
+		Mapping: model.Mapping{
+			TenantID:  "",
+			Inventory: []string{"foo"},
 		},
 		TotalCount: 1,
 		Result: []inventory.Device{{
@@ -162,7 +167,24 @@ func TestInventorySearchDevices(t *testing.T) {
 			}
 			defer store.AssertExpectations(t)
 
-			app := NewApp(store, nil)
+			ds := &mstore.DataStore{}
+
+			ds.On("UpdateAndGetMapping",
+				mock.MatchedBy(func(_ context.Context) bool {
+					return true
+				}),
+				"",
+				[]string{"foo"},
+			).Return(&tc.Mapping, nil).Once()
+
+			ds.On("GetMapping",
+				mock.MatchedBy(func(_ context.Context) bool {
+					return true
+				}),
+				"",
+			).Return(&tc.Mapping, nil).Once()
+
+			app := NewApp(store, ds)
 			res, cnt, err := app.InventorySearchDevices(context.Background(), tc.Params)
 			if tc.Error != nil {
 				if assert.Error(t, err) {

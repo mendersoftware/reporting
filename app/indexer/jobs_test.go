@@ -1,4 +1,4 @@
-// Copyright 2021 Northern.tech AS
+// Copyright 2022 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -475,7 +475,17 @@ func TestProcessJobs(t *testing.T) {
 				).Return(tc.inventoryDevices, tc.inventoryErr)
 			}
 
-			indexer := NewIndexer(store, nil, nil, devClient, invClient)
+			ds := &store_mocks.DataStore{}
+			ds.On("UpdateAndGetMapping",
+				ctx,
+				tenantID,
+				[]string{},
+			).Return(&model.Mapping{
+				TenantID:  tenantID,
+				Inventory: []string{},
+			}, nil)
+
+			indexer := NewIndexer(store, ds, nil, devClient, invClient)
 
 			indexer.ProcessJobs(ctx, tc.jobs)
 		})
