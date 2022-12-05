@@ -17,6 +17,7 @@ package mapping
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/mendersoftware/reporting/client/inventory"
 	"github.com/mendersoftware/reporting/model"
@@ -35,46 +36,108 @@ type Mapper interface {
 		attrs inventory.DeviceAttributes) (inventory.DeviceAttributes, error)
 }
 
+type tenantMapCache struct {
+	inventory        map[string]string
+	inventoryReverse map[string]string
+}
+
 type mapper struct {
-	ds store.DataStore
+	ds    store.DataStore
+	cache map[string]*tenantMapCache
+	lock  sync.RWMutex
 }
 
 func NewMapper(ds store.DataStore) Mapper {
+	return newMapper(ds)
+}
+
+func newMapper(ds store.DataStore) *mapper {
 	return &mapper{
-		ds: ds,
+		ds:    ds,
+		cache: make(map[string]*tenantMapCache),
+		lock:  sync.RWMutex{},
 	}
 }
 
 // MapInventoryAttribute maps an inventory attribute to an ES field
 func (m *mapper) MapInventoryAttributes(ctx context.Context, tenantID string,
 	attrs inventory.DeviceAttributes, update bool) (inventory.DeviceAttributes, error) {
-	var mapping *model.Mapping
-	var err error
-	if update {
-		mapping, err = m.updateAndGetMapping(ctx, tenantID, attrs)
-	} else {
-		mapping, err = m.getMapping(ctx, tenantID)
+	attributesToFieldsMap := m.lookupMapping(tenantID, attrs, false)
+	if attributesToFieldsMap == nil {
+		var mapping *model.Mapping
+		var err error
+		if update {
+			mapping, err = m.updateAndGetMapping(ctx, tenantID, attrs)
+		} else {
+			mapping, err = m.getMapping(ctx, tenantID)
+		}
+		if err != nil {
+			return nil, err
+		}
+		attributesToFieldsMap = attributesToFields(mapping.Inventory)
 	}
-	if err != nil {
-		return nil, err
-	}
-	attributesToFields := attributesToFields(mapping.Inventory)
-	return mapAttributes(attrs, attributesToFields), nil
+	return mapAttributes(attrs, attributesToFieldsMap), nil
 }
 
 // ReverseInventoryAttribute looks up the inventory attribute name from the ES field
 func (m *mapper) ReverseInventoryAttributes(ctx context.Context, tenantID string,
 	attrs inventory.DeviceAttributes) (inventory.DeviceAttributes, error) {
-	mapping, err := m.getMapping(ctx, tenantID)
-	if err != nil {
-		return nil, err
+	attributesToFieldsMap := m.lookupMapping(tenantID, attrs, true)
+	if attributesToFieldsMap == nil {
+		mapping, err := m.getMapping(ctx, tenantID)
+		if err != nil {
+			return nil, err
+		}
+		attributesToFieldsMap = fieldsToAttributes(mapping.Inventory)
 	}
-	attributesToFields := fieldsToAttributes(mapping.Inventory)
-	return mapAttributes(attrs, attributesToFields), nil
+	return mapAttributes(attrs, attributesToFieldsMap), nil
 }
 
 func (m *mapper) getMapping(ctx context.Context, tenantID string) (*model.Mapping, error) {
-	return m.ds.GetMapping(ctx, tenantID)
+	mapping, err := m.ds.GetMapping(ctx, tenantID)
+	if err == nil {
+		m.cacheMapping(tenantID, mapping)
+	}
+	return mapping, err
+}
+
+func (m *mapper) cacheMapping(tenantID string, mapping *model.Mapping) {
+	cache := &tenantMapCache{
+		inventory:        make(map[string]string),
+		inventoryReverse: make(map[string]string),
+	}
+	for i, attr := range mapping.Inventory {
+		attrName := fmt.Sprintf(inventoryAttributeTemplate, i+1)
+		cache.inventory[attr] = attrName
+		cache.inventoryReverse[attrName] = attr
+	}
+	m.lock.Lock()
+	m.cache[tenantID] = cache
+	m.lock.Unlock()
+}
+
+func (m *mapper) lookupMapping(tenantID string, attrs inventory.DeviceAttributes,
+	reverse bool) map[string]string {
+	m.lock.RLock()
+	cache, ok := m.cache[tenantID]
+	m.lock.RUnlock()
+	if ok {
+		var cacheAttributes map[string]string
+		if reverse {
+			cacheAttributes = cache.inventoryReverse
+		} else {
+			cacheAttributes = cache.inventory
+		}
+		for i := 0; i < len(attrs); i++ {
+			if attrs[i].Scope == inventory.AttrScopeInventory {
+				if _, ok := cacheAttributes[attrs[i].Name]; !ok {
+					return nil
+				}
+			}
+		}
+		return cacheAttributes
+	}
+	return nil
 }
 
 func (m *mapper) updateAndGetMapping(ctx context.Context, tenantID string,
@@ -89,6 +152,7 @@ func (m *mapper) updateAndGetMapping(ctx context.Context, tenantID string,
 	if err != nil {
 		return nil, err
 	}
+	m.cacheMapping(tenantID, mapping)
 	return mapping, nil
 }
 

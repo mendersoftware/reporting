@@ -211,7 +211,7 @@ func TestGetMapping(t *testing.T) {
 				tc.inventoryMapping,
 			).Return(tc.mapping, tc.err)
 
-			mapper := &mapper{ds: ds}
+			mapper := newMapper(ds)
 			mapping, err := mapper.updateAndGetMapping(ctx, tenantID, tc.attrs)
 			if tc.err != nil {
 				assert.Equal(t, tc.err, err)
@@ -293,4 +293,82 @@ func TestFieldsToAttributes(t *testing.T) {
 			assert.Equal(t, tc.out, out)
 		})
 	}
+}
+
+func TestCache(t *testing.T) {
+	ctx := context.Background()
+	const tenantID = "tenantID"
+
+	ds := &mocks.DataStore{}
+	ds.On("GetMapping",
+		ctx,
+		tenantID,
+	).Return(&model.Mapping{
+		TenantID:  tenantID,
+		Inventory: []string{"a1", "a2"},
+	}, nil).Once()
+
+	mapper := NewMapper(ds)
+
+	// first map call will cache the mapping
+	res, err := mapper.MapInventoryAttributes(ctx, tenantID, inventory.DeviceAttributes{
+		{Name: "a1", Value: "v1", Scope: inventory.AttrScopeInventory},
+		{Name: "a2", Value: "v2", Scope: inventory.AttrScopeInventory},
+		{Name: "a3", Value: "v3", Scope: inventory.AttrScopeSystem},
+	}, false)
+	assert.NoError(t, err)
+	assert.Equal(t, inventory.DeviceAttributes{
+		{Name: fmt.Sprintf(inventoryAttributeTemplate, 1), Value: "v1", Scope: inventory.AttrScopeInventory},
+		{Name: fmt.Sprintf(inventoryAttributeTemplate, 2), Value: "v2", Scope: inventory.AttrScopeInventory},
+		{Name: "a3", Value: "v3", Scope: inventory.AttrScopeSystem},
+	}, res)
+
+	// second map call will resuse the cached mapping
+	res, err = mapper.MapInventoryAttributes(ctx, tenantID, inventory.DeviceAttributes{
+		{Name: "a1", Value: "v1", Scope: inventory.AttrScopeInventory},
+		{Name: "a2", Value: "v2", Scope: inventory.AttrScopeInventory},
+		{Name: "a3", Value: "v3", Scope: inventory.AttrScopeSystem},
+	}, false)
+	assert.NoError(t, err)
+	assert.Equal(t, inventory.DeviceAttributes{
+		{Name: fmt.Sprintf(inventoryAttributeTemplate, 1), Value: "v1", Scope: inventory.AttrScopeInventory},
+		{Name: fmt.Sprintf(inventoryAttributeTemplate, 2), Value: "v2", Scope: inventory.AttrScopeInventory},
+		{Name: "a3", Value: "v3", Scope: inventory.AttrScopeSystem},
+	}, res)
+
+	// first reverse call will also resuse the cached mapping
+	res, err = mapper.ReverseInventoryAttributes(ctx, tenantID, inventory.DeviceAttributes{
+		{Name: fmt.Sprintf(inventoryAttributeTemplate, 1), Value: "v1", Scope: inventory.AttrScopeInventory},
+		{Name: fmt.Sprintf(inventoryAttributeTemplate, 2), Value: "v2", Scope: inventory.AttrScopeInventory},
+		{Name: "a3", Value: "v3", Scope: inventory.AttrScopeSystem},
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, inventory.DeviceAttributes{
+		{Name: "a1", Value: "v1", Scope: inventory.AttrScopeInventory},
+		{Name: "a2", Value: "v2", Scope: inventory.AttrScopeInventory},
+		{Name: "a3", Value: "v3", Scope: inventory.AttrScopeSystem},
+	}, res)
+
+	// call with an unseen attribute will trigger a new query to the data storage
+	ds.On("GetMapping",
+		ctx,
+		tenantID,
+	).Return(&model.Mapping{
+		TenantID:  tenantID,
+		Inventory: []string{"a1", "a2", "a3"},
+	}, nil).Once()
+
+	res, err = mapper.ReverseInventoryAttributes(ctx, tenantID, inventory.DeviceAttributes{
+		{Name: fmt.Sprintf(inventoryAttributeTemplate, 1), Value: "v1", Scope: inventory.AttrScopeInventory},
+		{Name: fmt.Sprintf(inventoryAttributeTemplate, 2), Value: "v2", Scope: inventory.AttrScopeInventory},
+		{Name: fmt.Sprintf(inventoryAttributeTemplate, 3), Value: "v3", Scope: inventory.AttrScopeInventory},
+		{Name: "a3", Value: "v3", Scope: inventory.AttrScopeSystem},
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, inventory.DeviceAttributes{
+		{Name: "a1", Value: "v1", Scope: inventory.AttrScopeInventory},
+		{Name: "a2", Value: "v2", Scope: inventory.AttrScopeInventory},
+		{Name: "a3", Value: "v3", Scope: inventory.AttrScopeInventory},
+		{Name: "a3", Value: "v3", Scope: inventory.AttrScopeSystem},
+	}, res)
 }
