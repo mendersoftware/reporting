@@ -134,7 +134,7 @@ func (m *mapper) lookupMapping(tenantID string, attrs inventory.DeviceAttributes
 		}
 		if len(cacheAttributes) < model.MaxMappingInventoryAttributes {
 			for i := 0; i < len(attrs); i++ {
-				if attrs[i].Scope == inventory.AttrScopeInventory {
+				if shouldMapScope(attrs[i].Scope) {
 					if _, ok := cacheAttributes[attrs[i].Name]; !ok {
 						return nil
 					}
@@ -150,7 +150,7 @@ func (m *mapper) updateAndGetMapping(ctx context.Context, tenantID string,
 	attrs inventory.DeviceAttributes) (*model.Mapping, error) {
 	inventoryMapping := make([]string, 0, len(attrs))
 	for i := 0; i < len(attrs); i++ {
-		if attrs[i].Scope == inventory.AttrScopeInventory {
+		if shouldMapScope(attrs[i].Scope) {
 			inventoryMapping = append(inventoryMapping, attrs[i].Name)
 		}
 	}
@@ -170,19 +170,19 @@ func mapAttributes(attrs inventory.DeviceAttributes,
 	mappedAttrs := make(inventory.DeviceAttributes, 0, len(attrs))
 	for i := 0; i < len(attrs); i++ {
 		var attrName string
-		if attrs[i].Scope != inventory.AttrScopeInventory {
+		if !shouldMapScope(attrs[i].Scope) {
 			attrName = attrs[i].Name
 		} else if name, ok := mapping[attrs[i].Name]; ok {
 			attrName = name
-		} else {
-			attrName = attrs[i].Name
 		}
-		mappedAttr := inventory.DeviceAttribute{
-			Name:  attrName,
-			Value: attrs[i].Value,
-			Scope: attrs[i].Scope,
+		if attrName != "" {
+			mappedAttr := inventory.DeviceAttribute{
+				Name:  attrName,
+				Value: attrs[i].Value,
+				Scope: attrs[i].Scope,
+			}
+			mappedAttrs = append(mappedAttrs, mappedAttr)
 		}
-		mappedAttrs = append(mappedAttrs, mappedAttr)
 	}
 	return mappedAttrs
 }
@@ -201,4 +201,8 @@ func fieldsToAttributes(attrs []string) map[string]string {
 		fieldsToAttributes[fmt.Sprintf(inventoryAttributeTemplate, i+1)] = attrs[i]
 	}
 	return fieldsToAttributes
+}
+
+func shouldMapScope(scope string) bool {
+	return scope != model.ScopeSystem
 }

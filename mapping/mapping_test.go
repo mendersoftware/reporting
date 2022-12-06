@@ -43,9 +43,9 @@ func TestMapInventoryAttributes(t *testing.T) {
 	}{
 		"ok": {
 			attrs: inventory.DeviceAttributes{
-				{Name: "a1", Value: "v1", Scope: inventory.AttrScopeInventory},
-				{Name: "a2", Value: "v2", Scope: inventory.AttrScopeInventory},
-				{Name: "a3", Value: "v3", Scope: inventory.AttrScopeSystem},
+				{Name: "a1", Value: "v1", Scope: model.ScopeInventory},
+				{Name: "a2", Value: "v2", Scope: model.ScopeInventory},
+				{Name: "a3", Value: "v3", Scope: model.ScopeSystem},
 			},
 			update: true,
 			mapping: &model.Mapping{
@@ -53,16 +53,16 @@ func TestMapInventoryAttributes(t *testing.T) {
 				Inventory: []string{"a1", "a2"},
 			},
 			out: inventory.DeviceAttributes{
-				{Name: fmt.Sprintf(inventoryAttributeTemplate, 1), Value: "v1", Scope: inventory.AttrScopeInventory},
-				{Name: fmt.Sprintf(inventoryAttributeTemplate, 2), Value: "v2", Scope: inventory.AttrScopeInventory},
-				{Name: "a3", Value: "v3", Scope: inventory.AttrScopeSystem},
+				{Name: fmt.Sprintf(inventoryAttributeTemplate, 1), Value: "v1", Scope: model.ScopeInventory},
+				{Name: fmt.Sprintf(inventoryAttributeTemplate, 2), Value: "v2", Scope: model.ScopeInventory},
+				{Name: "a3", Value: "v3", Scope: model.ScopeSystem},
 			},
 		},
 		"ok, no update": {
 			attrs: inventory.DeviceAttributes{
-				{Name: "a1", Value: "v1", Scope: inventory.AttrScopeInventory},
-				{Name: "a2", Value: "v2", Scope: inventory.AttrScopeInventory},
-				{Name: "a3", Value: "v3", Scope: inventory.AttrScopeInventory},
+				{Name: "a1", Value: "v1", Scope: model.ScopeInventory},
+				{Name: "a2", Value: "v2", Scope: model.ScopeInventory},
+				{Name: "a3", Value: "v3", Scope: model.ScopeInventory},
 			},
 			update: false,
 			mapping: &model.Mapping{
@@ -70,15 +70,14 @@ func TestMapInventoryAttributes(t *testing.T) {
 				Inventory: []string{"a1", "a2"},
 			},
 			out: inventory.DeviceAttributes{
-				{Name: fmt.Sprintf(inventoryAttributeTemplate, 1), Value: "v1", Scope: inventory.AttrScopeInventory},
-				{Name: fmt.Sprintf(inventoryAttributeTemplate, 2), Value: "v2", Scope: inventory.AttrScopeInventory},
-				{Name: "a3", Value: "v3", Scope: inventory.AttrScopeInventory},
+				{Name: fmt.Sprintf(inventoryAttributeTemplate, 1), Value: "v1", Scope: model.ScopeInventory},
+				{Name: fmt.Sprintf(inventoryAttributeTemplate, 2), Value: "v2", Scope: model.ScopeInventory},
 			},
 		},
 		"error": {
 			attrs: inventory.DeviceAttributes{
-				{Name: "a1", Value: "v1", Scope: inventory.AttrScopeInventory},
-				{Name: "a2", Value: "v2", Scope: inventory.AttrScopeInventory},
+				{Name: "a1", Value: "v1", Scope: model.ScopeInventory},
+				{Name: "a2", Value: "v2", Scope: model.ScopeInventory},
 			},
 			update: true,
 			err:    errors.New("error"),
@@ -125,24 +124,24 @@ func TestReverseInventoryAttributes(t *testing.T) {
 	}{
 		"ok": {
 			attrs: inventory.DeviceAttributes{
-				{Name: fmt.Sprintf(inventoryAttributeTemplate, 1), Value: "v1", Scope: inventory.AttrScopeInventory},
-				{Name: fmt.Sprintf(inventoryAttributeTemplate, 2), Value: "v2", Scope: inventory.AttrScopeInventory},
-				{Name: "a3", Value: "v3", Scope: inventory.AttrScopeSystem},
+				{Name: fmt.Sprintf(inventoryAttributeTemplate, 1), Value: "v1", Scope: model.ScopeInventory},
+				{Name: fmt.Sprintf(inventoryAttributeTemplate, 2), Value: "v2", Scope: model.ScopeInventory},
+				{Name: "a3", Value: "v3", Scope: model.ScopeSystem},
 			},
 			mapping: &model.Mapping{
 				TenantID:  tenantID,
 				Inventory: []string{"a1", "a2"},
 			},
 			out: inventory.DeviceAttributes{
-				{Name: "a1", Value: "v1", Scope: inventory.AttrScopeInventory},
-				{Name: "a2", Value: "v2", Scope: inventory.AttrScopeInventory},
-				{Name: "a3", Value: "v3", Scope: inventory.AttrScopeSystem},
+				{Name: "a1", Value: "v1", Scope: model.ScopeInventory},
+				{Name: "a2", Value: "v2", Scope: model.ScopeInventory},
+				{Name: "a3", Value: "v3", Scope: model.ScopeSystem},
 			},
 		},
 		"error": {
 			attrs: inventory.DeviceAttributes{
-				{Name: fmt.Sprintf(inventoryAttributeTemplate, 1), Value: "v1", Scope: inventory.AttrScopeInventory},
-				{Name: fmt.Sprintf(inventoryAttributeTemplate, 1), Value: "v2", Scope: inventory.AttrScopeInventory},
+				{Name: fmt.Sprintf(inventoryAttributeTemplate, 1), Value: "v1", Scope: model.ScopeInventory},
+				{Name: fmt.Sprintf(inventoryAttributeTemplate, 1), Value: "v2", Scope: model.ScopeInventory},
 			},
 			err: errors.New("error"),
 		},
@@ -180,8 +179,8 @@ func TestGetMapping(t *testing.T) {
 	}{
 		"ok": {
 			attrs: inventory.DeviceAttributes{
-				{Name: "a1", Value: "v1", Scope: inventory.AttrScopeInventory},
-				{Name: "a2", Value: "v2", Scope: inventory.AttrScopeInventory},
+				{Name: "a1", Value: "v1", Scope: model.ScopeInventory},
+				{Name: "a2", Value: "v2", Scope: model.ScopeInventory},
 			},
 			inventoryMapping: []string{"a1", "a2"},
 			mapping: &model.Mapping{
@@ -191,10 +190,10 @@ func TestGetMapping(t *testing.T) {
 		},
 		"error": {
 			attrs: inventory.DeviceAttributes{
-				{Name: "a1", Value: "v1", Scope: inventory.AttrScopeInventory},
-				{Name: "a2", Value: "v2", Scope: inventory.AttrScopeInventory},
-				{Name: "a3", Value: "v2", Scope: inventory.AttrScopeInventory},
-				{Name: "a2", Value: "v2", Scope: inventory.AttrScopeInventory},
+				{Name: "a1", Value: "v1", Scope: model.ScopeInventory},
+				{Name: "a2", Value: "v2", Scope: model.ScopeInventory},
+				{Name: "a3", Value: "v2", Scope: model.ScopeInventory},
+				{Name: "a2", Value: "v2", Scope: model.ScopeInventory},
 			},
 			inventoryMapping: []string{"a1", "a2", "a3", "a2"},
 			err:              errors.New("error"),
@@ -232,16 +231,16 @@ func TestMapAttributes(t *testing.T) {
 	}{
 		"case 1": {
 			attrs: inventory.DeviceAttributes{
-				{Name: "a1", Value: "v1", Scope: inventory.AttrScopeInventory},
-				{Name: "a2", Value: "v2", Scope: inventory.AttrScopeInventory},
+				{Name: "a1", Value: "v1", Scope: model.ScopeInventory},
+				{Name: "a2", Value: "v2", Scope: model.ScopeInventory},
 			},
 			mapping: map[string]string{
 				"a1": fmt.Sprintf(inventoryAttributeTemplate, 1),
 				"a2": fmt.Sprintf(inventoryAttributeTemplate, 2),
 			},
 			out: inventory.DeviceAttributes{
-				{Name: fmt.Sprintf(inventoryAttributeTemplate, 1), Value: "v1", Scope: inventory.AttrScopeInventory},
-				{Name: fmt.Sprintf(inventoryAttributeTemplate, 2), Value: "v2", Scope: inventory.AttrScopeInventory},
+				{Name: fmt.Sprintf(inventoryAttributeTemplate, 1), Value: "v1", Scope: model.ScopeInventory},
+				{Name: fmt.Sprintf(inventoryAttributeTemplate, 2), Value: "v2", Scope: model.ScopeInventory},
 			},
 		},
 	}
@@ -312,41 +311,41 @@ func TestCache(t *testing.T) {
 
 	// first map call will cache the mapping
 	res, err := mapper.MapInventoryAttributes(ctx, tenantID, inventory.DeviceAttributes{
-		{Name: "a1", Value: "v1", Scope: inventory.AttrScopeInventory},
-		{Name: "a2", Value: "v2", Scope: inventory.AttrScopeInventory},
-		{Name: "a3", Value: "v3", Scope: inventory.AttrScopeSystem},
+		{Name: "a1", Value: "v1", Scope: model.ScopeInventory},
+		{Name: "a2", Value: "v2", Scope: model.ScopeInventory},
+		{Name: "a3", Value: "v3", Scope: model.ScopeSystem},
 	}, false)
 	assert.NoError(t, err)
 	assert.Equal(t, inventory.DeviceAttributes{
-		{Name: fmt.Sprintf(inventoryAttributeTemplate, 1), Value: "v1", Scope: inventory.AttrScopeInventory},
-		{Name: fmt.Sprintf(inventoryAttributeTemplate, 2), Value: "v2", Scope: inventory.AttrScopeInventory},
-		{Name: "a3", Value: "v3", Scope: inventory.AttrScopeSystem},
+		{Name: fmt.Sprintf(inventoryAttributeTemplate, 1), Value: "v1", Scope: model.ScopeInventory},
+		{Name: fmt.Sprintf(inventoryAttributeTemplate, 2), Value: "v2", Scope: model.ScopeInventory},
+		{Name: "a3", Value: "v3", Scope: model.ScopeSystem},
 	}, res)
 
 	// second map call will resuse the cached mapping
 	res, err = mapper.MapInventoryAttributes(ctx, tenantID, inventory.DeviceAttributes{
-		{Name: "a1", Value: "v1", Scope: inventory.AttrScopeInventory},
-		{Name: "a2", Value: "v2", Scope: inventory.AttrScopeInventory},
-		{Name: "a3", Value: "v3", Scope: inventory.AttrScopeSystem},
+		{Name: "a1", Value: "v1", Scope: model.ScopeInventory},
+		{Name: "a2", Value: "v2", Scope: model.ScopeInventory},
+		{Name: "a3", Value: "v3", Scope: model.ScopeSystem},
 	}, false)
 	assert.NoError(t, err)
 	assert.Equal(t, inventory.DeviceAttributes{
-		{Name: fmt.Sprintf(inventoryAttributeTemplate, 1), Value: "v1", Scope: inventory.AttrScopeInventory},
-		{Name: fmt.Sprintf(inventoryAttributeTemplate, 2), Value: "v2", Scope: inventory.AttrScopeInventory},
-		{Name: "a3", Value: "v3", Scope: inventory.AttrScopeSystem},
+		{Name: fmt.Sprintf(inventoryAttributeTemplate, 1), Value: "v1", Scope: model.ScopeInventory},
+		{Name: fmt.Sprintf(inventoryAttributeTemplate, 2), Value: "v2", Scope: model.ScopeInventory},
+		{Name: "a3", Value: "v3", Scope: model.ScopeSystem},
 	}, res)
 
 	// first reverse call will also resuse the cached mapping
 	res, err = mapper.ReverseInventoryAttributes(ctx, tenantID, inventory.DeviceAttributes{
-		{Name: fmt.Sprintf(inventoryAttributeTemplate, 1), Value: "v1", Scope: inventory.AttrScopeInventory},
-		{Name: fmt.Sprintf(inventoryAttributeTemplate, 2), Value: "v2", Scope: inventory.AttrScopeInventory},
-		{Name: "a3", Value: "v3", Scope: inventory.AttrScopeSystem},
+		{Name: fmt.Sprintf(inventoryAttributeTemplate, 1), Value: "v1", Scope: model.ScopeInventory},
+		{Name: fmt.Sprintf(inventoryAttributeTemplate, 2), Value: "v2", Scope: model.ScopeInventory},
+		{Name: "a3", Value: "v3", Scope: model.ScopeSystem},
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, inventory.DeviceAttributes{
-		{Name: "a1", Value: "v1", Scope: inventory.AttrScopeInventory},
-		{Name: "a2", Value: "v2", Scope: inventory.AttrScopeInventory},
-		{Name: "a3", Value: "v3", Scope: inventory.AttrScopeSystem},
+		{Name: "a1", Value: "v1", Scope: model.ScopeInventory},
+		{Name: "a2", Value: "v2", Scope: model.ScopeInventory},
+		{Name: "a3", Value: "v3", Scope: model.ScopeSystem},
 	}, res)
 
 	// call with an unseen attribute will trigger a new query to the data storage
@@ -359,16 +358,16 @@ func TestCache(t *testing.T) {
 	}, nil).Once()
 
 	res, err = mapper.ReverseInventoryAttributes(ctx, tenantID, inventory.DeviceAttributes{
-		{Name: fmt.Sprintf(inventoryAttributeTemplate, 1), Value: "v1", Scope: inventory.AttrScopeInventory},
-		{Name: fmt.Sprintf(inventoryAttributeTemplate, 2), Value: "v2", Scope: inventory.AttrScopeInventory},
-		{Name: fmt.Sprintf(inventoryAttributeTemplate, 3), Value: "v3", Scope: inventory.AttrScopeInventory},
-		{Name: "a3", Value: "v3", Scope: inventory.AttrScopeSystem},
+		{Name: fmt.Sprintf(inventoryAttributeTemplate, 1), Value: "v1", Scope: model.ScopeInventory},
+		{Name: fmt.Sprintf(inventoryAttributeTemplate, 2), Value: "v2", Scope: model.ScopeInventory},
+		{Name: fmt.Sprintf(inventoryAttributeTemplate, 3), Value: "v3", Scope: model.ScopeInventory},
+		{Name: "a3", Value: "v3", Scope: model.ScopeSystem},
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, inventory.DeviceAttributes{
-		{Name: "a1", Value: "v1", Scope: inventory.AttrScopeInventory},
-		{Name: "a2", Value: "v2", Scope: inventory.AttrScopeInventory},
-		{Name: "a3", Value: "v3", Scope: inventory.AttrScopeInventory},
-		{Name: "a3", Value: "v3", Scope: inventory.AttrScopeSystem},
+		{Name: "a1", Value: "v1", Scope: model.ScopeInventory},
+		{Name: "a2", Value: "v2", Scope: model.ScopeInventory},
+		{Name: "a3", Value: "v3", Scope: model.ScopeInventory},
+		{Name: "a3", Value: "v3", Scope: model.ScopeSystem},
 	}, res)
 }
