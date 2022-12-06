@@ -30,7 +30,8 @@ const (
 	URIInternal   = "/api/internal/v1/reporting"
 	URIManagement = "/api/management/v1/reporting"
 
-	URILiveliness              = "/alive"
+	URIAlive                   = "/alive"
+	URIHealth                  = "/health"
 	URIInventorySearch         = "/devices/search"
 	URIInventorySearchAttrs    = "/devices/search/attributes"
 	URIInventorySearchInternal = "/inventory/tenants/:tenant_id/search"
@@ -48,7 +49,8 @@ func NewRouter(reporting reporting.App) *gin.Engine {
 
 	internal := NewInternalController(reporting)
 	internalAPI := router.Group(URIInternal)
-	internalAPI.GET(URILiveliness, internal.Alive)
+	internalAPI.GET(URIAlive, internal.Alive)
+	internalAPI.GET(URIHealth, internal.Health)
 	internalAPI.POST(URIInventorySearchInternal, internal.Search)
 
 	mgmt := NewManagementController(reporting)

@@ -29,6 +29,7 @@ import (
 
 //go:generate ../../x/mockgen.sh
 type App interface {
+	HealthCheck(ctx context.Context) error
 	GetSearchableInvAttrs(ctx context.Context, tid string) ([]model.FilterAttribute, error)
 	InventorySearchDevices(ctx context.Context, searchParams *model.SearchParams) (
 		[]inventory.Device, int, error)
@@ -44,6 +45,15 @@ func NewApp(store store.Store, ds store.DataStore) App {
 		store: store,
 		ds:    ds,
 	}
+}
+
+// HealthCheck performs a health check and returns an error if it fails
+func (a *app) HealthCheck(ctx context.Context) error {
+	err := a.ds.Ping(ctx)
+	if err == nil {
+		err = a.store.Ping(ctx)
+	}
+	return err
 }
 
 func (app *app) InventorySearchDevices(
