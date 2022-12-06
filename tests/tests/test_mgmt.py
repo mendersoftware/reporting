@@ -15,6 +15,7 @@
 import json
 import pytest
 import re
+import time
 
 from datetime import datetime, timedelta
 from typing import Union
@@ -30,11 +31,15 @@ class TestManagementSearch:
         # clean up any indices from previous tests
         indices = elasticsearch.cat.indices(format="json")
         for idx in indices:
-            if not idx["index"].startswith('.'):
-                elasticsearch.indices.delete(idx["index"])
+            if not idx["index"].startswith("."):
+                elasticsearch.delete_by_query(
+                    index=[idx["index"]], body={"query": {"match_all": {}}}
+                )
 
         for dev in self._test_set:
-            utils.index_device(elasticsearch, dev)
+            utils.index_device(dev)
+
+        time.sleep(5)
 
     class _TestCase:
         def __init__(

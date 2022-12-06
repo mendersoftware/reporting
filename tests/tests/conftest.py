@@ -24,12 +24,3 @@ def elasticsearch():
     client = Elasticsearch(hosts=hosts)
     yield client
     client.close()
-
-
-@pytest.fixture(scope="function")
-def clean_es(elasticsearch):
-    indices = elasticsearch.cat.indices(format="json")
-    for idx in indices:
-        if not idx["index"].startswith('.'):
-            elasticsearch.indices.delete(idx["index"])
-    yield elasticsearch

@@ -17,6 +17,8 @@ services:
         depends_on:
             - mender-reporting
             - mender-reporting-indexer
+            - mender-workflows-server
+            - mender-workflows-worker
             - mmock
 
     mender-reporting:
@@ -51,8 +53,6 @@ services:
             - "--automigrate"
         networks:
             mender:
-                aliases:
-                    - mender-reporting
         volumes:
             - ".:/testing"
         working_dir: /testing
@@ -66,6 +66,21 @@ services:
             REPORTING_INVENTORY_ADDR: "http://mender-inventory:8080"
             REPORTING_NATS_URI: "nats://mender-nats:4222"
             REPORTING_DEBUG_LOG: "true"
+
+    mender-workflows-server:
+        image: "mendersoftware/workflows:mender-master"
+        restart: always
+        command:
+            - "server"
+            - "--automigrate"
+        networks:
+            mender:
+
+    mender-workflows-worker:
+        image: "mendersoftware/workflows-worker:mender-master"
+        restart: always
+        networks:
+            mender:
 
     mmock:
         image: "jordimartin/mmock:v2.7.9"
