@@ -39,16 +39,17 @@ const (
 type MongoStoreConfig struct {
 	// MongoURL holds the URL to the MongoDB server.
 	MongoURL *url.URL
-	// TLSConfig holds optional tls configuration options for connecting
-	// to the MongoDB server.
-	TLSConfig *tls.Config
+	// SSL Enables SSL for mongo connections
+	SSL bool
+	// SkipVerify controls whether a mongo client verifies the server's
+	// certificate chain and host name.
+	SSLSkipVerify bool
 	// Username holds the user id credential for authenticating with the
 	// MongoDB server.
 	Username string
 	// Password holds the password credential for authenticating with the
 	// MongoDB server.
 	Password string
-
 	// DbName contains the name of the reporting database.
 	DbName string
 }
@@ -73,8 +74,10 @@ func newClient(ctx context.Context, config MongoStoreConfig) (*mongo.Client, err
 		clientOptions.SetAuth(credentials)
 	}
 
-	if config.TLSConfig != nil {
-		clientOptions.SetTLSConfig(config.TLSConfig)
+	if config.SSL {
+		tlsConfig := &tls.Config{}
+		tlsConfig.InsecureSkipVerify = config.SSLSkipVerify
+		clientOptions.SetTLSConfig(tlsConfig)
 	}
 
 	client, err := mongo.Connect(ctx, clientOptions)

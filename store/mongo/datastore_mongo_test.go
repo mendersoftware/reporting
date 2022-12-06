@@ -16,7 +16,6 @@ package mongo
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"net/url"
 	"testing"
@@ -115,11 +114,11 @@ func TestNewMongoStore(t *testing.T) {
 
 		Config: MongoStoreConfig{
 			DbName: t.Name(),
+			SSL:    true,
 			MongoURL: func() *url.URL {
 				uri, _ := url.Parse(db.URL())
 				return uri
 			}(),
-			TLSConfig: &tls.Config{},
 		},
 		Error: errors.New("^mongo: error reaching mongo server:.*" +
 			context.Canceled.Error(),

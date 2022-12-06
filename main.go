@@ -248,10 +248,12 @@ func getDatastore(args *cli.Context) (store.DataStore, error) {
 	}
 
 	storeConfig := mongo.MongoStoreConfig{
-		MongoURL: mgoURL,
-		Username: config.Config.GetString(dconfig.SettingDbUsername),
-		Password: config.Config.GetString(dconfig.SettingDbPassword),
-		DbName:   mongo.DbName,
+		MongoURL:      mgoURL,
+		SSL:           config.Config.GetBool(dconfig.SettingDbSSL),
+		SSLSkipVerify: config.Config.GetBool(dconfig.SettingDbSSLSkipVerify),
+		Username:      config.Config.GetString(dconfig.SettingDbUsername),
+		Password:      config.Config.GetString(dconfig.SettingDbPassword),
+		DbName:        mongo.DbName,
 	}
 
 	return mongo.NewMongoStore(context.Background(), storeConfig)
