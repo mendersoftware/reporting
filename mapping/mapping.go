@@ -17,6 +17,7 @@ package mapping
 import (
 	"context"
 	"fmt"
+	"math"
 	"sync"
 
 	"github.com/mendersoftware/reporting/client/inventory"
@@ -74,7 +75,8 @@ func (m *mapper) MapInventoryAttributes(ctx context.Context, tenantID string,
 		if err != nil {
 			return nil, err
 		}
-		attributesToFieldsMap = attributesToFields(mapping.Inventory)
+		n := int(math.Min(float64(len(mapping.Inventory)), model.MaxMappingInventoryAttributes))
+		attributesToFieldsMap = attributesToFields(mapping.Inventory[:n])
 	}
 	return mapAttributes(attrs, attributesToFieldsMap), nil
 }
@@ -88,7 +90,8 @@ func (m *mapper) ReverseInventoryAttributes(ctx context.Context, tenantID string
 		if err != nil {
 			return nil, err
 		}
-		attributesToFieldsMap = fieldsToAttributes(mapping.Inventory)
+		n := int(math.Min(float64(len(mapping.Inventory)), model.MaxMappingInventoryAttributes))
+		attributesToFieldsMap = fieldsToAttributes(mapping.Inventory[:n])
 	}
 	return mapAttributes(attrs, attributesToFieldsMap), nil
 }
@@ -106,7 +109,8 @@ func (m *mapper) cacheMapping(tenantID string, mapping *model.Mapping) {
 		inventory:        make(map[string]string),
 		inventoryReverse: make(map[string]string),
 	}
-	for i, attr := range mapping.Inventory {
+	n := int(math.Min(float64(len(mapping.Inventory)), model.MaxMappingInventoryAttributes))
+	for i, attr := range mapping.Inventory[:n] {
 		attrName := fmt.Sprintf(inventoryAttributeTemplate, i+1)
 		cache.inventory[attr] = attrName
 		cache.inventoryReverse[attrName] = attr
@@ -128,10 +132,12 @@ func (m *mapper) lookupMapping(tenantID string, attrs inventory.DeviceAttributes
 		} else {
 			cacheAttributes = cache.inventory
 		}
-		for i := 0; i < len(attrs); i++ {
-			if attrs[i].Scope == inventory.AttrScopeInventory {
-				if _, ok := cacheAttributes[attrs[i].Name]; !ok {
-					return nil
+		if len(cacheAttributes) < model.MaxMappingInventoryAttributes {
+			for i := 0; i < len(attrs); i++ {
+				if attrs[i].Scope == inventory.AttrScopeInventory {
+					if _, ok := cacheAttributes[attrs[i].Name]; !ok {
+						return nil
+					}
 				}
 			}
 		}
