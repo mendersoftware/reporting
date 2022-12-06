@@ -154,6 +154,9 @@ func (m *mapper) updateAndGetMapping(ctx context.Context, tenantID string,
 			inventoryMapping = append(inventoryMapping, attrs[i].Name)
 		}
 	}
+	if len(inventoryMapping) > model.MaxMappingInventoryAttributes {
+		inventoryMapping = inventoryMapping[:model.MaxMappingInventoryAttributes]
+	}
 	mapping, err := m.ds.UpdateAndGetMapping(ctx, tenantID, inventoryMapping)
 	if err != nil {
 		return nil, err
@@ -185,7 +188,7 @@ func mapAttributes(attrs inventory.DeviceAttributes,
 }
 
 func attributesToFields(attrs []string) map[string]string {
-	var attributesToFields = make(map[string]string)
+	var attributesToFields = make(map[string]string, len(attrs))
 	for i := 0; i < len(attrs); i++ {
 		attributesToFields[attrs[i]] = fmt.Sprintf(inventoryAttributeTemplate, i+1)
 	}
@@ -193,7 +196,7 @@ func attributesToFields(attrs []string) map[string]string {
 }
 
 func fieldsToAttributes(attrs []string) map[string]string {
-	var fieldsToAttributes = make(map[string]string)
+	var fieldsToAttributes = make(map[string]string, len(attrs))
 	for i := 0; i < len(attrs); i++ {
 		fieldsToAttributes[fmt.Sprintf(inventoryAttributeTemplate, i+1)] = attrs[i]
 	}
