@@ -64,7 +64,7 @@ func (app *app) InventorySearchDevices(
 	ctx context.Context,
 	searchParams *model.SearchParams,
 ) ([]inventory.Device, int, error) {
-	if err := app.mapSearchParamsAttributes(ctx, searchParams); err != nil {
+	if err := app.mapSearchParams(ctx, searchParams); err != nil {
 		return nil, 0, err
 	}
 	query, err := model.BuildQuery(*searchParams)
@@ -101,8 +101,32 @@ func (app *app) InventorySearchDevices(
 	return res, total, err
 }
 
-func (app *app) mapSearchParamsAttributes(ctx context.Context,
-	searchParams *model.SearchParams) error {
+func (app *app) mapSearchParams(ctx context.Context, searchParams *model.SearchParams) error {
+	if len(searchParams.Filters) > 0 {
+		attributes := make(inventory.DeviceAttributes, 0, len(searchParams.Attributes))
+		for i := 0; i < len(searchParams.Filters); i++ {
+			attributes = append(attributes, inventory.DeviceAttribute{
+				Name:        searchParams.Filters[i].Attribute,
+				Scope:       searchParams.Filters[i].Scope,
+				Value:       searchParams.Filters[i].Value,
+				Description: &searchParams.Filters[i].Type,
+			})
+		}
+		attributes, err := app.mapper.MapInventoryAttributes(ctx, searchParams.TenantID,
+			attributes, false)
+		if err != nil {
+			return err
+		}
+		searchParams.Filters = make([]model.FilterPredicate, 0, len(searchParams.Filters))
+		for _, attribute := range attributes {
+			searchParams.Filters = append(searchParams.Filters, model.FilterPredicate{
+				Attribute: attribute.Name,
+				Scope:     attribute.Scope,
+				Value:     attribute.Value,
+				Type:      *attribute.Description,
+			})
+		}
+	}
 	if len(searchParams.Attributes) > 0 {
 		attributes := make(inventory.DeviceAttributes, 0, len(searchParams.Attributes))
 		for i := 0; i < len(searchParams.Attributes); i++ {
@@ -124,6 +148,30 @@ func (app *app) mapSearchParamsAttributes(ctx context.Context,
 			})
 		}
 	}
+	if len(searchParams.Sort) > 0 {
+		attributes := make(inventory.DeviceAttributes, 0, len(searchParams.Sort))
+		for i := 0; i < len(searchParams.Sort); i++ {
+			attributes = append(attributes, inventory.DeviceAttribute{
+				Name:        searchParams.Sort[i].Attribute,
+				Scope:       searchParams.Sort[i].Scope,
+				Description: &searchParams.Sort[i].Order,
+			})
+		}
+		attributes, err := app.mapper.MapInventoryAttributes(ctx, searchParams.TenantID,
+			attributes, false)
+		if err != nil {
+			return err
+		}
+		searchParams.Sort = make([]model.SortCriteria, 0, len(searchParams.Attributes))
+		for _, attribute := range attributes {
+			searchParams.Sort = append(searchParams.Sort, model.SortCriteria{
+				Attribute: attribute.Name,
+				Scope:     attribute.Scope,
+				Order:     *attribute.Description,
+			})
+		}
+	}
+
 	return nil
 }
 

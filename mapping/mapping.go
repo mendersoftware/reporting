@@ -190,9 +190,10 @@ func mapAttributes(attrs inventory.DeviceAttributes,
 		}
 		if attrName != "" {
 			mappedAttr := inventory.DeviceAttribute{
-				Name:  attrName,
-				Value: attrs[i].Value,
-				Scope: attrs[i].Scope,
+				Name:        attrName,
+				Scope:       attrs[i].Scope,
+				Value:       attrs[i].Value,
+				Description: attrs[i].Description,
 			}
 			mappedAttrs = append(mappedAttrs, mappedAttr)
 		}

@@ -34,9 +34,10 @@ func TestInventorySearchDevices(t *testing.T) {
 	type testCase struct {
 		Name string
 
-		Params  *model.SearchParams
-		Store   func(*testing.T, testCase) *mstore.Store
-		Mapping model.Mapping
+		Params       *model.SearchParams
+		MappedParams *model.SearchParams
+		Store        func(*testing.T, testCase) *mstore.Store
+		Mapping      model.Mapping
 
 		Result     []inventory.Device
 		TotalCount int
@@ -59,9 +60,23 @@ func TestInventorySearchDevices(t *testing.T) {
 			}},
 			DeviceIDs: []string{"194d1060-1717-44dc-a783-00038f4a8013"},
 		},
+		MappedParams: &model.SearchParams{
+			Filters: []model.FilterPredicate{{
+				Attribute: "attribute1",
+				Value:     "bar",
+				Scope:     "inventory",
+				Type:      "$eq",
+			}},
+			Sort: []model.SortCriteria{{
+				Attribute: "attribute1",
+				Scope:     "inventory",
+				Order:     "desc",
+			}},
+			DeviceIDs: []string{"194d1060-1717-44dc-a783-00038f4a8013"},
+		},
 		Store: func(t *testing.T, self testCase) *mstore.Store {
 			store := new(mstore.Store)
-			q, _ := model.BuildQuery(*self.Params)
+			q, _ := model.BuildQuery(*self.MappedParams)
 			q = q.Must(model.M{"terms": model.M{"id": self.Params.DeviceIDs}})
 			store.On("Search", contextMatcher, q).
 				Return(model.M{"hits": map[string]interface{}{"hits": []interface{}{
@@ -78,7 +93,7 @@ func TestInventorySearchDevices(t *testing.T) {
 		},
 		Mapping: model.Mapping{
 			TenantID:  "",
-			Inventory: []string{"foo"},
+			Inventory: []string{"inventory/foo"},
 		},
 		TotalCount: 1,
 		Result: []inventory.Device{{
@@ -148,9 +163,13 @@ func TestInventorySearchDevices(t *testing.T) {
 			Filters: []model.FilterPredicate{{
 				Attribute: "foo",
 				Value:     true,
-				Scope:     "baz",
+				Scope:     "inventory",
 				Type:      "$useyourimagination",
 			}},
+		},
+		Mapping: model.Mapping{
+			TenantID:  "",
+			Inventory: []string{"inventory/foo"},
 		},
 		Error: errors.New("filter type not supported"),
 	}}
