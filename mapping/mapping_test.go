@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path"
 	"testing"
 
 	"github.com/mendersoftware/reporting/client/inventory"
@@ -49,8 +50,11 @@ func TestMapInventoryAttributes(t *testing.T) {
 			},
 			update: true,
 			mapping: &model.Mapping{
-				TenantID:  tenantID,
-				Inventory: []string{"a1", "a2"},
+				TenantID: tenantID,
+				Inventory: []string{
+					path.Join(model.ScopeInventory, "a1"),
+					path.Join(model.ScopeInventory, "a2"),
+				},
 			},
 			out: inventory.DeviceAttributes{
 				{Name: fmt.Sprintf(inventoryAttributeTemplate, 1), Value: "v1", Scope: model.ScopeInventory},
@@ -66,8 +70,11 @@ func TestMapInventoryAttributes(t *testing.T) {
 			},
 			update: false,
 			mapping: &model.Mapping{
-				TenantID:  tenantID,
-				Inventory: []string{"a1", "a2"},
+				TenantID: tenantID,
+				Inventory: []string{
+					path.Join(model.ScopeInventory, "a1"),
+					path.Join(model.ScopeInventory, "a2"),
+				},
 			},
 			out: inventory.DeviceAttributes{
 				{Name: fmt.Sprintf(inventoryAttributeTemplate, 1), Value: "v1", Scope: model.ScopeInventory},
@@ -129,8 +136,11 @@ func TestReverseInventoryAttributes(t *testing.T) {
 				{Name: "a3", Value: "v3", Scope: model.ScopeSystem},
 			},
 			mapping: &model.Mapping{
-				TenantID:  tenantID,
-				Inventory: []string{"a1", "a2"},
+				TenantID: tenantID,
+				Inventory: []string{
+					path.Join(model.ScopeInventory, "a1"),
+					path.Join(model.ScopeInventory, "a2"),
+				},
 			},
 			out: inventory.DeviceAttributes{
 				{Name: "a1", Value: "v1", Scope: model.ScopeInventory},
@@ -182,7 +192,10 @@ func TestGetMapping(t *testing.T) {
 				{Name: "a1", Value: "v1", Scope: model.ScopeInventory},
 				{Name: "a2", Value: "v2", Scope: model.ScopeInventory},
 			},
-			inventoryMapping: []string{"a1", "a2"},
+			inventoryMapping: []string{
+				path.Join(model.ScopeInventory, "a1"),
+				path.Join(model.ScopeInventory, "a2"),
+			},
 			mapping: &model.Mapping{
 				TenantID:  tenantID,
 				Inventory: []string{"a1", "a2"},
@@ -195,8 +208,13 @@ func TestGetMapping(t *testing.T) {
 				{Name: "a3", Value: "v2", Scope: model.ScopeInventory},
 				{Name: "a2", Value: "v2", Scope: model.ScopeInventory},
 			},
-			inventoryMapping: []string{"a1", "a2", "a3", "a2"},
-			err:              errors.New("error"),
+			inventoryMapping: []string{
+				path.Join(model.ScopeInventory, "a1"),
+				path.Join(model.ScopeInventory, "a2"),
+				path.Join(model.ScopeInventory, "a3"),
+				path.Join(model.ScopeInventory, "a2"),
+			},
+			err: errors.New("error"),
 		},
 	}
 	for name, tc := range testCases {
@@ -246,7 +264,7 @@ func TestMapAttributes(t *testing.T) {
 	}
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			out := mapAttributes(tc.attrs, tc.mapping)
+			out := mapAttributes(tc.attrs, tc.mapping, true)
 			assert.Equal(t, tc.out, out)
 		})
 	}
@@ -303,8 +321,11 @@ func TestCache(t *testing.T) {
 		ctx,
 		tenantID,
 	).Return(&model.Mapping{
-		TenantID:  tenantID,
-		Inventory: []string{"a1", "a2"},
+		TenantID: tenantID,
+		Inventory: []string{
+			path.Join(model.ScopeInventory, "a1"),
+			path.Join(model.ScopeInventory, "a2"),
+		},
 	}, nil).Once()
 
 	mapper := NewMapper(ds)

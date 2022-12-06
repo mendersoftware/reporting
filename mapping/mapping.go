@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"path"
 	"sync"
 
 	"github.com/mendersoftware/reporting/client/inventory"
@@ -78,7 +79,7 @@ func (m *mapper) MapInventoryAttributes(ctx context.Context, tenantID string,
 		n := int(math.Min(float64(len(mapping.Inventory)), model.MaxMappingInventoryAttributes))
 		attributesToFieldsMap = attributesToFields(mapping.Inventory[:n])
 	}
-	return mapAttributes(attrs, attributesToFieldsMap), nil
+	return mapAttributes(attrs, attributesToFieldsMap, false), nil
 }
 
 // ReverseInventoryAttributes looks up the inventory attribute names from the ES fields
@@ -93,7 +94,7 @@ func (m *mapper) ReverseInventoryAttributes(ctx context.Context, tenantID string
 		n := int(math.Min(float64(len(mapping.Inventory)), model.MaxMappingInventoryAttributes))
 		attributesToFieldsMap = fieldsToAttributes(mapping.Inventory[:n])
 	}
-	return mapAttributes(attrs, attributesToFieldsMap), nil
+	return mapAttributes(attrs, attributesToFieldsMap, true), nil
 }
 
 func (m *mapper) getMapping(ctx context.Context, tenantID string) (*model.Mapping, error) {
@@ -134,8 +135,14 @@ func (m *mapper) lookupMapping(tenantID string, attrs inventory.DeviceAttributes
 		}
 		if len(cacheAttributes) < model.MaxMappingInventoryAttributes {
 			for i := 0; i < len(attrs); i++ {
-				if shouldMapScope(attrs[i].Scope) {
-					if _, ok := cacheAttributes[attrs[i].Name]; !ok {
+				if shouldMapScope(attrs[i].Scope, attrs[i].Name) {
+					var key string
+					if reverse {
+						key = attrs[i].Name
+					} else {
+						key = path.Join(attrs[i].Scope, attrs[i].Name)
+					}
+					if _, ok := cacheAttributes[key]; !ok {
 						return nil
 					}
 				}
@@ -150,8 +157,9 @@ func (m *mapper) updateAndGetMapping(ctx context.Context, tenantID string,
 	attrs inventory.DeviceAttributes) (*model.Mapping, error) {
 	inventoryMapping := make([]string, 0, len(attrs))
 	for i := 0; i < len(attrs); i++ {
-		if shouldMapScope(attrs[i].Scope) {
-			inventoryMapping = append(inventoryMapping, attrs[i].Name)
+		if shouldMapScope(attrs[i].Scope, attrs[i].Name) {
+			key := path.Join(attrs[i].Scope, attrs[i].Name)
+			inventoryMapping = append(inventoryMapping, key)
 		}
 	}
 	if len(inventoryMapping) > model.MaxMappingInventoryAttributes {
@@ -166,13 +174,18 @@ func (m *mapper) updateAndGetMapping(ctx context.Context, tenantID string,
 }
 
 func mapAttributes(attrs inventory.DeviceAttributes,
-	mapping map[string]string) inventory.DeviceAttributes {
+	mapping map[string]string, reverse bool) inventory.DeviceAttributes {
 	mappedAttrs := make(inventory.DeviceAttributes, 0, len(attrs))
 	for i := 0; i < len(attrs); i++ {
 		var attrName string
-		if !shouldMapScope(attrs[i].Scope) {
+		if !shouldMapScope(attrs[i].Scope, attrs[i].Name) {
 			attrName = attrs[i].Name
-		} else if name, ok := mapping[attrs[i].Name]; ok {
+		} else if reverse {
+			if name, ok := mapping[attrs[i].Name]; ok {
+				_, name = path.Split(name)
+				attrName = name
+			}
+		} else if name, ok := mapping[path.Join(attrs[i].Scope, attrs[i].Name)]; ok {
 			attrName = name
 		}
 		if attrName != "" {
@@ -203,6 +216,7 @@ func fieldsToAttributes(attrs []string) map[string]string {
 	return fieldsToAttributes
 }
 
-func shouldMapScope(scope string) bool {
-	return scope != model.ScopeSystem
+func shouldMapScope(scope, attribute string) bool {
+	return scope != model.ScopeSystem &&
+		!(scope == model.ScopeIdentity && attribute == model.AttrNameStatus)
 }
