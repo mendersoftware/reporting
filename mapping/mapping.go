@@ -60,7 +60,7 @@ func newMapper(ds store.DataStore) *mapper {
 	}
 }
 
-// MapInventoryAttribute maps an inventory attribute to an ES field
+// MapInventoryAttributes maps inventory attributes to ES fields
 func (m *mapper) MapInventoryAttributes(ctx context.Context, tenantID string,
 	attrs inventory.DeviceAttributes, update bool) (inventory.DeviceAttributes, error) {
 	attributesToFieldsMap := m.lookupMapping(tenantID, attrs, false)
@@ -81,7 +81,7 @@ func (m *mapper) MapInventoryAttributes(ctx context.Context, tenantID string,
 	return mapAttributes(attrs, attributesToFieldsMap), nil
 }
 
-// ReverseInventoryAttribute looks up the inventory attribute name from the ES field
+// ReverseInventoryAttributes looks up the inventory attribute names from the ES fields
 func (m *mapper) ReverseInventoryAttributes(ctx context.Context, tenantID string,
 	attrs inventory.DeviceAttributes) (inventory.DeviceAttributes, error) {
 	attributesToFieldsMap := m.lookupMapping(tenantID, attrs, true)
