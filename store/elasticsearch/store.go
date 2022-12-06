@@ -316,6 +316,8 @@ func (s *elasticStore) Search(ctx context.Context, query interface{}) (model.M, 
 		return nil, err
 	}
 
+	l.Debugf("es response: %v", ret)
+
 	return ret, nil
 }
 
