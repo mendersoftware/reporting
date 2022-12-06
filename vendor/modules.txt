@@ -97,14 +97,12 @@ github.com/mendersoftware/go-lib-micro/addons
 github.com/mendersoftware/go-lib-micro/config
 github.com/mendersoftware/go-lib-micro/identity
 github.com/mendersoftware/go-lib-micro/log
-github.com/mendersoftware/go-lib-micro/mongo/doc
 github.com/mendersoftware/go-lib-micro/mongo/migrate
 github.com/mendersoftware/go-lib-micro/rbac
 github.com/mendersoftware/go-lib-micro/requestid
 github.com/mendersoftware/go-lib-micro/requestlog
 github.com/mendersoftware/go-lib-micro/rest.utils
 github.com/mendersoftware/go-lib-micro/store
-github.com/mendersoftware/go-lib-micro/store/v2
 # github.com/mitchellh/mapstructure v1.5.0
 ## explicit; go 1.14
 github.com/mitchellh/mapstructure

@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"net/url"
 
-	mstore "github.com/mendersoftware/go-lib-micro/store/v2"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -115,7 +114,7 @@ func NewMongoStore(ctx context.Context, config MongoStoreConfig) (*MongoStore, e
 }
 
 func (db *MongoStore) Database(ctx context.Context, opt ...*mopts.DatabaseOptions) *mongo.Database {
-	return db.client.Database(mstore.DbFromContext(ctx, db.config.DbName), opt...)
+	return db.client.Database(db.config.DbName, opt...)
 }
 
 // Ping verifies the connection to the database
@@ -135,7 +134,7 @@ func (db *MongoStore) Close(ctx context.Context) error {
 //nolint:unused
 func (db *MongoStore) DropDatabase(ctx context.Context) error {
 	err := db.client.
-		Database(mstore.DbFromContext(ctx, db.config.DbName)).
+		Database(db.config.DbName).
 		Drop(ctx)
 	return err
 }
@@ -146,7 +145,7 @@ func (db *MongoStore) GetMapping(ctx context.Context, tenantID string) (*model.M
 		keyNameTenantID: tenantID,
 	}
 	res := db.client.
-		Database(mstore.DbFromContext(ctx, db.config.DbName)).
+		Database(db.config.DbName).
 		Collection(collNameMapping).
 		FindOne(ctx, query)
 
@@ -187,7 +186,7 @@ func (db *MongoStore) UpdateAndGetMapping(ctx context.Context, tenantID string,
 		Upsert:         &upsert,
 	}
 	res := db.client.
-		Database(mstore.DbFromContext(ctx, db.config.DbName)).
+		Database(db.config.DbName).
 		Collection(collNameMapping).
 		FindOneAndUpdate(ctx, query, update, opts)
 

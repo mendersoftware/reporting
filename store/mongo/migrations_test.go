@@ -41,19 +41,6 @@ func TestMigrate(t *testing.T) {
 		Version:     DbVersion,
 		Automigrate: true,
 	}, {
-		Name: "error, context canceled getting tenant dbs",
-
-		CTX: func() context.Context {
-			ctx, cancel := context.WithCancel(context.TODO())
-			cancel()
-			return ctx
-		}(),
-		Version: DbVersion,
-		Error: errors.Errorf(
-			"failed to resolve tenant databases: .*%s",
-			context.Canceled.Error(),
-		),
-	}, {
 		Name: "error, context canceled applying migrations",
 		CTX: func() context.Context {
 			ctx := identity.WithContext(context.TODO(),

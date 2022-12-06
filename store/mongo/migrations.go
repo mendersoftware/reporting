@@ -19,7 +19,6 @@ import (
 
 	"github.com/mendersoftware/go-lib-micro/log"
 	"github.com/mendersoftware/go-lib-micro/mongo/migrate"
-	mstore "github.com/mendersoftware/go-lib-micro/store"
 	"github.com/pkg/errors"
 )
 
@@ -41,39 +40,22 @@ func (db *MongoStore) Migrate(ctx context.Context, version string, automigrate b
 		return errors.Wrap(err, "failed to parse service version")
 	}
 	l := log.FromContext(ctx)
-	dbName := mstore.DbFromContext(ctx, db.config.DbName)
-	migrationTargets := []string{dbName}
-	isTenantDb := mstore.IsTenantDb(db.config.DbName)
-	if !isTenantDb(dbName) {
-		tenantDBs, err := migrate.GetTenantDbs(
-			ctx, db.client, isTenantDb,
-		)
-		if err != nil {
-			return errors.Wrap(
-				err, "failed to resolve tenant databases",
-			)
-		}
-		migrationTargets = append(tenantDBs, dbName)
+	l.Infof("Migrating database: %s", db.config.DbName)
+
+	m := migrate.SimpleMigrator{
+		Client:      db.client,
+		Db:          db.config.DbName,
+		Automigrate: automigrate,
 	}
-
-	for _, DBName := range migrationTargets {
-		l.Infof("Migrating database: %s", DBName)
-
-		m := migrate.SimpleMigrator{
-			Client:      db.client,
-			Db:          DBName,
-			Automigrate: automigrate,
-		}
-		migrations := []migrate.Migration{
-			&migration_1_0_0{
-				client: db.client,
-				db:     DBName,
-			},
-		}
-		err = m.Apply(ctx, *ver, migrations)
-		if err != nil {
-			return errors.Wrap(err, "failed to apply migrations")
-		}
+	migrations := []migrate.Migration{
+		&migration_1_0_0{
+			client: db.client,
+			db:     db.config.DbName,
+		},
+	}
+	err = m.Apply(ctx, *ver, migrations)
+	if err != nil {
+		return errors.Wrap(err, "failed to apply migrations")
 	}
 	return nil
 }

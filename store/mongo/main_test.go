@@ -26,7 +26,6 @@ import (
 	"testing"
 	"time"
 
-	mstore "github.com/mendersoftware/go-lib-micro/store"
 	"go.mongodb.org/mongo-driver/mongo"
 	mopts "go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/net/context"
@@ -94,8 +93,7 @@ func GetTestDataStore(t *testing.T) *MongoStore {
 
 // GetTestDatabase as function above returns the test-local database.
 func GetTestDatabase(ctx context.Context, t *testing.T) *mongo.Database {
-	dbName := legalizeDbName(t.Name())
-	return client.Database(mstore.DbFromContext(ctx, dbName))
+	return client.Database(DbName)
 }
 
 type MongoTestInstance struct {
