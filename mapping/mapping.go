@@ -18,7 +18,9 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"os"
 	"path"
+	"strings"
 	"sync"
 
 	"github.com/mendersoftware/reporting/client/inventory"
@@ -182,8 +184,8 @@ func mapAttributes(attrs inventory.DeviceAttributes,
 			attrName = attrs[i].Name
 		} else if reverse {
 			if name, ok := mapping[attrs[i].Name]; ok {
-				_, name = path.Split(name)
-				attrName = name
+				parts := strings.SplitN(name, string(os.PathSeparator), 2)
+				attrName = parts[len(parts)-1]
 			}
 		} else if name, ok := mapping[path.Join(attrs[i].Scope, attrs[i].Name)]; ok {
 			attrName = name
