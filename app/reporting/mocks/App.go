@@ -30,6 +30,29 @@ type App struct {
 	mock.Mock
 }
 
+// GetMapping provides a mock function with given fields: ctx, tid
+func (_m *App) GetMapping(ctx context.Context, tid string) (*model.Mapping, error) {
+	ret := _m.Called(ctx, tid)
+
+	var r0 *model.Mapping
+	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Mapping); ok {
+		r0 = rf(ctx, tid)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Mapping)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, tid)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetSearchableInvAttrs provides a mock function with given fields: ctx, tid
 func (_m *App) GetSearchableInvAttrs(ctx context.Context, tid string) ([]model.FilterAttribute, error) {
 	ret := _m.Called(ctx, tid)

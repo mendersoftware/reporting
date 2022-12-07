@@ -29,6 +29,23 @@ import (
 
 var contextMatcher = mock.MatchedBy(func(_ context.Context) bool { return true })
 
+func TestGetMapping(t *testing.T) {
+	const tenantID = "tenant_id"
+	ctx := context.Background()
+
+	mapping := &model.Mapping{
+		TenantID: tenantID,
+	}
+
+	ds := &mstore.DataStore{}
+	ds.On("GetMapping", ctx, tenantID).Return(mapping, nil)
+
+	app := NewApp(nil, ds)
+	res, err := app.GetMapping(ctx, tenantID)
+	assert.NoError(t, err)
+	assert.Equal(t, mapping, res)
+}
+
 func TestInventorySearchDevices(t *testing.T) {
 	t.Parallel()
 	type testCase struct {

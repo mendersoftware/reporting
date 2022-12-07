@@ -13,6 +13,52 @@ security:
   - ManagementJWT: []
 
 paths:
+  /devices/attributes:
+    get:
+      tags:
+        - Management API
+      operationId: Get device filterable attributes usage and limits
+      summary: Get the list of device filterable attributes and the limits
+      description:  |
+        Returns a list of device filterable attributes.
+      responses:
+        200:
+          description: OK. Returns a list of filterable attributes.
+          content:
+            application/json:
+              schema:
+                title: Attributes usage and limits
+                type: object
+                properties:
+                  attributes:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                          description: Attribute key to compare.
+                        scope:
+                          type: string
+                          description: The scope the attribute exists in.
+                    description: List of filterable attributes
+                  count:
+                    type: integer
+                    description: Current number of device filterable attributes
+                  limit:
+                    type: integer
+                    description: Maximum number of device filterable attributes
+                example:
+                  attributes:
+                    - name: "system-version"
+                      scope: "inventory"
+                    - name: "SN"
+                      scope: "inventory"
+                  count: 2
+                  limit: 100
+        500:
+          $ref: '#/components/responses/InternalServerError'
+
   /devices/search:
     post:
       tags:

@@ -32,6 +32,7 @@ const (
 
 	URIAlive                   = "/alive"
 	URIHealth                  = "/health"
+	URIInventoryAttrs          = "/devices/attributes"
 	URIInventorySearch         = "/devices/search"
 	URIInventorySearchAttrs    = "/devices/search/attributes"
 	URIInventorySearchInternal = "/inventory/tenants/:tenant_id/search"
@@ -57,6 +58,7 @@ func NewRouter(reporting reporting.App) *gin.Engine {
 	mgmtAPI := router.Group(URIManagement)
 	mgmtAPI.Use(identity.Middleware())
 	mgmtAPI.Use(rbac.Middleware())
+	mgmtAPI.GET(URIInventoryAttrs, mgmt.Attrs)
 	mgmtAPI.POST(URIInventorySearch, mgmt.Search)
 	mgmtAPI.GET(URIInventorySearchAttrs, mgmt.SearchAttrs)
 

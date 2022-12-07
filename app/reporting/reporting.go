@@ -31,6 +31,7 @@ import (
 //go:generate ../../x/mockgen.sh
 type App interface {
 	HealthCheck(ctx context.Context) error
+	GetMapping(ctx context.Context, tid string) (*model.Mapping, error)
 	GetSearchableInvAttrs(ctx context.Context, tid string) ([]model.FilterAttribute, error)
 	InventorySearchDevices(ctx context.Context, searchParams *model.SearchParams) (
 		[]inventory.Device, int, error)
@@ -58,6 +59,11 @@ func (a *app) HealthCheck(ctx context.Context) error {
 		err = a.store.Ping(ctx)
 	}
 	return err
+}
+
+// GetMapping returns the mapping for the specified tenant
+func (app *app) GetMapping(ctx context.Context, tid string) (*model.Mapping, error) {
+	return app.ds.GetMapping(ctx, tid)
 }
 
 func (app *app) InventorySearchDevices(
