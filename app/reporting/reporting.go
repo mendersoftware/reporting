@@ -119,7 +119,7 @@ func (app *app) mapSearchParams(ctx context.Context, searchParams *model.SearchP
 			})
 		}
 		attributes, err := app.mapper.MapInventoryAttributes(ctx, searchParams.TenantID,
-			attributes, false)
+			attributes, false, true)
 		if err != nil {
 			return err
 		}
@@ -142,7 +142,7 @@ func (app *app) mapSearchParams(ctx context.Context, searchParams *model.SearchP
 			})
 		}
 		attributes, err := app.mapper.MapInventoryAttributes(ctx, searchParams.TenantID,
-			attributes, false)
+			attributes, false, false)
 		if err != nil {
 			return err
 		}
@@ -164,7 +164,7 @@ func (app *app) mapSearchParams(ctx context.Context, searchParams *model.SearchP
 			})
 		}
 		attributes, err := app.mapper.MapInventoryAttributes(ctx, searchParams.TenantID,
-			attributes, false)
+			attributes, false, false)
 		if err != nil {
 			return err
 		}

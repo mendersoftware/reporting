@@ -36,11 +36,12 @@ func TestNewMapper(t *testing.T) {
 func TestMapInventoryAttributes(t *testing.T) {
 	const tenantID = "tenantID"
 	testCases := map[string]struct {
-		attrs   inventory.DeviceAttributes
-		update  bool
-		mapping *model.Mapping
-		out     inventory.DeviceAttributes
-		err     error
+		attrs       inventory.DeviceAttributes
+		update      bool
+		passthrough bool
+		mapping     *model.Mapping
+		out         inventory.DeviceAttributes
+		err         error
 	}{
 		"ok": {
 			attrs: inventory.DeviceAttributes{
@@ -81,6 +82,27 @@ func TestMapInventoryAttributes(t *testing.T) {
 				{Name: fmt.Sprintf(inventoryAttributeTemplate, 2), Value: "v2", Scope: model.ScopeInventory},
 			},
 		},
+		"ok, no update, passthrough": {
+			attrs: inventory.DeviceAttributes{
+				{Name: "a1", Value: "v1", Scope: model.ScopeInventory},
+				{Name: "a2", Value: "v2", Scope: model.ScopeInventory},
+				{Name: "a3", Value: "v3", Scope: model.ScopeInventory},
+			},
+			update:      false,
+			passthrough: true,
+			mapping: &model.Mapping{
+				TenantID: tenantID,
+				Inventory: []string{
+					path.Join(model.ScopeInventory, "a1"),
+					path.Join(model.ScopeInventory, "a2"),
+				},
+			},
+			out: inventory.DeviceAttributes{
+				{Name: fmt.Sprintf(inventoryAttributeTemplate, 1), Value: "v1", Scope: model.ScopeInventory},
+				{Name: fmt.Sprintf(inventoryAttributeTemplate, 2), Value: "v2", Scope: model.ScopeInventory},
+				{Name: "a3", Value: "v3", Scope: model.ScopeInventory},
+			},
+		},
 		"error": {
 			attrs: inventory.DeviceAttributes{
 				{Name: "a1", Value: "v1", Scope: model.ScopeInventory},
@@ -109,7 +131,7 @@ func TestMapInventoryAttributes(t *testing.T) {
 			}
 
 			mapper := NewMapper(ds)
-			attrs, err := mapper.MapInventoryAttributes(ctx, tenantID, tc.attrs, tc.update)
+			attrs, err := mapper.MapInventoryAttributes(ctx, tenantID, tc.attrs, tc.update, tc.passthrough)
 			if tc.err != nil {
 				assert.Equal(t, tc.err, err)
 				assert.Nil(t, attrs)
@@ -264,7 +286,7 @@ func TestMapAttributes(t *testing.T) {
 	}
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			out := mapAttributes(tc.attrs, tc.mapping, true)
+			out := mapAttributes(tc.attrs, tc.mapping, true, false)
 			assert.Equal(t, tc.out, out)
 		})
 	}
@@ -335,7 +357,7 @@ func TestCache(t *testing.T) {
 		{Name: "a1", Value: "v1", Scope: model.ScopeInventory},
 		{Name: "a2", Value: "v2", Scope: model.ScopeInventory},
 		{Name: "a3", Value: "v3", Scope: model.ScopeSystem},
-	}, false)
+	}, false, false)
 	assert.NoError(t, err)
 	assert.Equal(t, inventory.DeviceAttributes{
 		{Name: fmt.Sprintf(inventoryAttributeTemplate, 1), Value: "v1", Scope: model.ScopeInventory},
@@ -348,7 +370,7 @@ func TestCache(t *testing.T) {
 		{Name: "a1", Value: "v1", Scope: model.ScopeInventory},
 		{Name: "a2", Value: "v2", Scope: model.ScopeInventory},
 		{Name: "a3", Value: "v3", Scope: model.ScopeSystem},
-	}, false)
+	}, false, false)
 	assert.NoError(t, err)
 	assert.Equal(t, inventory.DeviceAttributes{
 		{Name: fmt.Sprintf(inventoryAttributeTemplate, 1), Value: "v1", Scope: model.ScopeInventory},

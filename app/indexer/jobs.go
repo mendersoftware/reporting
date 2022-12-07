@@ -142,7 +142,7 @@ func (i *indexer) ProcessJobs(ctx context.Context, jobs []*model.Job) {
 			// data from inventory
 			device.SetUpdatedAt(inventoryDevice.UpdatedTs)
 			attributes, err := i.mapper.MapInventoryAttributes(ctx, tenant,
-				inventoryDevice.Attributes, true)
+				inventoryDevice.Attributes, true, false)
 			if err != nil {
 				err = errors.Wrapf(err,
 					"failed to map inventory data for tenant %s, "+

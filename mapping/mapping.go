@@ -35,7 +35,8 @@ const (
 // Mapping is an interface to map and reverse attributes
 type Mapper interface {
 	MapInventoryAttributes(ctx context.Context, tenantID string,
-		attrs inventory.DeviceAttributes, update bool) (inventory.DeviceAttributes, error)
+		attrs inventory.DeviceAttributes, update bool, passthrough bool,
+	) (inventory.DeviceAttributes, error)
 	ReverseInventoryAttributes(ctx context.Context, tenantID string,
 		attrs inventory.DeviceAttributes) (inventory.DeviceAttributes, error)
 }
@@ -65,7 +66,8 @@ func newMapper(ds store.DataStore) *mapper {
 
 // MapInventoryAttributes maps inventory attributes to ES fields
 func (m *mapper) MapInventoryAttributes(ctx context.Context, tenantID string,
-	attrs inventory.DeviceAttributes, update bool) (inventory.DeviceAttributes, error) {
+	attrs inventory.DeviceAttributes, update bool, passthrough bool) (
+	inventory.DeviceAttributes, error) {
 	attributesToFieldsMap := m.lookupMapping(tenantID, attrs, false)
 	if attributesToFieldsMap == nil {
 		var mapping *model.Mapping
@@ -81,7 +83,7 @@ func (m *mapper) MapInventoryAttributes(ctx context.Context, tenantID string,
 		n := int(math.Min(float64(len(mapping.Inventory)), model.MaxMappingInventoryAttributes))
 		attributesToFieldsMap = attributesToFields(mapping.Inventory[:n])
 	}
-	return mapAttributes(attrs, attributesToFieldsMap, false), nil
+	return mapAttributes(attrs, attributesToFieldsMap, false, passthrough), nil
 }
 
 // ReverseInventoryAttributes looks up the inventory attribute names from the ES fields
@@ -96,7 +98,7 @@ func (m *mapper) ReverseInventoryAttributes(ctx context.Context, tenantID string
 		n := int(math.Min(float64(len(mapping.Inventory)), model.MaxMappingInventoryAttributes))
 		attributesToFieldsMap = fieldsToAttributes(mapping.Inventory[:n])
 	}
-	return mapAttributes(attrs, attributesToFieldsMap, true), nil
+	return mapAttributes(attrs, attributesToFieldsMap, true, false), nil
 }
 
 func (m *mapper) getMapping(ctx context.Context, tenantID string) (*model.Mapping, error) {
@@ -176,7 +178,7 @@ func (m *mapper) updateAndGetMapping(ctx context.Context, tenantID string,
 }
 
 func mapAttributes(attrs inventory.DeviceAttributes,
-	mapping map[string]string, reverse bool) inventory.DeviceAttributes {
+	mapping map[string]string, reverse bool, passthrough bool) inventory.DeviceAttributes {
 	mappedAttrs := make(inventory.DeviceAttributes, 0, len(attrs))
 	for i := 0; i < len(attrs); i++ {
 		var attrName string
@@ -189,6 +191,8 @@ func mapAttributes(attrs inventory.DeviceAttributes,
 			}
 		} else if name, ok := mapping[path.Join(attrs[i].Scope, attrs[i].Name)]; ok {
 			attrName = name
+		} else if passthrough {
+			attrName = attrs[i].Name
 		}
 		if attrName != "" {
 			mappedAttr := inventory.DeviceAttribute{
