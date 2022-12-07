@@ -1,4 +1,4 @@
-# Copyright 2021 Northern.tech AS
+# Copyright 2022 Northern.tech AS
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -37,19 +37,16 @@ type_decoder = {
 }
 
 
-def index_device(es: Elasticsearch, device: InternalDevice):
-    doc = device.to_dict()
-    if device.attributes is not None:
-        for attr in device.attributes:
-            typ = type_decoder[type(attr.value)]
-            doc[f"{attr.scope}_{attr.name}_{typ}"] = [attr.value]
-    try:
-        doc.pop("attributes")
-    except KeyError:
-        pass
-    doc["tenantID"] = device.tenant_id
-    es.index(
-        f"devices", doc, routing=device.tenant_id, refresh="wait_for", id=device.id
+def index_device(device: InternalDevice):
+    requests.post(
+        "http://mender-workflows-server:8080/api/v1/workflow/reindex_reporting",
+        json={
+            "action": "reindex",
+            "request_id": "req",
+            "tenant_id": device.tenant_id,
+            "device_id": device.id,
+            "service": "inventory",
+        },
     )
 
 

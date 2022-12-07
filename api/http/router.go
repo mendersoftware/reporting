@@ -1,4 +1,4 @@
-// Copyright 2021 Northern.tech AS
+// Copyright 2022 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import (
 	"github.com/mendersoftware/go-lib-micro/accesslog"
 	"github.com/mendersoftware/go-lib-micro/identity"
 	"github.com/mendersoftware/go-lib-micro/rbac"
+	"github.com/mendersoftware/go-lib-micro/requestid"
 
 	"github.com/mendersoftware/reporting/app/reporting"
 )
@@ -29,7 +30,9 @@ const (
 	URIInternal   = "/api/internal/v1/reporting"
 	URIManagement = "/api/management/v1/reporting"
 
-	URILiveliness              = "/alive"
+	URIAlive                   = "/alive"
+	URIHealth                  = "/health"
+	URIInventoryAttrs          = "/devices/attributes"
 	URIInventorySearch         = "/devices/search"
 	URIInventorySearchAttrs    = "/devices/search/attributes"
 	URIInventorySearchInternal = "/inventory/tenants/:tenant_id/search"
@@ -43,16 +46,19 @@ func NewRouter(reporting reporting.App) *gin.Engine {
 	router := gin.New()
 	router.Use(accesslog.Middleware())
 	router.Use(gin.Recovery())
+	router.Use(requestid.Middleware())
 
 	internal := NewInternalController(reporting)
 	internalAPI := router.Group(URIInternal)
-	internalAPI.GET(URILiveliness, internal.Alive)
+	internalAPI.GET(URIAlive, internal.Alive)
+	internalAPI.GET(URIHealth, internal.Health)
 	internalAPI.POST(URIInventorySearchInternal, internal.Search)
 
 	mgmt := NewManagementController(reporting)
 	mgmtAPI := router.Group(URIManagement)
 	mgmtAPI.Use(identity.Middleware())
 	mgmtAPI.Use(rbac.Middleware())
+	mgmtAPI.GET(URIInventoryAttrs, mgmt.Attrs)
 	mgmtAPI.POST(URIInventorySearch, mgmt.Search)
 	mgmtAPI.GET(URIInventorySearchAttrs, mgmt.SearchAttrs)
 

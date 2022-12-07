@@ -29,13 +29,32 @@ import (
 
 var contextMatcher = mock.MatchedBy(func(_ context.Context) bool { return true })
 
+func TestGetMapping(t *testing.T) {
+	const tenantID = "tenant_id"
+	ctx := context.Background()
+
+	mapping := &model.Mapping{
+		TenantID: tenantID,
+	}
+
+	ds := &mstore.DataStore{}
+	ds.On("GetMapping", ctx, tenantID).Return(mapping, nil)
+
+	app := NewApp(nil, ds)
+	res, err := app.GetMapping(ctx, tenantID)
+	assert.NoError(t, err)
+	assert.Equal(t, mapping, res)
+}
+
 func TestInventorySearchDevices(t *testing.T) {
 	t.Parallel()
 	type testCase struct {
 		Name string
 
-		Params *model.SearchParams
-		Store  func(*testing.T, testCase) *mstore.Store
+		Params       *model.SearchParams
+		MappedParams *model.SearchParams
+		Store        func(*testing.T, testCase) *mstore.Store
+		Mapping      model.Mapping
 
 		Result     []inventory.Device
 		TotalCount int
@@ -58,22 +77,40 @@ func TestInventorySearchDevices(t *testing.T) {
 			}},
 			DeviceIDs: []string{"194d1060-1717-44dc-a783-00038f4a8013"},
 		},
+		MappedParams: &model.SearchParams{
+			Filters: []model.FilterPredicate{{
+				Attribute: "attribute1",
+				Value:     "bar",
+				Scope:     "inventory",
+				Type:      "$eq",
+			}},
+			Sort: []model.SortCriteria{{
+				Attribute: "attribute1",
+				Scope:     "inventory",
+				Order:     "desc",
+			}},
+			DeviceIDs: []string{"194d1060-1717-44dc-a783-00038f4a8013"},
+		},
 		Store: func(t *testing.T, self testCase) *mstore.Store {
 			store := new(mstore.Store)
-			q, _ := model.BuildQuery(*self.Params)
+			q, _ := model.BuildQuery(*self.MappedParams)
 			q = q.Must(model.M{"terms": model.M{"id": self.Params.DeviceIDs}})
 			store.On("Search", contextMatcher, q).
 				Return(model.M{"hits": map[string]interface{}{"hits": []interface{}{
 					map[string]interface{}{"_source": map[string]interface{}{
 						"id":       "194d1060-1717-44dc-a783-00038f4a8013",
 						"tenantID": "123456789012345678901234",
-						model.ToAttr("inventory", "foo", model.TypeStr): []string{"bar"},
+						model.ToAttr("inventory", "attribute1", model.TypeStr): []string{"bar"},
 					}}},
 					"total": map[string]interface{}{
 						"value": float64(1),
 					}},
 				}, nil)
 			return store
+		},
+		Mapping: model.Mapping{
+			TenantID:  "",
+			Inventory: []string{"inventory/foo"},
 		},
 		TotalCount: 1,
 		Result: []inventory.Device{{
@@ -143,9 +180,13 @@ func TestInventorySearchDevices(t *testing.T) {
 			Filters: []model.FilterPredicate{{
 				Attribute: "foo",
 				Value:     true,
-				Scope:     "baz",
+				Scope:     "inventory",
 				Type:      "$useyourimagination",
 			}},
+		},
+		Mapping: model.Mapping{
+			TenantID:  "",
+			Inventory: []string{"inventory/foo"},
 		},
 		Error: errors.New("filter type not supported"),
 	}}
@@ -162,7 +203,24 @@ func TestInventorySearchDevices(t *testing.T) {
 			}
 			defer store.AssertExpectations(t)
 
-			app := NewApp(store)
+			ds := &mstore.DataStore{}
+
+			ds.On("UpdateAndGetMapping",
+				mock.MatchedBy(func(_ context.Context) bool {
+					return true
+				}),
+				"",
+				[]string{"foo"},
+			).Return(&tc.Mapping, nil).Once()
+
+			ds.On("GetMapping",
+				mock.MatchedBy(func(_ context.Context) bool {
+					return true
+				}),
+				"",
+			).Return(&tc.Mapping, nil).Once()
+
+			app := NewApp(store, ds)
 			res, cnt, err := app.InventorySearchDevices(context.Background(), tc.Params)
 			if tc.Error != nil {
 				if assert.Error(t, err) {
@@ -171,6 +229,99 @@ func TestInventorySearchDevices(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, tc.TotalCount, cnt)
+				assert.Equal(t, tc.Result, res)
+			}
+		})
+	}
+}
+
+func TestGetSearchableInvAttrs(t *testing.T) {
+	const tenantID = "tenant_id"
+
+	t.Parallel()
+	type testCase struct {
+		Name    string
+		Store   func(*testing.T, testCase) *mstore.Store
+		Mapping model.Mapping
+
+		Result []model.FilterAttribute
+		Error  error
+	}
+	testCases := []testCase{{
+		Name: "ok",
+
+		Store: func(t *testing.T, self testCase) *mstore.Store {
+			store := new(mstore.Store)
+			store.On("GetDevicesIndexMapping", contextMatcher, tenantID).
+				Return(map[string]interface{}{
+					"mappings": map[string]interface{}{
+						"properties": map[string]interface{}{
+							"inventory_attribute1_str": 1,
+							"inventory_attribute2_str": 1,
+							"system_attribute3_str":    1,
+						},
+					},
+				}, nil)
+			return store
+		},
+		Mapping: model.Mapping{
+			TenantID: "",
+			Inventory: []string{
+				"inventory/foo",
+				"inventory/bar",
+			},
+		},
+		Result: []model.FilterAttribute{
+			{
+				Name:  "bar",
+				Scope: "inventory",
+				Count: 1,
+			},
+			{
+				Name:  "foo",
+				Scope: "inventory",
+				Count: 1,
+			},
+			{
+				Name:  "attribute3",
+				Scope: "system",
+				Count: 1,
+			},
+		},
+	}, {
+		Name: "ko, error in GetDevicesIndexMapping",
+
+		Store: func(t *testing.T, self testCase) *mstore.Store {
+			store := new(mstore.Store)
+			store.On("GetDevicesIndexMapping", contextMatcher, tenantID).
+				Return(nil, errors.New("error"))
+			return store
+		},
+		Error: errors.New("error"),
+	}}
+	for i := range testCases {
+		tc := testCases[i]
+		t.Run(tc.Name, func(t *testing.T) {
+			t.Parallel()
+			store := tc.Store(t, tc)
+			defer store.AssertExpectations(t)
+
+			ds := &mstore.DataStore{}
+			ds.On("GetMapping",
+				mock.MatchedBy(func(_ context.Context) bool {
+					return true
+				}),
+				tenantID,
+			).Return(&tc.Mapping, nil).Once()
+
+			app := NewApp(store, ds)
+			res, err := app.GetSearchableInvAttrs(context.Background(), tenantID)
+			if tc.Error != nil {
+				if assert.Error(t, err) {
+					assert.Regexp(t, tc.Error.Error(), err.Error())
+				}
+			} else {
+				assert.NoError(t, err)
 				assert.Equal(t, tc.Result, res)
 			}
 		})

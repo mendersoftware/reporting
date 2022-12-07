@@ -1,4 +1,4 @@
-// Copyright 2021 Northern.tech AS
+// Copyright 2022 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ import (
 const jobsChanSize = 1000
 
 // InitAndRun initializes the indexer and runs it
-func InitAndRun(conf config.Reader, store store.Store, nats nats.Client) error {
+func InitAndRun(conf config.Reader, store store.Store, ds store.DataStore, nats nats.Client) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -47,7 +47,7 @@ func InitAndRun(conf config.Reader, store store.Store, nats nats.Client) error {
 		conf.GetString(rconfig.SettingDeviceAuthAddr),
 	)
 
-	indexer := NewIndexer(store, nats, devClient, invClient)
+	indexer := NewIndexer(store, ds, nats, devClient, invClient)
 	jobs := make(chan *model.Job, jobsChanSize)
 
 	err := indexer.GetJobs(ctx, jobs)

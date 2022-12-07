@@ -1,4 +1,4 @@
-// Copyright 2021 Northern.tech AS
+// Copyright 2022 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -42,10 +42,64 @@ func TestStatus(t *testing.T) {
 	router := NewRouter(nil)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest(http.MethodGet, URIInternal+URILiveliness, nil)
+	req, _ := http.NewRequest(http.MethodGet, URIInternal+URIAlive, nil)
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusNoContent, w.Code)
+}
+
+func TestHealth(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		Name string
+
+		Error      error
+		StatusCode int
+	}{{
+		Name: "ok",
+
+		StatusCode: http.StatusNoContent,
+	}, {
+		Name: "error, from application layer",
+
+		Error:      errors.New("mongo: Connection refused"),
+		StatusCode: http.StatusInternalServerError,
+	}}
+
+	for i := range testCases {
+		tc := testCases[i]
+		t.Run(tc.Name, func(t *testing.T) {
+			app := new(mapp.App)
+			app.On("HealthCheck",
+				mock.MatchedBy(func(_ context.Context) bool {
+					return true
+				}),
+			).Return(tc.Error)
+			defer app.AssertExpectations(t)
+			router := NewRouter(app)
+
+			w := httptest.NewRecorder()
+			req, _ := http.NewRequest("GET", URIInternal+URIHealth, nil)
+			req.Header.Set("X-Men-Requestid", "test")
+
+			router.ServeHTTP(w, req)
+			assert.Equal(t, tc.StatusCode, w.Code)
+			if tc.Error == nil {
+				assert.Nil(t, w.Body.Bytes())
+			} else {
+				err := rest.Error{
+					Err:       tc.Error.Error(),
+					RequestID: "test",
+				}
+				b, _ := json.Marshal(err)
+				assert.Equal(t,
+					string(b),
+					w.Body.String(),
+				)
+			}
+		})
+	}
 }
 
 func TestInternalSearch(t *testing.T) {

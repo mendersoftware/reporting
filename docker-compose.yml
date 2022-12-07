@@ -5,9 +5,17 @@ services:
     # elasticsearch
     #
     elasticsearch:
-        image: elasticsearch:7.13.1
+        image: elasticsearch:7.17.7
         environment:
           - "discovery.type=single-node"
           - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
         ports:
             - 9200:9200
+
+    #
+    # mongo
+    #
+    mongo:
+        image: mongo:4.4
+        ports:
+            - 27017:27017
