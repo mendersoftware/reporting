@@ -337,8 +337,7 @@ func (app *app) GetSearchableInvAttrs(
 		return nil, errors.New("can't parse index properties")
 	}
 
-	ret := []model.FilterAttribute{}
-
+	attrs := []inventory.DeviceAttribute{}
 	for k := range propsM {
 		s, n, err := model.MaybeParseAttr(k)
 
@@ -347,8 +346,17 @@ func (app *app) GetSearchableInvAttrs(
 		}
 
 		if n != "" {
-			ret = append(ret, model.FilterAttribute{Name: n, Scope: s, Count: 1})
+			attrs = append(attrs, inventory.DeviceAttribute{Name: n, Scope: s})
 		}
+	}
+	attributes, err := app.mapper.ReverseInventoryAttributes(ctx, tid, attrs)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := []model.FilterAttribute{}
+	for _, attr := range attributes {
+		ret = append(ret, model.FilterAttribute{Name: attr.Name, Scope: attr.Scope, Count: 1})
 	}
 
 	sort.Slice(ret, func(i, j int) bool {
