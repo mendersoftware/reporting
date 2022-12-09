@@ -27,12 +27,12 @@ import utils
 
 class TestManagementSearch:
     @pytest.fixture(scope="class", autouse=True)
-    def setup_test_context(self, elasticsearch):
+    def setup_test_context(self, opensearch):
         # clean up any indices from previous tests
-        indices = elasticsearch.cat.indices(format="json")
+        indices = opensearch.cat.indices(format="json")
         for idx in indices:
             if not idx["index"].startswith("."):
-                elasticsearch.delete_by_query(
+                opensearch.delete_by_query(
                     index=[idx["index"]], body={"query": {"match_all": {}}}
                 )
 

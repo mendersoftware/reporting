@@ -23,7 +23,7 @@ from typing import Union
 import internal_api
 import utils
 
-from elasticsearch import exceptions
+from opensearchpy import exceptions
 
 
 class TestInternalHealth:
@@ -96,12 +96,12 @@ test_set = [
 
 
 @pytest.fixture(scope="class")
-def setup_test_context(elasticsearch):
+def setup_test_context(opensearch):
     # clean up any indices from previous tests
-    indices = elasticsearch.cat.indices(format="json")
+    indices = opensearch.cat.indices(format="json")
     for idx in indices:
         if not idx["index"].startswith("."):
-            elasticsearch.delete_by_query(
+            opensearch.delete_by_query(
                 index=[idx["index"]], body={"query": {"match_all": {}}}
             )
 

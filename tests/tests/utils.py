@@ -26,7 +26,6 @@ from urllib.parse import urljoin
 
 import requests
 
-from elasticsearch import Elasticsearch
 from internal_api.models import InternalDevice, Attribute
 
 type_decoder = {

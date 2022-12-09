@@ -3,11 +3,11 @@ module github.com/mendersoftware/reporting
 go 1.18
 
 require (
-	github.com/elastic/go-elasticsearch/v7 v7.17.7
 	github.com/gin-gonic/gin v1.8.1
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/mendersoftware/go-lib-micro v0.0.0-20221025103319-e1f941fb3145
 	github.com/nats-io/nats.go v1.19.0
+	github.com/opensearch-project/opensearch-go v1.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.1
 	github.com/urfave/cli v1.22.10

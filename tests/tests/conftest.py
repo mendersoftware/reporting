@@ -15,12 +15,12 @@
 import pytest
 import os
 
-from elasticsearch import Elasticsearch
+from opensearchpy import OpenSearch
 
 
 @pytest.fixture(scope="session")
-def elasticsearch():
-    hosts = os.getenv("ELASTICSEARCH_URL").split(",")
-    client = Elasticsearch(hosts=hosts)
+def opensearch():
+    hosts = os.getenv("OPENSEARCH_URL").split(",")
+    client = OpenSearch(hosts=hosts)
     yield client
     client.close()
