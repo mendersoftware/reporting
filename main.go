@@ -34,13 +34,13 @@ import (
 	"github.com/mendersoftware/reporting/client/nats"
 	dconfig "github.com/mendersoftware/reporting/config"
 	"github.com/mendersoftware/reporting/store"
-	elastic "github.com/mendersoftware/reporting/store/elasticsearch"
 	"github.com/mendersoftware/reporting/store/mongo"
+	"github.com/mendersoftware/reporting/store/opensearch"
 )
 
 const (
-	elasticsearchMaxWaitingTime      = 300
-	elasticsearchRetryDelayInSeconds = 1
+	opensearchMaxWaitingTime      = 300
+	opensearchRetryDelayInSeconds = 1
 )
 
 func main() {
@@ -209,35 +209,35 @@ func cmdMigrate(args *cli.Context) error {
 }
 
 func getStore(args *cli.Context) (store.Store, error) {
-	addresses := config.Config.GetStringSlice(dconfig.SettingElasticsearchAddresses)
-	devicesIndexName := config.Config.GetString(dconfig.SettingElasticsearchDevicesIndexName)
-	deviceesIndexShards := config.Config.GetInt(dconfig.SettingElasticsearchDevicesIndexShards)
+	addresses := config.Config.GetStringSlice(dconfig.SettingOpenSearchAddresses)
+	devicesIndexName := config.Config.GetString(dconfig.SettingOpenSearchDevicesIndexName)
+	deviceesIndexShards := config.Config.GetInt(dconfig.SettingOpenSearchDevicesIndexShards)
 	deviceesIndexReplicas := config.Config.GetInt(
-		dconfig.SettingElasticsearchDevicesIndexReplicas)
-	store, err := elastic.NewStore(
-		elastic.WithServerAddresses(addresses),
-		elastic.WithDevicesIndexName(devicesIndexName),
-		elastic.WithDevicesIndexShards(deviceesIndexShards),
-		elastic.WithDevicesIndexReplicas(deviceesIndexReplicas),
+		dconfig.SettingOpenSearchDevicesIndexReplicas)
+	store, err := opensearch.NewStore(
+		opensearch.WithServerAddresses(addresses),
+		opensearch.WithDevicesIndexName(devicesIndexName),
+		opensearch.WithDevicesIndexShards(deviceesIndexShards),
+		opensearch.WithDevicesIndexReplicas(deviceesIndexReplicas),
 	)
 	if err != nil {
 		return nil, err
 	}
 	ctx := context.Background()
 	l := log.FromContext(ctx)
-	for i := 0; i < elasticsearchMaxWaitingTime; i++ {
+	for i := 0; i < opensearchMaxWaitingTime; i++ {
 		err = store.Ping(ctx)
 		if err == nil {
 			break
 		}
 		l.Warn(err)
-		time.Sleep(elasticsearchRetryDelayInSeconds * time.Second)
+		time.Sleep(opensearchRetryDelayInSeconds * time.Second)
 	}
 	if err != nil {
 		l.Error(err)
 		return nil, err
 	}
-	l.Info("successfully connected to Elasticsearch")
+	l.Info("successfully connected to OpenSearch")
 	return store, nil
 }
 

@@ -24,31 +24,31 @@ const (
 	// SettingListenDefault is the default value for the listen address
 	SettingListenDefault = ":8080"
 
-	// SettingElasticsearchAddresses is the config key for the elasticsearch addresses
-	SettingElasticsearchAddresses = "elasticsearch_addresses"
-	// SettingElasticsearchAddressesDefault is the default value for the elasticsearch addresses
-	SettingElasticsearchAddressesDefault = "http://localhost:9200"
+	// SettingOpenSearchAddresses is the config key for the opensearch addresses
+	SettingOpenSearchAddresses = "opensearch_addresses"
+	// SettingOpenSearchAddressesDefault is the default value for the opensearch addresses
+	SettingOpenSearchAddressesDefault = "http://localhost:9200"
 
-	// SettingElasticsearchDevicesIndexName is the config key for the elasticsearch devices
+	// SettingOpenSearchDevicesIndexName is the config key for the opensearch devices
 	// index name
-	SettingElasticsearchDevicesIndexName = "elasticsearch_devices_index_name"
-	// SettingElasticsearchDevicesIndexNameDefault is the default value for the elasticsearch
+	SettingOpenSearchDevicesIndexName = "opensearch_devices_index_name"
+	// SettingOpenSearchDevicesIndexNameDefault is the default value for the opensearch
 	// devices index name
-	SettingElasticsearchDevicesIndexNameDefault = "devices"
+	SettingOpenSearchDevicesIndexNameDefault = "devices"
 
-	// SettingElasticsearchDevicesIndexShards is the config key for the elasticsearch devices
+	// SettingOpenSearchDevicesIndexShards is the config key for the opensearch devices
 	// index shards
-	SettingElasticsearchDevicesIndexShards = "elasticsearch_devices_index_shards"
-	// SettingElasticsearchDevicesIndexShardsDefault is the default value for the elasticsearch
+	SettingOpenSearchDevicesIndexShards = "opensearch_devices_index_shards"
+	// SettingOpenSearchDevicesIndexShardsDefault is the default value for the opensearch
 	// devices index shards
-	SettingElasticsearchDevicesIndexShardsDefault = 1
+	SettingOpenSearchDevicesIndexShardsDefault = 1
 
-	// SettingElasticsearchDevicesIndexReplicas is the config key for the elasticsearch devices
+	// SettingOpenSearchDevicesIndexReplicas is the config key for the opensearch devices
 	// index replicas
-	SettingElasticsearchDevicesIndexReplicas = "elasticsearch_devices_index_replicas"
-	// SettingElasticsearchDevicesIndexReplicasDefault is the default value for the
-	// elasticsearch devices index replicas
-	SettingElasticsearchDevicesIndexReplicasDefault = 0
+	SettingOpenSearchDevicesIndexReplicas = "opensearch_devices_index_replicas"
+	// SettingOpenSearchDevicesIndexReplicasDefault is the default value for the
+	// opensearch devices index replicas
+	SettingOpenSearchDevicesIndexReplicasDefault = 0
 
 	// SettingDeviceAuthAddr is the config key for the deviceauth service address
 	SettingDeviceAuthAddr = "deviceauth_addr"
@@ -126,13 +126,13 @@ var (
 	// Defaults are the default configuration settings
 	Defaults = []config.Default{
 		{Key: SettingListen, Value: SettingListenDefault},
-		{Key: SettingElasticsearchAddresses, Value: SettingElasticsearchAddressesDefault},
-		{Key: SettingElasticsearchDevicesIndexName,
-			Value: SettingElasticsearchDevicesIndexNameDefault},
-		{Key: SettingElasticsearchDevicesIndexShards,
-			Value: SettingElasticsearchDevicesIndexShardsDefault},
-		{Key: SettingElasticsearchDevicesIndexReplicas,
-			Value: SettingElasticsearchDevicesIndexReplicasDefault},
+		{Key: SettingOpenSearchAddresses, Value: SettingOpenSearchAddressesDefault},
+		{Key: SettingOpenSearchDevicesIndexName,
+			Value: SettingOpenSearchDevicesIndexNameDefault},
+		{Key: SettingOpenSearchDevicesIndexShards,
+			Value: SettingOpenSearchDevicesIndexShardsDefault},
+		{Key: SettingOpenSearchDevicesIndexReplicas,
+			Value: SettingOpenSearchDevicesIndexReplicasDefault},
 		{Key: SettingDebugLog, Value: SettingDebugLogDefault},
 		{Key: SettingDeviceAuthAddr, Value: SettingDeviceAuthAddrDefault},
 		{Key: SettingInventoryAddr, Value: SettingInventoryAddrDefault},
