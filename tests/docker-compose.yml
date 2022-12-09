@@ -12,8 +12,6 @@ services:
             TESTING_HOST: "mender-reporting:8080"
             REPORTING_URL: "http://mender-reporting:8080"
             OPENSEARCH_URL: "http://mender-opensearch:9200"
-            MMOCK_CONTROL_URL: "http://mmock:8081"
-            MMOCK_API_URL: "http://mmock:8080"
         depends_on:
             - mender-reporting
             - mender-reporting-indexer
