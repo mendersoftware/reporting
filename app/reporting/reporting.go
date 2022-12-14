@@ -33,6 +33,8 @@ type App interface {
 	HealthCheck(ctx context.Context) error
 	GetMapping(ctx context.Context, tid string) (*model.Mapping, error)
 	GetSearchableInvAttrs(ctx context.Context, tid string) ([]model.FilterAttribute, error)
+	InventoryAggregateDevices(ctx context.Context, aggregateParams *model.AggregateParams) (
+		[]model.DeviceAggregation, error)
 	InventorySearchDevices(ctx context.Context, searchParams *model.SearchParams) (
 		[]inventory.Device, int, error)
 }
@@ -66,6 +68,113 @@ func (app *app) GetMapping(ctx context.Context, tid string) (*model.Mapping, err
 	return app.ds.GetMapping(ctx, tid)
 }
 
+// InventoryAggregateDevices aggregates devices' inventory data
+func (app *app) InventoryAggregateDevices(
+	ctx context.Context,
+	aggregateParams *model.AggregateParams,
+) ([]model.DeviceAggregation, error) {
+	searchParams := &model.SearchParams{
+		Filters:  aggregateParams.Filters,
+		Groups:   aggregateParams.Groups,
+		TenantID: aggregateParams.TenantID,
+	}
+	if err := app.mapSearchParams(ctx, searchParams); err != nil {
+		return nil, err
+	}
+	query, err := model.BuildQuery(*searchParams)
+	if err != nil {
+		return nil, err
+	}
+	if searchParams.TenantID != "" {
+		query = query.Must(model.M{
+			"term": model.M{
+				model.FieldNameTenantID: searchParams.TenantID,
+			},
+		})
+	}
+
+	if err := app.mapAggregations(ctx, searchParams.TenantID,
+		aggregateParams.Aggregations); err != nil {
+		return nil, err
+	}
+	aggregations, err := model.BuildAggregations(aggregateParams.Aggregations)
+	if err != nil {
+		return nil, err
+	}
+
+	query = query.WithSize(0).With(map[string]interface{}{
+		"aggs": aggregations,
+	})
+	esRes, err := app.store.Aggregate(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	aggregationsS, ok := esRes["aggregations"].(map[string]interface{})
+	if !ok {
+		return nil, errors.New("can't process store aggregations slice")
+	}
+	res, err := app.storeToDeviceAggregations(ctx, searchParams.TenantID, aggregationsS)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+// storeToDeviceAggregations translates ES results directly to device aggregations
+func (a *app) storeToDeviceAggregations(
+	ctx context.Context, tenantID string, aggregationsS map[string]interface{},
+) ([]model.DeviceAggregation, error) {
+	aggs := []model.DeviceAggregation{}
+	for name, aggregationS := range aggregationsS {
+		if _, ok := aggregationS.(map[string]interface{}); !ok {
+			continue
+		}
+		bucketsS, ok := aggregationS.(map[string]interface{})["buckets"].([]interface{})
+		if !ok {
+			continue
+		}
+		items := make([]model.DeviceAggregationItem, 0, len(bucketsS))
+		for _, bucket := range bucketsS {
+			bucketMap, ok := bucket.(map[string]interface{})
+			if !ok {
+				return nil, errors.New("can't process store bucket item")
+			}
+			key, ok := bucketMap["key"].(string)
+			if !ok {
+				return nil, errors.New("can't process store key attribute")
+			}
+			count, ok := bucketMap["doc_count"].(float64)
+			if !ok {
+				return nil, errors.New("can't process store doc_count attribute")
+			}
+			item := model.DeviceAggregationItem{
+				Key:   key,
+				Count: int(count),
+			}
+			subaggs, err := a.storeToDeviceAggregations(ctx, tenantID, bucketMap)
+			if err == nil && len(subaggs) > 0 {
+				item.Aggregations = subaggs
+			}
+			items = append(items, item)
+		}
+
+		otherCount := 0
+		if count, ok := aggregationS.(map[string]interface{})["sum_other_doc_count"].(float64); ok {
+			otherCount = int(count)
+		}
+
+		aggs = append(aggs, model.DeviceAggregation{
+			Name:       name,
+			Items:      items,
+			OtherCount: otherCount,
+		})
+	}
+	return aggs, nil
+}
+
+// InventorySearchDevices searches devices' inventory data
 func (app *app) InventorySearchDevices(
 	ctx context.Context,
 	searchParams *model.SearchParams,
@@ -105,6 +214,32 @@ func (app *app) InventorySearchDevices(
 	}
 
 	return res, total, err
+}
+
+func (app *app) mapAggregations(ctx context.Context, tenantID string,
+	aggregations []model.AggregationTerm) error {
+	attributes := make(inventory.DeviceAttributes, 0, len(aggregations))
+	for i := range aggregations {
+		attributes = append(attributes, inventory.DeviceAttribute{
+			Name:  aggregations[i].Attribute,
+			Scope: aggregations[i].Scope,
+		})
+	}
+	attributes, err := app.mapper.MapInventoryAttributes(ctx, tenantID,
+		attributes, false, true)
+	if err == nil {
+		for i, attr := range attributes {
+			aggregations[i].Attribute = attr.Name
+			aggregations[i].Scope = attr.Scope
+			if len(aggregations[i].Aggregations) > 0 {
+				err = app.mapAggregations(ctx, tenantID, aggregations[i].Aggregations)
+				if err != nil {
+					break
+				}
+			}
+		}
+	}
+	return err
 }
 
 func (app *app) mapSearchParams(ctx context.Context, searchParams *model.SearchParams) error {
@@ -181,7 +316,7 @@ func (app *app) mapSearchParams(ctx context.Context, searchParams *model.SearchP
 	return nil
 }
 
-// storeToInventoryDevs translates ES results directly to iventory devices
+// storeToInventoryDevs translates ES results directly to inventory devices
 func (a *app) storeToInventoryDevs(
 	ctx context.Context, tenantID string, storeRes map[string]interface{},
 ) ([]inventory.Device, int, error) {

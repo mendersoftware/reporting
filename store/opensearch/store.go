@@ -278,7 +278,50 @@ func (s *opensearchStore) Ping(ctx context.Context) error {
 	return errors.Wrap(err, "failed to ping opensearch")
 }
 
-func (s *opensearchStore) Search(ctx context.Context, query interface{}) (model.M, error) {
+func (s *opensearchStore) Aggregate(ctx context.Context, query model.Query) (model.M, error) {
+	l := log.FromContext(ctx)
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(query); err != nil {
+		return nil, err
+	}
+
+	l.Debugf("es query: %v", buf.String())
+
+	id := identity.FromContext(ctx)
+
+	searchRequests := []func(*opensearchapi.SearchRequest){
+		s.client.Search.WithContext(ctx),
+		s.client.Search.WithIndex(s.GetDevicesIndex(id.Tenant)),
+		s.client.Search.WithBody(&buf),
+		s.client.Search.WithTrackTotalHits(false),
+	}
+	routingKey := s.GetDevicesRoutingKey(id.Tenant)
+	if routingKey != "" {
+		searchRequests = append(searchRequests, s.client.Search.WithRouting(routingKey))
+	}
+	resp, err := s.client.Search(searchRequests...)
+	defer resp.Body.Close()
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.IsError() {
+		return nil, errors.New(resp.String())
+	}
+
+	var ret map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&ret); err != nil {
+		return nil, err
+	}
+
+	l.Debugf("opensearch response: %v", ret)
+
+	return ret, nil
+}
+
+func (s *opensearchStore) Search(ctx context.Context, query model.Query) (model.M, error) {
 	l := log.FromContext(ctx)
 
 	var buf bytes.Buffer

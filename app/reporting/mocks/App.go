@@ -90,6 +90,29 @@ func (_m *App) HealthCheck(ctx context.Context) error {
 	return r0
 }
 
+// InventoryAggregateDevices provides a mock function with given fields: ctx, aggregateParams
+func (_m *App) InventoryAggregateDevices(ctx context.Context, aggregateParams *model.AggregateParams) ([]model.DeviceAggregation, error) {
+	ret := _m.Called(ctx, aggregateParams)
+
+	var r0 []model.DeviceAggregation
+	if rf, ok := ret.Get(0).(func(context.Context, *model.AggregateParams) []model.DeviceAggregation); ok {
+		r0 = rf(ctx, aggregateParams)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]model.DeviceAggregation)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *model.AggregateParams) error); ok {
+		r1 = rf(ctx, aggregateParams)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // InventorySearchDevices provides a mock function with given fields: ctx, searchParams
 func (_m *App) InventorySearchDevices(ctx context.Context, searchParams *model.SearchParams) ([]inventory.Device, int, error) {
 	ret := _m.Called(ctx, searchParams)

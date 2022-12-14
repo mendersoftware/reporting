@@ -1,4 +1,4 @@
-// Copyright 2021 Northern.tech AS
+// Copyright 2022 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -47,20 +47,23 @@ type S []interface{}
 
 // Query represents the ES query
 // general form:
-// {
-//   "query": {
-//     "bool": {
-//       "must": [...conditions...],
-//       "must_not": [...conditions...],
-//     }
-//   "sort": [...],
-//   "from": ...,
-//   "size": ...,
-// }
+//
+//	{
+//	  "query": {
+//	    "bool": {
+//	      "must": [...conditions...],
+//	      "must_not": [...conditions...],
+//	    }
+//	  "sort": [...],
+//	  "from": ...,
+//	  "size": ...,
+//	}
+//
 // it exposes an API for query parts to insert themselves in the right place
 type Query interface {
 	Must(condition interface{}) Query
 	MustNot(condition interface{}) Query
+	WithSize(size int) Query
 	WithSort(sort interface{}) Query
 	WithPage(page, per_page int) Query
 	With(parts map[string]interface{}) Query
@@ -99,6 +102,11 @@ func (q *query) Must(condition interface{}) Query {
 
 func (q *query) MustNot(condition interface{}) Query {
 	q.mustNot = append(q.mustNot, condition)
+	return q
+}
+
+func (q *query) WithSize(size int) Query {
+	q.size = size
 	return q
 }
 
@@ -239,7 +247,6 @@ func NewFilter(fp FilterPredicate, arrOpts ArrayOpts, typeOpts Type) (*filter, e
 	}, nil
 }
 
-//
 type filterEq struct {
 	*filter
 }
@@ -263,7 +270,6 @@ func (f *filterEq) AddTo(q Query) Query {
 	})
 }
 
-//
 type filterNe struct {
 	*filter
 }
@@ -287,7 +293,6 @@ func (f *filterNe) AddTo(q Query) Query {
 	})
 }
 
-//
 type filterRegex struct {
 	*filter
 }
@@ -310,7 +315,6 @@ func (f *filterRegex) AddTo(q Query) Query {
 	})
 }
 
-//
 type filterIn struct {
 	*filter
 }
@@ -333,7 +337,6 @@ func (f *filterIn) AddTo(q Query) Query {
 	})
 }
 
-//
 type filterNin struct {
 	*filter
 }
@@ -357,7 +360,6 @@ func (f *filterNin) AddTo(q Query) Query {
 	})
 }
 
-//
 type filterExists struct {
 	*filter
 	fp FilterPredicate
@@ -428,7 +430,6 @@ func (f *filterRange) AddTo(q Query) Query {
 	})
 }
 
-//
 type sort struct {
 	attrStr  string
 	attrNum  string
@@ -470,7 +471,6 @@ func (s *sort) AddTo(q Query) Query {
 	return q
 }
 
-//
 type sel struct {
 	attrs []SelectAttribute
 }
@@ -502,7 +502,6 @@ func (s *sel) AddTo(q Query) Query {
 
 }
 
-//
 type devIDsFilter struct {
 	devIDs []string
 }

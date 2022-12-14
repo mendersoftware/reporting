@@ -28,6 +28,29 @@ type Store struct {
 	mock.Mock
 }
 
+// Aggregate provides a mock function with given fields: ctx, query
+func (_m *Store) Aggregate(ctx context.Context, query model.Query) (model.M, error) {
+	ret := _m.Called(ctx, query)
+
+	var r0 model.M
+	if rf, ok := ret.Get(0).(func(context.Context, model.Query) model.M); ok {
+		r0 = rf(ctx, query)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(model.M)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, model.Query) error); ok {
+		r1 = rf(ctx, query)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // BulkIndexDevices provides a mock function with given fields: ctx, devices, removedDevices
 func (_m *Store) BulkIndexDevices(ctx context.Context, devices []*model.Device, removedDevices []*model.Device) error {
 	ret := _m.Called(ctx, devices, removedDevices)
@@ -122,11 +145,11 @@ func (_m *Store) Ping(ctx context.Context) error {
 }
 
 // Search provides a mock function with given fields: ctx, query
-func (_m *Store) Search(ctx context.Context, query interface{}) (model.M, error) {
+func (_m *Store) Search(ctx context.Context, query model.Query) (model.M, error) {
 	ret := _m.Called(ctx, query)
 
 	var r0 model.M
-	if rf, ok := ret.Get(0).(func(context.Context, interface{}) model.M); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, model.Query) model.M); ok {
 		r0 = rf(ctx, query)
 	} else {
 		if ret.Get(0) != nil {
@@ -135,7 +158,7 @@ func (_m *Store) Search(ctx context.Context, query interface{}) (model.M, error)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, interface{}) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, model.Query) error); ok {
 		r1 = rf(ctx, query)
 	} else {
 		r1 = ret.Error(1)
