@@ -141,10 +141,8 @@ class TestManagementSearch:
                 ),
                 http_code=200,
                 result=[
-                    internal_api.models.InternalDevice(
+                    management_api.models.DeviceInventory(
                         id="ad707aab-916b-4ec9-a43f-0031b2bcf9ad",
-                        tenant_id="123456789012345678901234",
-                        name="birch32",
                         attributes=[
                             management_api.models.Attribute(
                                 name="string",
@@ -153,10 +151,8 @@ class TestManagementSearch:
                             ),
                         ],
                     ),
-                    internal_api.models.InternalDevice(
+                    management_api.models.DeviceInventory(
                         id="85388603-5852-437f-89c4-7549502893d5",
-                        tenant_id="123456789012345678901234",
-                        name="birch32",
                         attributes=[
                             management_api.models.Attribute(
                                 name="string",
@@ -168,10 +164,8 @@ class TestManagementSearch:
                             ),
                         ],
                     ),
-                    internal_api.models.InternalDevice(
+                    management_api.models.DeviceInventory(
                         id="d8b04e01-690d-41ce-8c6d-ab079a04d488",
-                        tenant_id="123456789012345678901234",
-                        name="blueberryPi",
                         attributes=[
                             management_api.models.Attribute(
                                 name="string",
@@ -236,7 +230,7 @@ class TestManagementSearch:
                 ),
                 http_code=200,
                 result=[
-                    internal_api.models.InternalDevice(
+                    management_api.models.DeviceInventory(
                         id="85388603-5852-437f-89c4-7549502893d5",
                         attributes=[
                             management_api.models.Attribute(
@@ -249,7 +243,7 @@ class TestManagementSearch:
                             ),
                         ],
                     ),
-                    internal_api.models.InternalDevice(
+                    management_api.models.DeviceInventory(
                         id="ad707aab-916b-4ec9-a43f-0031b2bcf9ad",
                         attributes=[
                             management_api.models.Attribute(
@@ -280,7 +274,7 @@ class TestManagementSearch:
                 ),
                 http_code=200,
                 result=[
-                    internal_api.models.InternalDevice(
+                    management_api.models.DeviceInventory(
                         id="85388603-5852-437f-89c4-7549502893d5",
                         attributes=[
                             management_api.models.Attribute(
@@ -293,7 +287,7 @@ class TestManagementSearch:
                             ),
                         ],
                     ),
-                    internal_api.models.InternalDevice(
+                    management_api.models.DeviceInventory(
                         id="d8b04e01-690d-41ce-8c6d-ab079a04d488",
                         attributes=[
                             management_api.models.Attribute(
@@ -306,10 +300,8 @@ class TestManagementSearch:
                             ),
                         ],
                     ),
-                    internal_api.models.InternalDevice(
+                    management_api.models.DeviceInventory(
                         id="463e12dd-1adb-4f62-965e-b0a9ba2c93ff",
-                        tenant_id="123456789012345678901234",
-                        name="bagelBone",
                         attributes=[
                             management_api.models.Attribute(
                                 name="string",
@@ -342,7 +334,7 @@ class TestManagementSearch:
                 ),
                 http_code=200,
                 result=[
-                    internal_api.models.InternalDevice(
+                    management_api.models.DeviceInventory(
                         id="463e12dd-1adb-4f62-965e-b0a9ba2c93ff",
                         attributes=[
                             management_api.models.Attribute(
@@ -355,7 +347,7 @@ class TestManagementSearch:
                             ),
                         ],
                     ),
-                    internal_api.models.InternalDevice(
+                    management_api.models.DeviceInventory(
                         id="85388603-5852-437f-89c4-7549502893d5",
                         attributes=[
                             management_api.models.Attribute(
@@ -368,7 +360,7 @@ class TestManagementSearch:
                             ),
                         ],
                     ),
-                    internal_api.models.InternalDevice(
+                    management_api.models.DeviceInventory(
                         id="ad707aab-916b-4ec9-a43f-0031b2bcf9ad",
                         attributes=[
                             management_api.models.Attribute(
@@ -394,7 +386,7 @@ class TestManagementSearch:
                 ),
                 http_code=200,
                 result=[
-                    internal_api.models.InternalDevice(
+                    management_api.models.DeviceInventory(
                         id="ad707aab-916b-4ec9-a43f-0031b2bcf9ad",
                         attributes=[
                             management_api.models.Attribute(
@@ -425,7 +417,7 @@ class TestManagementSearch:
                 ),
                 http_code=200,
                 result=[
-                    internal_api.models.InternalDevice(
+                    management_api.models.DeviceInventory(
                         id="463e12dd-1adb-4f62-965e-b0a9ba2c93ff",
                         attributes=[
                             management_api.models.Attribute(
@@ -438,7 +430,7 @@ class TestManagementSearch:
                             ),
                         ],
                     ),
-                    internal_api.models.InternalDevice(
+                    management_api.models.DeviceInventory(
                         id="d8b04e01-690d-41ce-8c6d-ab079a04d488",
                         attributes=[
                             management_api.models.Attribute(
