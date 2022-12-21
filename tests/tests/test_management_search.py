@@ -12,12 +12,10 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-import json
 import pytest
 import re
 import time
 
-from datetime import datetime, timedelta
 from typing import Union
 
 import internal_api
