@@ -1,4 +1,4 @@
-# Copyright 2021 Northern.tech AS
+# Copyright 2022 Northern.tech AS
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ from urllib.parse import urljoin
 
 import requests
 
-from elasticsearch import Elasticsearch
 from internal_api.models import InternalDevice, Attribute
 
 type_decoder = {
@@ -37,19 +36,16 @@ type_decoder = {
 }
 
 
-def index_device(es: Elasticsearch, device: InternalDevice):
-    doc = device.to_dict()
-    if device.attributes is not None:
-        for attr in device.attributes:
-            typ = type_decoder[type(attr.value)]
-            doc[f"{attr.scope}_{attr.name}_{typ}"] = [attr.value]
-    try:
-        doc.pop("attributes")
-    except KeyError:
-        pass
-    doc["tenantID"] = device.tenant_id
-    es.index(
-        f"devices", doc, routing=device.tenant_id, refresh="wait_for", id=device.id
+def index_device(device: InternalDevice):
+    requests.post(
+        "http://mender-workflows-server:8080/api/v1/workflow/reindex_reporting",
+        json={
+            "action": "reindex",
+            "request_id": "req",
+            "tenant_id": device.tenant_id,
+            "device_id": device.id,
+            "service": "inventory",
+        },
     )
 
 
@@ -95,80 +91,3 @@ def generate_jwt(tenant_id: str = "", subject: str = "", is_user: bool = True) -
     sign = hmac.new(b"secretJWTkey", msg=jwt.encode(), digestmod="sha256")
     sign64 = b64encode(sign.digest(), altchars=b"-_").decode("ascii").rstrip("=")
     return jwt + "." + sign64
-
-
-_MMOCK_URL = os.getenv("MMOCK_CONTROL_URL")
-
-
-class MockAPI:
-    def __init__(
-        self,
-        method: str,
-        path: str,
-        rsp_code: int = 200,
-        rsp_hdrs: Union[dict[str, str], None] = None,
-        rsp_body: Union[str, None] = None,
-        req_qparams: Union[dict[str, str]] = None,
-        req_host: Union[str, None] = None,
-        req_hdrs: Union[dict[str, str]] = None,
-        req_body: Union[str, None] = None,
-    ):
-        self.method = method
-        self.path = path
-        self.rsp_code = rsp_code
-        self.rsp_hdrs = rsp_hdrs
-        self.rsp_body = rsp_body
-        self.req_host = req_host
-        self.req_qparams = req_qparams
-        self.req_hdrs = req_hdrs
-        self.req_body = req_body
-        # API URL is on the form: "<method>_<*path*>.json where *path* is
-        # path with all illegal path characters replaced by '_'.
-        self._api_url = urljoin(
-            _MMOCK_URL,
-            f"/api/mapping/%s_%s.json" % (method, re.sub("[^0-9A-Za-z-_]", "_", path)),
-        )
-
-    @property
-    def _request(self):
-        js = {
-            "request": {"method": self.method, "path": self.path},
-            "response": {"statusCode": self.rsp_code},
-        }
-        if self.rsp_hdrs is not None:
-            js["response"]["headers"] = {
-                key: [value] for key, value in self.rsp_hdrs.items()
-            }
-        if self.rsp_body is not None:
-            js["response"]["body"] = self.rsp_body
-
-        if self.req_host is not None:
-            js["request"]["host"] = self.req_host
-        if self.req_qparams is not None:
-            js["request"]["queryStringParameters"] = {
-                key: [value] for key, value in self.req_qparams.items()
-            }
-        if self.req_hdrs is not None:
-            js["request"]["headers"] = {key: [value] for key, value in self.req_hdrs}
-        if self.req_body is not None:
-            js["request"]["body"] = self.req_body
-
-        return js
-
-    def __enter__(self):
-        url = urljoin(_MMOCK_URL, self._api_url)
-        rsp = requests.post(url, json=self._request)
-        if rsp.status_code == 409:
-            rsp = requests.put(url, json=self._request)
-        if rsp.status_code >= 300:
-            raise ValueError(
-                "mmock server returned an unexpected status code: %d" % rsp.status_code
-            )
-
-    def __exit__(self, exception_type, exception_value, exception_traceback):
-        url = urljoin(_MMOCK_URL, self._api_url)
-        rsp = requests.delete(url)
-        if rsp.status_code >= 300:
-            raise ValueError(
-                "mmock server returned an unexpected status code: %d" % rsp.status_code
-            )

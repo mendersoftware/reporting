@@ -4,29 +4,64 @@
 
 # listen: :8080
 
-# List of elasticsearch addresses
-# Defauls to: "elasticsearch:9200"
-# Overwrite with environment variable: REPORTING_ELASTICSEARCH_ADDRESSES
+# List of opensearch addresses
+# Defauls to: "opensearch:9200"
+# Overwrite with environment variable: REPORTING_OPENSEARCH_ADDRESSES
 
-# elasticsearch_addresses: "http://localhost:9200"
+# opensearch_addresses: "http://localhost:9200"
 
 # Devices: index name
 # Defauls to: "devices"
-# Overwrite with environment variable: REPORTING_ELASTICSEARCH_DEVICES_INDEX_NAME
+# Overwrite with environment variable: REPORTING_OPENSEARCH_DEVICES_INDEX_NAME
 
-# elasticsearch_devices_index_name: "devices"
+# opensearch_devices_index_name: "devices"
 
 # Devices: number of shards
 # Defauls to: 1
-# Overwrite with environment variable: REPORTING_ELASTICSEARCH_DEVICES_INDEX_SHARDS
+# Overwrite with environment variable: REPORTING_OPENSEARCH_DEVICES_INDEX_SHARDS
 
-# elasticsearch_devices_index_shards: 1
+# opensearch_devices_index_shards: 1
 
 # Devices: number of replicas
 # Defauls to: 0
-# Overwrite with environment variable: REPORTING_ELASTICSEARCH_DEVICES_INDEX_REPLICAS
+# Overwrite with environment variable: REPORTING_OPENSEARCH_DEVICES_INDEX_REPLICAS
 
-# elasticsearch_devices_index_replicas: 0
+# opensearch_devices_index_replicas: 0
+
+# Mongodb connection string
+# Defaults to: "mongodb://mender-mongo:27017"
+# Overwrite with environment variable: REPORTING_MONGO_URL
+mongo_url: mongodb://mender-mongo:27017
+
+# Mongodb database name
+# Defaults to: "reporting"
+# Overwrite with environment variable: REPORTING_MONGO_DBNAME
+mongo_dbname: reporting
+
+# Enable SSL for mongo connections
+# Defaults to: false
+# Overwrite with environment variable: REPORTING_MONGO_SSL
+mongo_ssl: false
+
+# SkipVerify controls whether a mongo client verifies the
+# server's certificate chain and host name.
+# If InsecureSkipVerify is true, accepts any certificate
+# presented by the server and any host name in that certificate.
+# Defaults to: false
+# Overwrite with environment variable: REPORTING_MONGO_SSL_SKIPVERIFY
+mongo_ssl_skipverify: false
+
+# Mongodb username
+# Overwrites username set in connection string.
+# Defaults to: none
+# Overwrite with environment variable: REPORTING_MONGO_USERNAME
+mongo_username: ""
+
+# Mongodb password
+# Overwrites password set in connection string.
+# Defaults to: none
+# Overwrite with environment variable: REPORTING_MONGO_PASSWORD
+mongo_password: ""
 
 # NATS uri
 # Defauls to: "nats://localhost:4222"

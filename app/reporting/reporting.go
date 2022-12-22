@@ -23,31 +23,165 @@ import (
 	"github.com/mendersoftware/go-lib-micro/log"
 
 	"github.com/mendersoftware/reporting/client/inventory"
+	"github.com/mendersoftware/reporting/mapping"
 	"github.com/mendersoftware/reporting/model"
 	"github.com/mendersoftware/reporting/store"
 )
 
 //go:generate ../../x/mockgen.sh
 type App interface {
+	HealthCheck(ctx context.Context) error
+	GetMapping(ctx context.Context, tid string) (*model.Mapping, error)
 	GetSearchableInvAttrs(ctx context.Context, tid string) ([]model.FilterAttribute, error)
+	InventoryAggregateDevices(ctx context.Context, aggregateParams *model.AggregateParams) (
+		[]model.DeviceAggregation, error)
 	InventorySearchDevices(ctx context.Context, searchParams *model.SearchParams) (
 		[]inventory.Device, int, error)
 }
 
 type app struct {
-	store store.Store
+	store  store.Store
+	mapper mapping.Mapper
+	ds     store.DataStore
 }
 
-func NewApp(store store.Store) App {
+func NewApp(store store.Store, ds store.DataStore) App {
+	mapper := mapping.NewMapper(ds)
 	return &app{
-		store: store,
+		store:  store,
+		mapper: mapper,
+		ds:     ds,
 	}
 }
 
+// HealthCheck performs a health check and returns an error if it fails
+func (a *app) HealthCheck(ctx context.Context) error {
+	err := a.ds.Ping(ctx)
+	if err == nil {
+		err = a.store.Ping(ctx)
+	}
+	return err
+}
+
+// GetMapping returns the mapping for the specified tenant
+func (app *app) GetMapping(ctx context.Context, tid string) (*model.Mapping, error) {
+	return app.ds.GetMapping(ctx, tid)
+}
+
+// InventoryAggregateDevices aggregates devices' inventory data
+func (app *app) InventoryAggregateDevices(
+	ctx context.Context,
+	aggregateParams *model.AggregateParams,
+) ([]model.DeviceAggregation, error) {
+	searchParams := &model.SearchParams{
+		Filters:  aggregateParams.Filters,
+		Groups:   aggregateParams.Groups,
+		TenantID: aggregateParams.TenantID,
+	}
+	if err := app.mapSearchParams(ctx, searchParams); err != nil {
+		return nil, err
+	}
+	query, err := model.BuildQuery(*searchParams)
+	if err != nil {
+		return nil, err
+	}
+	if searchParams.TenantID != "" {
+		query = query.Must(model.M{
+			"term": model.M{
+				model.FieldNameTenantID: searchParams.TenantID,
+			},
+		})
+	}
+
+	if err := app.mapAggregations(ctx, searchParams.TenantID,
+		aggregateParams.Aggregations); err != nil {
+		return nil, err
+	}
+	aggregations, err := model.BuildAggregations(aggregateParams.Aggregations)
+	if err != nil {
+		return nil, err
+	}
+
+	query = query.WithSize(0).With(map[string]interface{}{
+		"aggs": aggregations,
+	})
+	esRes, err := app.store.Aggregate(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	aggregationsS, ok := esRes["aggregations"].(map[string]interface{})
+	if !ok {
+		return nil, errors.New("can't process store aggregations slice")
+	}
+	res, err := app.storeToDeviceAggregations(ctx, searchParams.TenantID, aggregationsS)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+// storeToDeviceAggregations translates ES results directly to device aggregations
+func (a *app) storeToDeviceAggregations(
+	ctx context.Context, tenantID string, aggregationsS map[string]interface{},
+) ([]model.DeviceAggregation, error) {
+	aggs := []model.DeviceAggregation{}
+	for name, aggregationS := range aggregationsS {
+		if _, ok := aggregationS.(map[string]interface{}); !ok {
+			continue
+		}
+		bucketsS, ok := aggregationS.(map[string]interface{})["buckets"].([]interface{})
+		if !ok {
+			continue
+		}
+		items := make([]model.DeviceAggregationItem, 0, len(bucketsS))
+		for _, bucket := range bucketsS {
+			bucketMap, ok := bucket.(map[string]interface{})
+			if !ok {
+				return nil, errors.New("can't process store bucket item")
+			}
+			key, ok := bucketMap["key"].(string)
+			if !ok {
+				return nil, errors.New("can't process store key attribute")
+			}
+			count, ok := bucketMap["doc_count"].(float64)
+			if !ok {
+				return nil, errors.New("can't process store doc_count attribute")
+			}
+			item := model.DeviceAggregationItem{
+				Key:   key,
+				Count: int(count),
+			}
+			subaggs, err := a.storeToDeviceAggregations(ctx, tenantID, bucketMap)
+			if err == nil && len(subaggs) > 0 {
+				item.Aggregations = subaggs
+			}
+			items = append(items, item)
+		}
+
+		otherCount := 0
+		if count, ok := aggregationS.(map[string]interface{})["sum_other_doc_count"].(float64); ok {
+			otherCount = int(count)
+		}
+
+		aggs = append(aggs, model.DeviceAggregation{
+			Name:       name,
+			Items:      items,
+			OtherCount: otherCount,
+		})
+	}
+	return aggs, nil
+}
+
+// InventorySearchDevices searches devices' inventory data
 func (app *app) InventorySearchDevices(
 	ctx context.Context,
 	searchParams *model.SearchParams,
 ) ([]inventory.Device, int, error) {
+	if err := app.mapSearchParams(ctx, searchParams); err != nil {
+		return nil, 0, err
+	}
 	query, err := model.BuildQuery(*searchParams)
 	if err != nil {
 		return nil, 0, err
@@ -70,12 +204,11 @@ func (app *app) InventorySearchDevices(
 	}
 
 	esRes, err := app.store.Search(ctx, query)
-
 	if err != nil {
 		return nil, 0, err
 	}
 
-	res, total, err := app.storeToInventoryDevs(esRes)
+	res, total, err := app.storeToInventoryDevs(ctx, searchParams.TenantID, esRes)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -83,9 +216,109 @@ func (app *app) InventorySearchDevices(
 	return res, total, err
 }
 
-// storeToInventoryDevs translates ES results directly to iventory devices
+func (app *app) mapAggregations(ctx context.Context, tenantID string,
+	aggregations []model.AggregationTerm) error {
+	attributes := make(inventory.DeviceAttributes, 0, len(aggregations))
+	for i := range aggregations {
+		attributes = append(attributes, inventory.DeviceAttribute{
+			Name:  aggregations[i].Attribute,
+			Scope: aggregations[i].Scope,
+		})
+	}
+	attributes, err := app.mapper.MapInventoryAttributes(ctx, tenantID,
+		attributes, false, true)
+	if err == nil {
+		for i, attr := range attributes {
+			aggregations[i].Attribute = attr.Name
+			aggregations[i].Scope = attr.Scope
+			if len(aggregations[i].Aggregations) > 0 {
+				err = app.mapAggregations(ctx, tenantID, aggregations[i].Aggregations)
+				if err != nil {
+					break
+				}
+			}
+		}
+	}
+	return err
+}
+
+func (app *app) mapSearchParams(ctx context.Context, searchParams *model.SearchParams) error {
+	if len(searchParams.Filters) > 0 {
+		attributes := make(inventory.DeviceAttributes, 0, len(searchParams.Attributes))
+		for i := 0; i < len(searchParams.Filters); i++ {
+			attributes = append(attributes, inventory.DeviceAttribute{
+				Name:        searchParams.Filters[i].Attribute,
+				Scope:       searchParams.Filters[i].Scope,
+				Value:       searchParams.Filters[i].Value,
+				Description: &searchParams.Filters[i].Type,
+			})
+		}
+		attributes, err := app.mapper.MapInventoryAttributes(ctx, searchParams.TenantID,
+			attributes, false, true)
+		if err != nil {
+			return err
+		}
+		searchParams.Filters = make([]model.FilterPredicate, 0, len(searchParams.Filters))
+		for _, attribute := range attributes {
+			searchParams.Filters = append(searchParams.Filters, model.FilterPredicate{
+				Attribute: attribute.Name,
+				Scope:     attribute.Scope,
+				Value:     attribute.Value,
+				Type:      *attribute.Description,
+			})
+		}
+	}
+	if len(searchParams.Attributes) > 0 {
+		attributes := make(inventory.DeviceAttributes, 0, len(searchParams.Attributes))
+		for i := 0; i < len(searchParams.Attributes); i++ {
+			attributes = append(attributes, inventory.DeviceAttribute{
+				Name:  searchParams.Attributes[i].Attribute,
+				Scope: searchParams.Attributes[i].Scope,
+			})
+		}
+		attributes, err := app.mapper.MapInventoryAttributes(ctx, searchParams.TenantID,
+			attributes, false, false)
+		if err != nil {
+			return err
+		}
+		searchParams.Attributes = make([]model.SelectAttribute, 0, len(searchParams.Attributes))
+		for _, attribute := range attributes {
+			searchParams.Attributes = append(searchParams.Attributes, model.SelectAttribute{
+				Attribute: attribute.Name,
+				Scope:     attribute.Scope,
+			})
+		}
+	}
+	if len(searchParams.Sort) > 0 {
+		attributes := make(inventory.DeviceAttributes, 0, len(searchParams.Sort))
+		for i := 0; i < len(searchParams.Sort); i++ {
+			attributes = append(attributes, inventory.DeviceAttribute{
+				Name:        searchParams.Sort[i].Attribute,
+				Scope:       searchParams.Sort[i].Scope,
+				Description: &searchParams.Sort[i].Order,
+			})
+		}
+		attributes, err := app.mapper.MapInventoryAttributes(ctx, searchParams.TenantID,
+			attributes, false, false)
+		if err != nil {
+			return err
+		}
+		searchParams.Sort = make([]model.SortCriteria, 0, len(searchParams.Attributes))
+		for _, attribute := range attributes {
+			searchParams.Sort = append(searchParams.Sort, model.SortCriteria{
+				Attribute: attribute.Name,
+				Scope:     attribute.Scope,
+				Order:     *attribute.Description,
+			})
+		}
+	}
+
+	return nil
+}
+
+// storeToInventoryDevs translates ES results directly to inventory devices
 func (a *app) storeToInventoryDevs(
-	storeRes map[string]interface{},
+	ctx context.Context, tenantID string, storeRes map[string]interface{},
 ) ([]inventory.Device, int, error) {
 	devs := []inventory.Device{}
 
@@ -110,7 +343,7 @@ func (a *app) storeToInventoryDevs(
 	}
 
 	for _, v := range hitsS {
-		res, err := a.storeToInventoryDev(v)
+		res, err := a.storeToInventoryDev(ctx, tenantID, v)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -121,7 +354,8 @@ func (a *app) storeToInventoryDevs(
 	return devs, int(total), nil
 }
 
-func (a *app) storeToInventoryDev(storeRes interface{}) (*inventory.Device, error) {
+func (a *app) storeToInventoryDev(ctx context.Context, tenantID string,
+	storeRes interface{}) (*inventory.Device, error) {
 	resM, ok := storeRes.(map[string]interface{})
 	if !ok {
 		return nil, errors.New("can't process individual hit")
@@ -189,7 +423,11 @@ func (a *app) storeToInventoryDev(storeRes interface{}) (*inventory.Device, erro
 		}
 	}
 
-	ret.Attributes = attrs
+	attributes, err := a.mapper.ReverseInventoryAttributes(ctx, tenantID, attrs)
+	if err != nil {
+		return nil, err
+	}
+	ret.Attributes = attributes
 
 	return ret, nil
 }
@@ -234,8 +472,7 @@ func (app *app) GetSearchableInvAttrs(
 		return nil, errors.New("can't parse index properties")
 	}
 
-	ret := []model.FilterAttribute{}
-
+	attrs := []inventory.DeviceAttribute{}
 	for k := range propsM {
 		s, n, err := model.MaybeParseAttr(k)
 
@@ -244,8 +481,17 @@ func (app *app) GetSearchableInvAttrs(
 		}
 
 		if n != "" {
-			ret = append(ret, model.FilterAttribute{Name: n, Scope: s, Count: 1})
+			attrs = append(attrs, inventory.DeviceAttribute{Name: n, Scope: s})
 		}
+	}
+	attributes, err := app.mapper.ReverseInventoryAttributes(ctx, tid, attrs)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := []model.FilterAttribute{}
+	for _, attr := range attributes {
+		ret = append(ret, model.FilterAttribute{Name: attr.Name, Scope: attr.Scope, Count: 1})
 	}
 
 	sort.Slice(ret, func(i, j int) bool {

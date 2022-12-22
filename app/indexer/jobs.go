@@ -1,4 +1,4 @@
-// Copyright 2021 Northern.tech AS
+// Copyright 2022 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -141,15 +141,24 @@ func (i *indexer) ProcessJobs(ctx context.Context, jobs []*model.Job) {
 			device := model.NewDevice(tenant, string(inventoryDevice.ID))
 			// data from inventory
 			device.SetUpdatedAt(inventoryDevice.UpdatedTs)
-			for _, invattr := range inventoryDevice.Attributes {
-				attr := model.NewInventoryAttribute(invattr.Scope).
-					SetName(invattr.Name).
-					SetVal(invattr.Value)
-				if err := device.AppendAttr(attr); err != nil {
-					err = errors.Wrapf(err,
-						"failed to convert inventory data for tenant %s, "+
-							"device %s", tenant, deviceID)
-					l.Warn(err)
+			attributes, err := i.mapper.MapInventoryAttributes(ctx, tenant,
+				inventoryDevice.Attributes, true, false)
+			if err != nil {
+				err = errors.Wrapf(err,
+					"failed to map inventory data for tenant %s, "+
+						"device %s", tenant, deviceID)
+				l.Warn(err)
+			} else {
+				for _, invattr := range attributes {
+					attr := model.NewInventoryAttribute(invattr.Scope).
+						SetName(invattr.Name).
+						SetVal(invattr.Value)
+					if err := device.AppendAttr(attr); err != nil {
+						err = errors.Wrapf(err,
+							"failed to convert inventory data for tenant %s, "+
+								"device %s", tenant, deviceID)
+						l.Warn(err)
+					}
 				}
 			}
 			// data from device auth

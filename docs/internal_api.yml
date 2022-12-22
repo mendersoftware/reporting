@@ -22,6 +22,18 @@ paths:
         500:
           $ref: '#/components/responses/InternalServerError'
 
+  /health:
+    get:
+      tags:
+        - Internal API
+      summary: Get service health status.
+      operationId: Check Health
+      responses:
+        204:
+          description: Service is healthy.
+        500:
+          $ref: '#/components/responses/InternalServerError'
+
   /inventory/tenants/{tenant_id}/search:
     post:
       tags:

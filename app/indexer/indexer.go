@@ -1,4 +1,4 @@
-// Copyright 2021 Northern.tech AS
+// Copyright 2022 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import (
 	"github.com/mendersoftware/reporting/client/deviceauth"
 	"github.com/mendersoftware/reporting/client/inventory"
 	"github.com/mendersoftware/reporting/client/nats"
+	"github.com/mendersoftware/reporting/mapping"
 	"github.com/mendersoftware/reporting/model"
 	"github.com/mendersoftware/reporting/store"
 )
@@ -32,6 +33,7 @@ type Indexer interface {
 
 type indexer struct {
 	store     store.Store
+	mapper    mapping.Mapper
 	nats      nats.Client
 	devClient deviceauth.Client
 	invClient inventory.Client
@@ -39,12 +41,15 @@ type indexer struct {
 
 func NewIndexer(
 	store store.Store,
+	ds store.DataStore,
 	nats nats.Client,
 	devClient deviceauth.Client,
 	invClient inventory.Client,
 ) Indexer {
+	mapper := mapping.NewMapper(ds)
 	return &indexer{
 		store:     store,
+		mapper:    mapper,
 		nats:      nats,
 		devClient: devClient,
 		invClient: invClient,

@@ -13,6 +13,96 @@ security:
   - ManagementJWT: []
 
 paths:
+  /devices/aggregate:
+    post:
+      tags:
+        - Management API
+      summary: Aggregate device inventory data.
+      operationId: Aggregate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AggregationTerms'
+            example:
+              aggregations:
+                - name: "group"
+                  attribute: "group_name"
+                  scope: "system"
+                  size: 10
+              filters:
+                - attribute: "SN"
+                  scope: "inventory"
+                  type: "$in"
+                  value: ["1234567890", "0987654321"]
+      responses:
+        200:
+          description: OK. Returns a list of aggregations.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Aggregation'
+              example:
+                - name: "group"
+                  items:
+                  - key: "group1"
+                    count: 1
+                  - key: "group1"
+                    count: 2
+                  other_count: 5
+        400:
+          $ref: '#/components/responses/InvalidRequestError'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+
+  /devices/attributes:
+    get:
+      tags:
+        - Management API
+      operationId: Get device filterable attributes usage and limits
+      summary: Get the list of device filterable attributes and the limits
+      description:  |
+        Returns a list of device filterable attributes.
+      responses:
+        200:
+          description: OK. Returns a list of filterable attributes.
+          content:
+            application/json:
+              schema:
+                title: Attributes usage and limits
+                type: object
+                properties:
+                  attributes:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                          description: Attribute key to compare.
+                        scope:
+                          type: string
+                          description: The scope the attribute exists in.
+                    description: List of filterable attributes
+                  count:
+                    type: integer
+                    description: Current number of device filterable attributes
+                  limit:
+                    type: integer
+                    description: Maximum number of device filterable attributes
+                example:
+                  attributes:
+                    - name: "system-version"
+                      scope: "inventory"
+                    - name: "SN"
+                      scope: "inventory"
+                  count: 2
+                  limit: 100
+        500:
+          $ref: '#/components/responses/InternalServerError'
+
   /devices/search:
     post:
       tags:
@@ -136,6 +226,63 @@ components:
         error: "<error description>"
         request_id: "eed14d55-d996-42cd-8248-e806663810a8"
 
+    AggregationTerm:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the aggregation.
+        attribute:
+          type: string
+          description: Attribute key(s) to aggregate.
+        scope:
+          type: string
+          description: The scope the attribute(s) exists in.
+        limit:
+          type: integer
+          description: Number of top results to return.
+          default: 10
+        aggregations:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/AggregationTerm'
+          description: Sub-aggregation terms.
+      required:
+        - name
+        - field
+
+    Aggregation:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Aggregation name
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AggregationItem'
+        other_count:
+          type: integer
+          description: Count of the documents not included in the items
+
+    AggregationItem:
+      type: object
+      properties:
+        key:
+          type: string
+          description: Aggregation key
+        count:
+          type: integer
+          description: Aggregation count
+        aggregations:
+          type: array
+          minItems: 0
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/Aggregation'
+
     Attribute:
       type: object
       properties:
@@ -252,6 +399,20 @@ components:
           description: Scope the attribute key belongs to.
       required:
         - attribute
+
+    AggregationTerms:
+      type: object
+      properties:
+        aggregations:
+          type: array
+          items:
+            $ref: '#/components/schemas/AggregationTerm'
+          description: Aggregation terms.
+        filters:
+          type: array
+          items:
+            $ref: '#/components/schemas/FilterTerm'
+          description: Filtering terms.
 
     SearchTerms:
       type: object

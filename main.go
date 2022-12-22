@@ -17,13 +17,16 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 
 	"github.com/mendersoftware/go-lib-micro/config"
+	"github.com/mendersoftware/go-lib-micro/log"
 	mlog "github.com/mendersoftware/go-lib-micro/log"
 
 	"github.com/mendersoftware/reporting/app/indexer"
@@ -31,7 +34,13 @@ import (
 	"github.com/mendersoftware/reporting/client/nats"
 	dconfig "github.com/mendersoftware/reporting/config"
 	"github.com/mendersoftware/reporting/store"
-	elastic "github.com/mendersoftware/reporting/store/elasticsearch"
+	"github.com/mendersoftware/reporting/store/mongo"
+	"github.com/mendersoftware/reporting/store/opensearch"
+)
+
+const (
+	opensearchMaxWaitingTime      = 300
+	opensearchRetryDelayInSeconds = 1
 )
 
 func main() {
@@ -123,7 +132,17 @@ func cmdServer(args *cli.Context) error {
 			return err
 		}
 	}
-	return server.InitAndRun(config.Config, store)
+	ctx := context.Background()
+	ds, err := getDatastore(args)
+	if err != nil {
+		return err
+	}
+	defer ds.Close(ctx)
+	err = ds.Migrate(ctx, mongo.DbVersion, args.Bool("automigrate"))
+	if err != nil {
+		return err
+	}
+	return server.InitAndRun(config.Config, store, ds)
 }
 
 func getNatsClient() (nats.Client, error) {
@@ -153,14 +172,22 @@ func cmdIndexer(args *cli.Context) error {
 			return err
 		}
 	}
-
 	nats, err := getNatsClient()
 	if err != nil {
 		return err
 	}
 	defer nats.Close()
-
-	return indexer.InitAndRun(config.Config, store, nats)
+	ctx := context.Background()
+	ds, err := getDatastore(args)
+	if err != nil {
+		return err
+	}
+	defer ds.Close(ctx)
+	err = ds.Migrate(ctx, mongo.DbVersion, args.Bool("automigrate"))
+	if err != nil {
+		return err
+	}
+	return indexer.InitAndRun(config.Config, store, ds, nats)
 }
 
 func cmdMigrate(args *cli.Context) error {
@@ -169,23 +196,65 @@ func cmdMigrate(args *cli.Context) error {
 		return err
 	}
 	ctx := context.Background()
-	return store.Migrate(ctx)
+	err = store.Migrate(ctx)
+	if err != nil {
+		return err
+	}
+	ds, err := getDatastore(args)
+	if err != nil {
+		return err
+	}
+	defer ds.Close(ctx)
+	return ds.Migrate(ctx, mongo.DbVersion, true)
 }
 
 func getStore(args *cli.Context) (store.Store, error) {
-	addresses := config.Config.GetStringSlice(dconfig.SettingElasticsearchAddresses)
-	devicesIndexName := config.Config.GetString(dconfig.SettingElasticsearchDevicesIndexName)
-	deviceesIndexShards := config.Config.GetInt(dconfig.SettingElasticsearchDevicesIndexShards)
+	addresses := config.Config.GetStringSlice(dconfig.SettingOpenSearchAddresses)
+	devicesIndexName := config.Config.GetString(dconfig.SettingOpenSearchDevicesIndexName)
+	deviceesIndexShards := config.Config.GetInt(dconfig.SettingOpenSearchDevicesIndexShards)
 	deviceesIndexReplicas := config.Config.GetInt(
-		dconfig.SettingElasticsearchDevicesIndexReplicas)
-	store, err := elastic.NewStore(
-		elastic.WithServerAddresses(addresses),
-		elastic.WithDevicesIndexName(devicesIndexName),
-		elastic.WithDevicesIndexShards(deviceesIndexShards),
-		elastic.WithDevicesIndexReplicas(deviceesIndexReplicas),
+		dconfig.SettingOpenSearchDevicesIndexReplicas)
+	store, err := opensearch.NewStore(
+		opensearch.WithServerAddresses(addresses),
+		opensearch.WithDevicesIndexName(devicesIndexName),
+		opensearch.WithDevicesIndexShards(deviceesIndexShards),
+		opensearch.WithDevicesIndexReplicas(deviceesIndexReplicas),
 	)
 	if err != nil {
 		return nil, err
 	}
+	ctx := context.Background()
+	l := log.FromContext(ctx)
+	for i := 0; i < opensearchMaxWaitingTime; i++ {
+		err = store.Ping(ctx)
+		if err == nil {
+			break
+		}
+		l.Warn(err)
+		time.Sleep(opensearchRetryDelayInSeconds * time.Second)
+	}
+	if err != nil {
+		l.Error(err)
+		return nil, err
+	}
+	l.Info("successfully connected to OpenSearch")
 	return store, nil
+}
+
+func getDatastore(args *cli.Context) (store.DataStore, error) {
+	mgoURL, err := url.Parse(config.Config.GetString(dconfig.SettingMongo))
+	if err != nil {
+		return nil, err
+	}
+
+	storeConfig := mongo.MongoStoreConfig{
+		MongoURL:      mgoURL,
+		SSL:           config.Config.GetBool(dconfig.SettingDbSSL),
+		SSLSkipVerify: config.Config.GetBool(dconfig.SettingDbSSLSkipVerify),
+		Username:      config.Config.GetString(dconfig.SettingDbUsername),
+		Password:      config.Config.GetString(dconfig.SettingDbPassword),
+		DbName:        mongo.DbName,
+	}
+
+	return mongo.NewMongoStore(context.Background(), storeConfig)
 }

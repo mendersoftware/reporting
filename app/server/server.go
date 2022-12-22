@@ -1,4 +1,4 @@
-// Copyright 2021 Northern.tech AS
+// Copyright 2022 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -43,12 +43,12 @@ func init() {
 }
 
 // InitAndRun initializes the server and runs it
-func InitAndRun(conf config.Reader, store store.Store) error {
+func InitAndRun(conf config.Reader, store store.Store, ds store.DataStore) error {
 	ctx := context.Background()
 
 	l := log.FromContext(ctx)
 
-	reporting := reporting.NewApp(store)
+	reporting := reporting.NewApp(store, ds)
 
 	var listen = conf.GetString(dconfig.SettingListen)
 	var router = api.NewRouter(reporting)

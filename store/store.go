@@ -27,5 +27,7 @@ type Store interface {
 	GetDevicesRoutingKey(tid string) string
 	GetDevicesIndexMapping(ctx context.Context, tid string) (map[string]interface{}, error)
 	Migrate(ctx context.Context) error
-	Search(ctx context.Context, query interface{}) (model.M, error)
+	Aggregate(ctx context.Context, query model.Query) (model.M, error)
+	Search(ctx context.Context, query model.Query) (model.M, error)
+	Ping(ctx context.Context) error
 }

@@ -1,4 +1,4 @@
-# Copyright 2021 Northern.tech AS
+# Copyright 2022 Northern.tech AS
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -15,20 +15,12 @@
 import pytest
 import os
 
-from elasticsearch import Elasticsearch
+from opensearchpy import OpenSearch
 
 
 @pytest.fixture(scope="session")
-def elasticsearch():
-    hosts = os.getenv("ELASTICSEARCH_URL").split(",")
-    client = Elasticsearch(hosts=hosts)
+def opensearch():
+    hosts = os.getenv("OPENSEARCH_URL").split(",")
+    client = OpenSearch(hosts=hosts)
     yield client
     client.close()
-
-
-@pytest.fixture(scope="function")
-def clean_es(elasticsearch):
-    indices = elasticsearch.cat.indices(format="json")
-    for idx in indices:
-        elasticsearch.indices.delete(idx["index"])
-    yield elasticsearch

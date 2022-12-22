@@ -1,4 +1,4 @@
-// Copyright 2021 Northern.tech AS
+// Copyright 2022 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -19,7 +19,9 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -49,6 +51,108 @@ func NewManagementController(r reporting.App) *ManagementController {
 	}
 }
 
+type attributes struct {
+	Limit      int         `json:"limit"`
+	Count      int         `json:"count"`
+	Attributes []attribute `json:"attributes"`
+}
+
+type attribute struct {
+	Name  string `json:"name"`
+	Scope string `json:"scope"`
+}
+
+func (mc *ManagementController) Aggregate(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	params, err := parseAggregateParams(ctx, c)
+	if err != nil {
+		rest.RenderError(c,
+			http.StatusBadRequest,
+			errors.Wrap(err, "malformed request body"),
+		)
+		return
+	}
+
+	res, err := mc.reporting.InventoryAggregateDevices(ctx, params)
+	if err != nil {
+		rest.RenderError(c,
+			http.StatusInternalServerError,
+			err,
+		)
+		return
+	}
+
+	c.JSON(http.StatusOK, res)
+}
+
+func parseAggregateParams(ctx context.Context, c *gin.Context) (*model.AggregateParams, error) {
+	var aggregateParams model.AggregateParams
+
+	err := c.ShouldBindJSON(&aggregateParams)
+	if err != nil {
+		return nil, err
+	}
+
+	if id := identity.FromContext(ctx); id != nil {
+		aggregateParams.TenantID = id.Tenant
+	} else {
+		return nil, errors.New("missing tenant ID from the context")
+	}
+
+	if scope := rbac.ExtractScopeFromHeader(c.Request); scope != nil {
+		aggregateParams.Groups = scope.DeviceGroups
+	}
+
+	if err := aggregateParams.Validate(); err != nil {
+		return nil, err
+	}
+
+	return &aggregateParams, nil
+}
+
+func (mc *ManagementController) Attrs(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	var tenantID string
+	if id := identity.FromContext(ctx); id != nil && id.Tenant != "" {
+		tenantID = id.Tenant
+	} else {
+		rest.RenderError(c,
+			http.StatusBadRequest,
+			errors.New("missing tenant ID from the context"),
+		)
+		return
+	}
+
+	mapping, err := mc.reporting.GetMapping(ctx, tenantID)
+	if err != nil {
+		rest.RenderError(c,
+			http.StatusInternalServerError,
+			errors.Wrap(err, "failed to retrieve the mapping"),
+		)
+		return
+	} else if mapping == nil {
+		mapping = &model.Mapping{}
+	}
+
+	attributesList := make([]attribute, 0, len(mapping.Inventory))
+	for _, attr := range mapping.Inventory {
+		parts := strings.SplitN(attr, string(os.PathSeparator), 2)
+		attributesList = append(attributesList, attribute{
+			Name:  parts[1],
+			Scope: parts[0],
+		})
+	}
+	res := &attributes{
+		Limit:      model.MaxMappingInventoryAttributes,
+		Count:      len(mapping.Inventory),
+		Attributes: attributesList,
+	}
+
+	c.JSON(http.StatusOK, res)
+}
+
 func (mc *ManagementController) Search(c *gin.Context) {
 	ctx := c.Request.Context()
 	params, err := parseSearchParams(ctx, c)
@@ -60,9 +164,6 @@ func (mc *ManagementController) Search(c *gin.Context) {
 		return
 	}
 
-	if scope := rbac.ExtractScopeFromHeader(c.Request); scope != nil {
-		params.Groups = scope.DeviceGroups
-	}
 	res, total, err := mc.reporting.InventorySearchDevices(ctx, params)
 	if err != nil {
 		rest.RenderError(c,
@@ -90,6 +191,10 @@ func parseSearchParams(ctx context.Context, c *gin.Context) (*model.SearchParams
 		searchParams.TenantID = id.Tenant
 	} else {
 		return nil, errors.New("missing tenant ID from the context")
+	}
+
+	if scope := rbac.ExtractScopeFromHeader(c.Request); scope != nil {
+		searchParams.Groups = scope.DeviceGroups
 	}
 
 	if searchParams.PerPage <= 0 {

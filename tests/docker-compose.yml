@@ -11,19 +11,18 @@ services:
         environment:
             TESTING_HOST: "mender-reporting:8080"
             REPORTING_URL: "http://mender-reporting:8080"
-            ELASTICSEARCH_URL: "http://mender-elasticsearch:9200"
-            MMOCK_CONTROL_URL: "http://mmock:8081"
-            MMOCK_API_URL: "http://mmock:8080"
+            OPENSEARCH_URL: "http://mender-opensearch:9200"
         depends_on:
             - mender-reporting
             - mender-reporting-indexer
+            - mender-workflows-server
+            - mender-workflows-worker
             - mmock
 
     mender-reporting:
         image: "mendersoftware/reporting:prtest"
+        restart: always
         command:
-            - "/usr/bin/reporting"
-            - "--config=/etc/reporting/config.yaml"
             - "server"
             - "--automigrate"
         networks:
@@ -34,10 +33,11 @@ services:
             - ".:/testing"
         working_dir: /testing
         depends_on:
-            - mender-elasticsearch
+            - mender-opensearch
+            - mender-mongo
             - mender-nats
         environment:
-            REPORTING_ELASTICSEARCH_ADDRESSES: "http://mender-elasticsearch:9200"
+            REPORTING_OPENSEARCH_ADDRESSES: "http://mender-opensearch:9200"
             REPORTING_DEVICEAUTH_ADDR: "http://mender-device-auth:8080"
             REPORTING_INVENTORY_ADDR: "http://mender-inventory:8080"
             REPORTING_NATS_URI: "nats://mender-nats:4222"
@@ -45,26 +45,40 @@ services:
 
     mender-reporting-indexer:
         image: "mendersoftware/reporting:prtest"
+        restart: always
         command:
-            - "/usr/bin/reporting.test"
-            - "--config=/etc/reporting/config.yaml"
             - "indexer"
+            - "--automigrate"
         networks:
             mender:
-                aliases:
-                    - mender-reporting
         volumes:
             - ".:/testing"
         working_dir: /testing
         depends_on:
-            - mender-elasticsearch
+            - mender-opensearch
+            - mender-mongo
             - mender-nats
         environment:
-            REPORTING_ELASTICSEARCH_ADDRESSES: "http://mender-elasticsearch:9200"
+            REPORTING_OPENSEARCH_ADDRESSES: "http://mender-opensearch:9200"
             REPORTING_DEVICEAUTH_ADDR: "http://mender-device-auth:8080"
             REPORTING_INVENTORY_ADDR: "http://mender-inventory:8080"
             REPORTING_NATS_URI: "nats://mender-nats:4222"
             REPORTING_DEBUG_LOG: "true"
+
+    mender-workflows-server:
+        image: "mendersoftware/workflows:mender-master"
+        restart: always
+        command:
+            - "server"
+            - "--automigrate"
+        networks:
+            mender:
+
+    mender-workflows-worker:
+        image: "mendersoftware/workflows-worker:mender-master"
+        restart: always
+        networks:
+            mender:
 
     mmock:
         image: "jordimartin/mmock:v2.7.9"
@@ -84,16 +98,21 @@ services:
                     - mender-inventory
                     - mender-device-auth
 
-    mender-elasticsearch:
-        image: "elasticsearch:7.13.1"
+    mender-opensearch:
+        image: opensearchproject/opensearch:2.4.0
         networks:
             - mender
         environment:
-            - network.host=0.0.0.0
-            - discovery.type=single-node
-            - ES_JAVA_OPTS=-Xms512m -Xmx512m
+            - "discovery.type=single-node"
+            - "plugins.security.disabled=true"
+            - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
         ports:
             - "9200:9200"
+
+    mender-mongo:
+        image: mongo:4.4
+        networks:
+            - mender
 
     mender-nats:
         image: "nats:2.6.2-alpine3.14"

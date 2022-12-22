@@ -1,4 +1,4 @@
-// Copyright 2021 Northern.tech AS
+// Copyright 2022 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -24,31 +24,31 @@ const (
 	// SettingListenDefault is the default value for the listen address
 	SettingListenDefault = ":8080"
 
-	// SettingElasticsearchAddresses is the config key for the elasticsearch addresses
-	SettingElasticsearchAddresses = "elasticsearch_addresses"
-	// SettingElasticsearchAddressesDefault is the default value for the elasticsearch addresses
-	SettingElasticsearchAddressesDefault = "http://localhost:9200"
+	// SettingOpenSearchAddresses is the config key for the opensearch addresses
+	SettingOpenSearchAddresses = "opensearch_addresses"
+	// SettingOpenSearchAddressesDefault is the default value for the opensearch addresses
+	SettingOpenSearchAddressesDefault = "http://localhost:9200"
 
-	// SettingElasticsearchDevicesIndexName is the config key for the elasticsearch devices
+	// SettingOpenSearchDevicesIndexName is the config key for the opensearch devices
 	// index name
-	SettingElasticsearchDevicesIndexName = "elasticsearch_devices_index_name"
-	// SettingElasticsearchDevicesIndexNameDefault is the default value for the elasticsearch
+	SettingOpenSearchDevicesIndexName = "opensearch_devices_index_name"
+	// SettingOpenSearchDevicesIndexNameDefault is the default value for the opensearch
 	// devices index name
-	SettingElasticsearchDevicesIndexNameDefault = "devices"
+	SettingOpenSearchDevicesIndexNameDefault = "devices"
 
-	// SettingElasticsearchDevicesIndexShards is the config key for the elasticsearch devices
+	// SettingOpenSearchDevicesIndexShards is the config key for the opensearch devices
 	// index shards
-	SettingElasticsearchDevicesIndexShards = "elasticsearch_devices_index_shards"
-	// SettingElasticsearchDevicesIndexShardsDefault is the default value for the elasticsearch
+	SettingOpenSearchDevicesIndexShards = "opensearch_devices_index_shards"
+	// SettingOpenSearchDevicesIndexShardsDefault is the default value for the opensearch
 	// devices index shards
-	SettingElasticsearchDevicesIndexShardsDefault = 1
+	SettingOpenSearchDevicesIndexShardsDefault = 1
 
-	// SettingElasticsearchDevicesIndexReplicas is the config key for the elasticsearch devices
+	// SettingOpenSearchDevicesIndexReplicas is the config key for the opensearch devices
 	// index replicas
-	SettingElasticsearchDevicesIndexReplicas = "elasticsearch_devices_index_replicas"
-	// SettingElasticsearchDevicesIndexReplicasDefault is the default value for the
-	// elasticsearch devices index replicas
-	SettingElasticsearchDevicesIndexReplicasDefault = 0
+	SettingOpenSearchDevicesIndexReplicas = "opensearch_devices_index_replicas"
+	// SettingOpenSearchDevicesIndexReplicasDefault is the default value for the
+	// opensearch devices index replicas
+	SettingOpenSearchDevicesIndexReplicasDefault = 0
 
 	// SettingDeviceAuthAddr is the config key for the deviceauth service address
 	SettingDeviceAuthAddr = "deviceauth_addr"
@@ -59,6 +59,32 @@ const (
 	SettingInventoryAddr = "inventory_addr"
 	// SettingInventoryAddrDefault is the default value for the inventory service address
 	SettingInventoryAddrDefault = "http://mender-inventory:8080/"
+
+	// SettingMongo is the config key for the mongo URL
+	SettingMongo = "mongo_url"
+	// SettingMongoDefault is the default value for the mongo URL
+	SettingMongoDefault = "mongodb://mender-mongo:27017"
+
+	// SettingDbName is the config key for the mongo database name
+	SettingDbName = "mongo_dbname"
+	// SettingDbNameDefault is the default value for the mongo database name
+	SettingDbNameDefault = "reporting"
+
+	// SettingDbSSL is the config key for the mongo SSL setting
+	SettingDbSSL = "mongo_ssl"
+	// SettingDbSSLDefault is the default value for the mongo SSL setting
+	SettingDbSSLDefault = false
+
+	// SettingDbSSLSkipVerify is the config key for the mongo SSL skip verify setting
+	SettingDbSSLSkipVerify = "mongo_ssl_skipverify"
+	// SettingDbSSLSkipVerifyDefault is the default value for the mongo SSL skip verify setting
+	SettingDbSSLSkipVerifyDefault = false
+
+	// SettingDbUsername is the config key for the mongo username
+	SettingDbUsername = "mongo_username"
+
+	// SettingDbPassword is the config key for the mongo password
+	SettingDbPassword = "mongo_password"
 
 	// SettingNatsURI is the config key for the nats uri
 	SettingNatsURI = "nats_uri"
@@ -100,16 +126,18 @@ var (
 	// Defaults are the default configuration settings
 	Defaults = []config.Default{
 		{Key: SettingListen, Value: SettingListenDefault},
-		{Key: SettingElasticsearchAddresses, Value: SettingElasticsearchAddressesDefault},
-		{Key: SettingElasticsearchDevicesIndexName,
-			Value: SettingElasticsearchDevicesIndexNameDefault},
-		{Key: SettingElasticsearchDevicesIndexShards,
-			Value: SettingElasticsearchDevicesIndexShardsDefault},
-		{Key: SettingElasticsearchDevicesIndexReplicas,
-			Value: SettingElasticsearchDevicesIndexReplicasDefault},
+		{Key: SettingOpenSearchAddresses, Value: SettingOpenSearchAddressesDefault},
+		{Key: SettingOpenSearchDevicesIndexName,
+			Value: SettingOpenSearchDevicesIndexNameDefault},
+		{Key: SettingOpenSearchDevicesIndexShards,
+			Value: SettingOpenSearchDevicesIndexShardsDefault},
+		{Key: SettingOpenSearchDevicesIndexReplicas,
+			Value: SettingOpenSearchDevicesIndexReplicasDefault},
 		{Key: SettingDebugLog, Value: SettingDebugLogDefault},
 		{Key: SettingDeviceAuthAddr, Value: SettingDeviceAuthAddrDefault},
 		{Key: SettingInventoryAddr, Value: SettingInventoryAddrDefault},
+		{Key: SettingMongo, Value: SettingMongoDefault},
+		{Key: SettingDbName, Value: SettingDbNameDefault},
 		{Key: SettingNatsURI, Value: SettingNatsURIDefault},
 		{Key: SettingNatsStreamName, Value: SettingNatsStreamNameDefault},
 		{Key: SettingNatsSubscriberTopic, Value: SettingNatsSubscriberTopicDefault},
