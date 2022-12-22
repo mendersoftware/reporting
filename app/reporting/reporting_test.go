@@ -29,6 +29,54 @@ import (
 
 var contextMatcher = mock.MatchedBy(func(_ context.Context) bool { return true })
 
+func TestHealthCheck(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		Name string
+
+		StoreErr     error
+		DatastoreErr error
+
+		Error error
+	}{
+		{
+			Name: "ok",
+		},
+		{
+			Name:     "ko, store",
+			StoreErr: errors.New("error"),
+			Error:    errors.New("error"),
+		},
+		{
+			Name:         "ko, datastore",
+			DatastoreErr: errors.New("error"),
+			Error:        errors.New("error"),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			ctx := context.Background()
+
+			ds := &mstore.DataStore{}
+			ds.On("Ping", ctx).Return(tc.DatastoreErr)
+
+			store := &mstore.Store{}
+			if tc.DatastoreErr == nil {
+				store.On("Ping", ctx).Return(tc.StoreErr)
+			}
+			app := NewApp(store, ds)
+
+			err := app.HealthCheck(ctx)
+			if tc.Error != nil {
+				assert.Equal(t, tc.Error, err)
+			} else {
+				assert.Nil(t, err)
+			}
+		})
+	}
+}
+
 func TestGetMapping(t *testing.T) {
 	const tenantID = "tenant_id"
 	ctx := context.Background()
@@ -44,6 +92,286 @@ func TestGetMapping(t *testing.T) {
 	res, err := app.GetMapping(ctx, tenantID)
 	assert.NoError(t, err)
 	assert.Equal(t, mapping, res)
+}
+
+func TestInventoryAggregateDevices(t *testing.T) {
+	const tenantID = "tenant_id"
+	t.Parallel()
+	type testCase struct {
+		Name string
+
+		Params                 *model.AggregateParams
+		MappedParams           *model.SearchParams
+		MappedAggregatedParams []model.AggregationTerm
+		Store                  func(*testing.T, testCase) *mstore.Store
+		Mapping                model.Mapping
+
+		Result []model.DeviceAggregation
+		Error  error
+	}
+	testCases := []testCase{{
+		Name: "ok",
+
+		Params: &model.AggregateParams{
+			Filters: []model.FilterPredicate{{
+				Attribute: "foo",
+				Value:     "bar",
+				Scope:     "inventory",
+				Type:      "$eq",
+			}},
+			Aggregations: []model.AggregationTerm{
+				{
+					Name:      "aggr",
+					Attribute: "attr",
+					Scope:     "inventory",
+				},
+			},
+			TenantID: tenantID,
+		},
+		MappedParams: &model.SearchParams{
+			Filters: []model.FilterPredicate{{
+				Attribute: "attribute1",
+				Value:     "bar",
+				Scope:     "inventory",
+				Type:      "$eq",
+			}},
+		},
+		MappedAggregatedParams: []model.AggregationTerm{
+			{
+				Name:      "aggr",
+				Attribute: "attribute2",
+				Scope:     "inventory",
+			},
+		},
+		Store: func(t *testing.T, self testCase) *mstore.Store {
+			store := new(mstore.Store)
+			q, _ := model.BuildQuery(*self.MappedParams)
+			q.Must(model.M{
+				"term": model.M{
+					model.FieldNameTenantID: tenantID,
+				},
+			})
+			aggrs, _ := model.BuildAggregations(self.MappedAggregatedParams)
+			q = q.WithSize(0).With(map[string]interface{}{
+				"aggs": aggrs,
+			})
+			store.On("Aggregate", contextMatcher, q).
+				Return(model.M{
+					"aggregations": map[string]interface{}{
+						"aggr": map[string]interface{}{
+							"sum_other_doc_count": float64(0),
+							"buckets": []interface{}{
+								map[string]interface{}{
+									"key":       "group1",
+									"doc_count": float64(5),
+								},
+								map[string]interface{}{
+									"key":       "group2",
+									"doc_count": float64(4),
+								},
+							},
+						},
+					},
+				}, nil)
+			return store
+		},
+		Mapping: model.Mapping{
+			TenantID:  "",
+			Inventory: []string{"inventory/foo", "inventory/attr"},
+		},
+		Result: []model.DeviceAggregation{
+			{
+				Name: "aggr",
+				Items: []model.DeviceAggregationItem{
+					{
+						Key:   "group1",
+						Count: 5,
+					},
+					{
+						Key:   "group2",
+						Count: 4,
+					},
+				},
+			},
+		},
+	}, {
+		Name: "ok, subaggregations",
+
+		Params: &model.AggregateParams{
+			Filters: []model.FilterPredicate{{
+				Attribute: "foo",
+				Value:     "bar",
+				Scope:     "inventory",
+				Type:      "$eq",
+			}},
+			Aggregations: []model.AggregationTerm{
+				{
+					Name:      "aggr",
+					Attribute: "attr",
+					Scope:     "inventory",
+					Aggregations: []model.AggregationTerm{
+						{
+							Name:      "subaggr",
+							Attribute: "foo",
+							Scope:     "inventory",
+						},
+					},
+				},
+			},
+			TenantID: tenantID,
+		},
+		MappedParams: &model.SearchParams{
+			Filters: []model.FilterPredicate{{
+				Attribute: "attribute1",
+				Value:     "bar",
+				Scope:     "inventory",
+				Type:      "$eq",
+			}},
+		},
+		MappedAggregatedParams: []model.AggregationTerm{
+			{
+				Name:      "aggr",
+				Attribute: "attribute2",
+				Scope:     "inventory",
+				Aggregations: []model.AggregationTerm{
+					{
+						Name:      "subaggr",
+						Attribute: "attribute1",
+						Scope:     "inventory",
+					},
+				},
+			},
+		},
+		Store: func(t *testing.T, self testCase) *mstore.Store {
+			store := new(mstore.Store)
+			q, _ := model.BuildQuery(*self.MappedParams)
+			q.Must(model.M{
+				"term": model.M{
+					model.FieldNameTenantID: tenantID,
+				},
+			})
+			aggrs, _ := model.BuildAggregations(self.MappedAggregatedParams)
+			q = q.WithSize(0).With(map[string]interface{}{
+				"aggs": aggrs,
+			})
+			store.On("Aggregate", contextMatcher, q).
+				Return(model.M{
+					"aggregations": map[string]interface{}{
+						"aggr": map[string]interface{}{
+							"sum_other_doc_count": float64(0),
+							"buckets": []interface{}{
+								map[string]interface{}{
+									"key":       "group1",
+									"doc_count": float64(5),
+									"subaggr": map[string]interface{}{
+										"sum_other_doc_count": float64(0),
+										"buckets": []interface{}{
+											map[string]interface{}{
+												"key":       "v1",
+												"doc_count": float64(5),
+											},
+										},
+									},
+								},
+								map[string]interface{}{
+									"key":       "group2",
+									"doc_count": float64(4),
+									"subaggr": map[string]interface{}{
+										"sum_other_doc_count": float64(0),
+										"buckets": []interface{}{
+											map[string]interface{}{
+												"key":       "v1",
+												"doc_count": float64(4),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				}, nil)
+			return store
+		},
+		Mapping: model.Mapping{
+			TenantID:  "",
+			Inventory: []string{"inventory/foo", "inventory/attr"},
+		},
+		Result: []model.DeviceAggregation{
+			{
+				Name: "aggr",
+				Items: []model.DeviceAggregationItem{
+					{
+						Key:   "group1",
+						Count: 5,
+						Aggregations: []model.DeviceAggregation{{
+							Name: "subaggr",
+							Items: []model.DeviceAggregationItem{
+								{
+									Key:   "v1",
+									Count: 5,
+								},
+							},
+						}},
+					},
+					{
+						Key:   "group2",
+						Count: 4,
+						Aggregations: []model.DeviceAggregation{{
+							Name: "subaggr",
+							Items: []model.DeviceAggregationItem{
+								{
+									Key:   "v1",
+									Count: 4,
+								},
+							},
+						}},
+					},
+				},
+			},
+		},
+	}}
+	for i := range testCases {
+		tc := testCases[i]
+		t.Run(tc.Name, func(t *testing.T) {
+			t.Parallel()
+
+			var store *mstore.Store
+			if tc.Store == nil {
+				store = new(mstore.Store)
+			} else {
+				store = tc.Store(t, tc)
+			}
+			defer store.AssertExpectations(t)
+
+			ds := &mstore.DataStore{}
+
+			ds.On("UpdateAndGetMapping",
+				mock.MatchedBy(func(_ context.Context) bool {
+					return true
+				}),
+				tenantID,
+				[]string{"foo", "attr"},
+			).Return(&tc.Mapping, nil).Once()
+
+			ds.On("GetMapping",
+				mock.MatchedBy(func(_ context.Context) bool {
+					return true
+				}),
+				tenantID,
+			).Return(&tc.Mapping, nil).Once()
+
+			app := NewApp(store, ds)
+			res, err := app.InventoryAggregateDevices(context.Background(), tc.Params)
+			if tc.Error != nil {
+				if assert.Error(t, err) {
+					assert.Regexp(t, tc.Error.Error(), err.Error())
+				}
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.Result, res)
+			}
+		})
+	}
 }
 
 func TestInventorySearchDevices(t *testing.T) {
@@ -78,6 +406,75 @@ func TestInventorySearchDevices(t *testing.T) {
 			DeviceIDs: []string{"194d1060-1717-44dc-a783-00038f4a8013"},
 		},
 		MappedParams: &model.SearchParams{
+			Filters: []model.FilterPredicate{{
+				Attribute: "attribute1",
+				Value:     "bar",
+				Scope:     "inventory",
+				Type:      "$eq",
+			}},
+			Sort: []model.SortCriteria{{
+				Attribute: "attribute1",
+				Scope:     "inventory",
+				Order:     "desc",
+			}},
+			DeviceIDs: []string{"194d1060-1717-44dc-a783-00038f4a8013"},
+		},
+		Store: func(t *testing.T, self testCase) *mstore.Store {
+			store := new(mstore.Store)
+			q, _ := model.BuildQuery(*self.MappedParams)
+			q = q.Must(model.M{"terms": model.M{"id": self.Params.DeviceIDs}})
+			store.On("Search", contextMatcher, q).
+				Return(model.M{"hits": map[string]interface{}{"hits": []interface{}{
+					map[string]interface{}{"_source": map[string]interface{}{
+						"id":       "194d1060-1717-44dc-a783-00038f4a8013",
+						"tenantID": "123456789012345678901234",
+						model.ToAttr("inventory", "attribute1", model.TypeStr): []string{"bar"},
+					}}},
+					"total": map[string]interface{}{
+						"value": float64(1),
+					}},
+				}, nil)
+			return store
+		},
+		Mapping: model.Mapping{
+			TenantID:  "",
+			Inventory: []string{"inventory/foo"},
+		},
+		TotalCount: 1,
+		Result: []inventory.Device{{
+			ID: "194d1060-1717-44dc-a783-00038f4a8013",
+			Attributes: inventory.DeviceAttributes{{
+				Name:  "foo",
+				Value: []string{"bar"},
+				Scope: "inventory",
+			}},
+		}},
+	}, {
+		Name: "ok with attributes",
+
+		Params: &model.SearchParams{
+			Attributes: []model.SelectAttribute{{
+				Attribute: "foo",
+				Scope:     "inventory",
+			}},
+			Filters: []model.FilterPredicate{{
+				Attribute: "foo",
+				Value:     "bar",
+				Scope:     "inventory",
+				Type:      "$eq",
+			}},
+			Sort: []model.SortCriteria{{
+				Attribute: "foo",
+				Scope:     "inventory",
+				Order:     "desc",
+			}},
+			DeviceIDs: []string{"194d1060-1717-44dc-a783-00038f4a8013"},
+		},
+		MappedParams: &model.SearchParams{
+			Attributes: []model.SelectAttribute{{
+				Attribute: "attribute1",
+				Scope:     "inventory",
+			}},
 			Filters: []model.FilterPredicate{{
 				Attribute: "attribute1",
 				Value:     "bar",

@@ -62,6 +62,55 @@ type attribute struct {
 	Scope string `json:"scope"`
 }
 
+func (mc *ManagementController) Aggregate(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	params, err := parseAggregateParams(ctx, c)
+	if err != nil {
+		rest.RenderError(c,
+			http.StatusBadRequest,
+			errors.Wrap(err, "malformed request body"),
+		)
+		return
+	}
+
+	res, err := mc.reporting.InventoryAggregateDevices(ctx, params)
+	if err != nil {
+		rest.RenderError(c,
+			http.StatusInternalServerError,
+			err,
+		)
+		return
+	}
+
+	c.JSON(http.StatusOK, res)
+}
+
+func parseAggregateParams(ctx context.Context, c *gin.Context) (*model.AggregateParams, error) {
+	var aggregateParams model.AggregateParams
+
+	err := c.ShouldBindJSON(&aggregateParams)
+	if err != nil {
+		return nil, err
+	}
+
+	if id := identity.FromContext(ctx); id != nil {
+		aggregateParams.TenantID = id.Tenant
+	} else {
+		return nil, errors.New("missing tenant ID from the context")
+	}
+
+	if scope := rbac.ExtractScopeFromHeader(c.Request); scope != nil {
+		aggregateParams.Groups = scope.DeviceGroups
+	}
+
+	if err := aggregateParams.Validate(); err != nil {
+		return nil, err
+	}
+
+	return &aggregateParams, nil
+}
+
 func (mc *ManagementController) Attrs(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -115,9 +164,6 @@ func (mc *ManagementController) Search(c *gin.Context) {
 		return
 	}
 
-	if scope := rbac.ExtractScopeFromHeader(c.Request); scope != nil {
-		params.Groups = scope.DeviceGroups
-	}
 	res, total, err := mc.reporting.InventorySearchDevices(ctx, params)
 	if err != nil {
 		rest.RenderError(c,
@@ -145,6 +191,10 @@ func parseSearchParams(ctx context.Context, c *gin.Context) (*model.SearchParams
 		searchParams.TenantID = id.Tenant
 	} else {
 		return nil, errors.New("missing tenant ID from the context")
+	}
+
+	if scope := rbac.ExtractScopeFromHeader(c.Request); scope != nil {
+		searchParams.Groups = scope.DeviceGroups
 	}
 
 	if searchParams.PerPage <= 0 {

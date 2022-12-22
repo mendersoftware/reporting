@@ -13,24 +13,13 @@
 #    limitations under the License.
 
 import pytest
-import json
 import re
 import time
 
-from datetime import datetime, timedelta
 from typing import Union
 
 import internal_api
 import utils
-
-from opensearchpy import exceptions
-
-
-class TestInternalHealth:
-    def test_internal_alive(self):
-        client = internal_api.InternalAPIClient()
-        r = client.check_liveliness_with_http_info(_preload_content=False)
-        assert r.status == 204
 
 
 test_set = [

@@ -53,6 +53,199 @@ func GenerateJWT(id identity.Identity) string {
 	return JWT
 }
 
+func TestManagementAggregate(t *testing.T) {
+	t.Parallel()
+	type testCase struct {
+		Name string
+
+		App    func(*testing.T, testCase) *mapp.App
+		CTX    context.Context
+		Params interface{} // *model.AggregateParams
+
+		Code     int
+		Response interface{}
+	}
+	testCases := []testCase{{
+		Name: "ok",
+
+		App: func(t *testing.T, self testCase) *mapp.App {
+			app := new(mapp.App)
+
+			app.On("InventoryAggregateDevices",
+				contextMatcher,
+				mock.MatchedBy(func(*model.AggregateParams) bool {
+					return true
+				})).
+				Return(self.Response, nil)
+			return app
+		},
+		CTX: identity.WithContext(context.Background(),
+			&identity.Identity{
+				Subject: "851f90b3-cee5-425e-8f6e-b36de1993e7e",
+				Tenant:  "123456789012345678901234",
+			},
+		),
+		Params: &model.AggregateParams{
+			Aggregations: []model.AggregationTerm{
+				{
+					Name:      "mac",
+					Scope:     model.ScopeIdentity,
+					Attribute: "mac",
+					Limit:     10,
+				},
+			},
+			Filters: []model.FilterPredicate{{
+				Scope:     model.ScopeInventory,
+				Attribute: "ip4",
+				Type:      "$exists",
+				Value:     true,
+			}},
+			TenantID: "123456789012345678901234",
+		},
+
+		Code:     http.StatusOK,
+		Response: []model.DeviceAggregation{},
+	}, {
+		Name: "error, malformed request body",
+
+		CTX: identity.WithContext(context.Background(),
+			&identity.Identity{
+				Subject: "851f90b3-cee5-425e-8f6e-b36de1993e7e",
+				Tenant:  "123456789012345678901234",
+			},
+		),
+		Params:   &model.AggregateParams{},
+		Code:     http.StatusBadRequest,
+		Response: rest.Error{Err: "malformed request body: aggregations: cannot be blank."},
+	}, {
+		Name: "error, internal app error",
+
+		App: func(t *testing.T, self testCase) *mapp.App {
+			app := new(mapp.App)
+
+			app.On("InventoryAggregateDevices",
+				contextMatcher,
+				mock.MatchedBy(func(*model.AggregateParams) bool {
+					return true
+				})).
+				Return(nil, errors.New("internal error"))
+
+			return app
+		},
+		CTX: identity.WithContext(context.Background(),
+			&identity.Identity{
+				Subject: "851f90b3-cee5-425e-8f6e-b36de1993e7e",
+				Tenant:  "123456789012345678901234",
+			},
+		),
+		Params: &model.AggregateParams{
+			Aggregations: []model.AggregationTerm{
+				{
+					Name:      "mac",
+					Scope:     model.ScopeIdentity,
+					Attribute: "mac",
+					Limit:     10,
+				},
+			},
+			Filters: []model.FilterPredicate{{
+				Scope:     "secret-attrs",
+				Type:      "$eq",
+				Attribute: "rootpwd",
+				Value:     true,
+			}},
+		},
+
+		Code:     http.StatusInternalServerError,
+		Response: rest.Error{Err: "internal error"},
+	}, {
+		Name: "error, request identity not present",
+
+		App: func(t *testing.T, self testCase) *mapp.App {
+			return new(mapp.App)
+		},
+		CTX:    identity.WithContext(context.Background(), nil),
+		Params: &model.AggregateParams{},
+
+		Code:     http.StatusUnauthorized,
+		Response: rest.Error{Err: "Authorization not present in header"},
+	}, {
+		Name: "error, malformed request body",
+
+		App: func(t *testing.T, self testCase) *mapp.App {
+			return new(mapp.App)
+		},
+		CTX: identity.WithContext(context.Background(),
+			&identity.Identity{
+				Subject: "851f90b3-cee5-425e-8f6e-b36de1993e7e",
+				Tenant:  "123456789012345678901234",
+			},
+		),
+		Params: map[string]string{
+			"filters": "foo",
+		},
+
+		Code: http.StatusBadRequest,
+		Response: rest.Error{
+			Err: "malformed request body: json: " +
+				"cannot unmarshal string into Go struct field " +
+				"AggregateParams.filters of type []model.FilterPredicate",
+		},
+	}}
+	for i := range testCases {
+		tc := testCases[i]
+		t.Run(tc.Name, func(t *testing.T) {
+			t.Parallel()
+			var app *mapp.App
+			if tc.App == nil {
+				app = new(mapp.App)
+			} else {
+				app = tc.App(t, tc)
+			}
+			defer app.AssertExpectations(t)
+			router := NewRouter(app)
+
+			b, _ := json.Marshal(tc.Params)
+			req, _ := http.NewRequest(
+				http.MethodPost,
+				URIManagement+URIInventoryAggregate,
+				bytes.NewReader(b),
+			)
+			if id := identity.FromContext(tc.CTX); id != nil {
+				req.Header.Set("Authorization", "Bearer "+GenerateJWT(*id))
+			}
+			if scope := rbac.FromContext(tc.CTX); scope != nil {
+				req.Header.Set(rbac.ScopeHeader, strings.Join(scope.DeviceGroups, ","))
+			}
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+
+			assert.Equal(t, tc.Code, w.Code)
+
+			switch res := tc.Response.(type) {
+			case []model.DeviceAggregation:
+				b, _ := json.Marshal(res)
+				assert.JSONEq(t, string(b), w.Body.String())
+
+			case rest.Error:
+				var actual rest.Error
+				dec := json.NewDecoder(w.Body)
+				dec.DisallowUnknownFields()
+				err := dec.Decode(&actual)
+				if assert.NoError(t, err, "response schema did not match expected rest.Error") {
+					assert.EqualError(t, res, actual.Error())
+				}
+
+			case nil:
+				assert.Empty(t, w.Body.String())
+
+			default:
+				panic("[TEST ERR] Dunno what to compare!")
+			}
+
+		})
+	}
+}
+
 func TestManagementAttrs(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
