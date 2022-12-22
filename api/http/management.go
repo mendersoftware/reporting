@@ -52,9 +52,9 @@ func NewManagementController(r reporting.App) *ManagementController {
 }
 
 type attributes struct {
-	Limit      int `json:"limit"`
-	Count      int `json:"count"`
-	Attributes []attribute
+	Limit      int         `json:"limit"`
+	Count      int         `json:"count"`
+	Attributes []attribute `json:"attributes"`
 }
 
 type attribute struct {
