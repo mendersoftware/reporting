@@ -12,15 +12,21 @@
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
 
-package indexer
+package deployments
 
-import (
-	"testing"
+import "time"
 
-	"github.com/stretchr/testify/assert"
-)
+// DeviceDeployment stores a device deployment
+type DeviceDeployment struct {
+	ID     string  `json:"id"`
+	Device *Device `json:"device"`
+}
 
-func TestNewIndexer(t *testing.T) {
-	indexer := NewIndexer(nil, nil, nil, nil, nil, nil)
-	assert.NotNil(t, indexer)
+// Device contains the device-specific information for a device deployment
+type Device struct {
+	Created  *time.Time `json:"created"`
+	Finished *time.Time `json:"finished,omitempty"`
+	Deleted  *time.Time `json:"deleted,omitempty"`
+	Status   string     `json:"status"`
+	DeviceId string     `json:"id"`
 }

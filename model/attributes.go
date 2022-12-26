@@ -1,4 +1,4 @@
-// Copyright 2021 Northern.tech AS
+// Copyright 2022 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -35,11 +35,12 @@ const (
 
 // attributes
 const (
-	AttrNameID        = "id"
-	AttrNameGroup     = "group"
-	AttrNameStatus    = "status"
-	AttrNameCreatedAt = "created_ts"
-	AttrNameUpdatedAt = "updated_ts"
+	AttrNameID                     = "id"
+	AttrNameGroup                  = "group"
+	AttrNameStatus                 = "status"
+	AttrNameCreatedAt              = "created_ts"
+	AttrNameUpdatedAt              = "updated_ts"
+	AttrNameLatestDeploymentStatus = "latest_deployment_status"
 )
 
 const (

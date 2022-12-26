@@ -50,6 +50,11 @@ const (
 	// opensearch devices index replicas
 	SettingOpenSearchDevicesIndexReplicasDefault = 0
 
+	// SettingDeploymentsAddr is the config key for the deviceauth service address
+	SettingDeploymentsAddr = "deployments_addr"
+	// SettingDeploymentsAddrDefault is the default value for the deployments service address
+	SettingDeploymentsAddrDefault = "http://mender-deployments:8080/"
+
 	// SettingDeviceAuthAddr is the config key for the deviceauth service address
 	SettingDeviceAuthAddr = "deviceauth_addr"
 	// SettingDeviceAuthAddrDefault is the default value for the deviceauth service address
@@ -134,6 +139,7 @@ var (
 		{Key: SettingOpenSearchDevicesIndexReplicas,
 			Value: SettingOpenSearchDevicesIndexReplicasDefault},
 		{Key: SettingDebugLog, Value: SettingDebugLogDefault},
+		{Key: SettingDeploymentsAddr, Value: SettingDeploymentsAddrDefault},
 		{Key: SettingDeviceAuthAddr, Value: SettingDeviceAuthAddrDefault},
 		{Key: SettingInventoryAddr, Value: SettingInventoryAddrDefault},
 		{Key: SettingMongo, Value: SettingMongoDefault},

@@ -24,6 +24,7 @@ import (
 
 	"github.com/mendersoftware/go-lib-micro/config"
 
+	"github.com/mendersoftware/reporting/client/deployments"
 	"github.com/mendersoftware/reporting/client/deviceauth"
 	"github.com/mendersoftware/reporting/client/inventory"
 	"github.com/mendersoftware/reporting/client/nats"
@@ -47,7 +48,11 @@ func InitAndRun(conf config.Reader, store store.Store, ds store.DataStore, nats 
 		conf.GetString(rconfig.SettingDeviceAuthAddr),
 	)
 
-	indexer := NewIndexer(store, ds, nats, devClient, invClient)
+	deplClient := deployments.NewClient(
+		conf.GetString(rconfig.SettingDeploymentsAddr),
+	)
+
+	indexer := NewIndexer(store, ds, nats, devClient, invClient, deplClient)
 	jobs := make(chan *model.Job, jobsChanSize)
 
 	err := indexer.GetJobs(ctx, jobs)

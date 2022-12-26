@@ -446,6 +446,45 @@ class TestManagementSearch:
                 ],
             ),
             _TestCase(
+                authorization=utils.generate_jwt(tenant_id="123456789012345678901234"),
+                search_terms=management_api.models.SearchTerms(
+                    filters=[
+                        management_api.models.FilterTerm(
+                            attribute="latest_deployment_status",
+                            value="success",
+                            type="$eq",
+                            scope="system",
+                        )
+                    ],
+                    sort=[
+                        management_api.models.SortTerm(
+                            attribute="string", scope="inventory", order="asc"
+                        )
+                    ],
+                ),
+                http_code=200,
+                result=[
+                    management_api.models.DeviceInventory(
+                        id="463e12dd-1adb-4f62-965e-b0a9ba2c93ff",
+                        attributes=[
+                            management_api.models.Attribute(
+                                name="string",
+                                value="Lorem ipsum dolor sit amet",
+                                scope="inventory",
+                            ),
+                            management_api.models.Attribute(
+                                name="number", value=2 ** 47, scope="inventory"
+                            ),
+                            management_api.models.Attribute(
+                                name="latest_deployment_status",
+                                value="success",
+                                scope="system",
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+            _TestCase(
                 authorization=utils.generate_jwt(tenant_id="anIllegalTenantID"),
                 search_terms=management_api.models.SearchTerms(
                     filters=[
@@ -477,6 +516,7 @@ class TestManagementSearch:
             "ok, $ne + sort",
             "ok, $exists",
             "ok, $regex + sort",
+            "ok, latest_deployment_status",
             "error, missing index for tenant",
             "error, unauthorized access",
         ],

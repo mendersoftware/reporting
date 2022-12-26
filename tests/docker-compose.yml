@@ -97,6 +97,7 @@ services:
                     - mmock
                     - mender-inventory
                     - mender-device-auth
+                    - mender-deployments
 
     mender-opensearch:
         image: opensearchproject/opensearch:2.4.0
