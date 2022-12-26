@@ -105,7 +105,7 @@ func (app *app) InventoryAggregateDevices(
 	query = query.WithSize(0).With(map[string]interface{}{
 		"aggs": aggregations,
 	})
-	esRes, err := app.store.Aggregate(ctx, query)
+	esRes, err := app.store.AggregateDevices(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +203,7 @@ func (app *app) InventorySearchDevices(
 		})
 	}
 
-	esRes, err := app.store.Search(ctx, query)
+	esRes, err := app.store.SearchDevices(ctx, query)
 	if err != nil {
 		return nil, 0, err
 	}

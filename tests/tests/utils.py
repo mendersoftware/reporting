@@ -26,7 +26,7 @@ from urllib.parse import urljoin
 
 import requests
 
-from internal_api.models import InternalDevice, Attribute
+from internal_api.models import Device, DeviceAttribute
 
 type_decoder = {
     str: "str",
@@ -36,20 +36,20 @@ type_decoder = {
 }
 
 
-def index_device(device: InternalDevice):
+def index_device(tenant_id: str, device: Device):
     requests.post(
         "http://mender-workflows-server:8080/api/v1/workflow/reindex_reporting",
         json={
             "action": "reindex",
             "request_id": "req",
-            "tenant_id": device.tenant_id,
+            "tenant_id": tenant_id,
             "device_id": device.id,
             "service": "inventory",
         },
     )
 
 
-def attributes_to_document(attrs: list[Attribute]) -> dict[str, object]:
+def attributes_to_document(attrs: list[DeviceAttribute]) -> dict[str, object]:
     doc = {}
     if attrs is not None:
         for attr in attrs:

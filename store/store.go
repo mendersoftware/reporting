@@ -26,8 +26,13 @@ type Store interface {
 	GetDevicesIndex(tid string) string
 	GetDevicesRoutingKey(tid string) string
 	GetDevicesIndexMapping(ctx context.Context, tid string) (map[string]interface{}, error)
+	GetDeploymentsIndex(tid string) string
+	GetDeploymentsRoutingKey(tid string) string
+	GetDeploymentsIndexMapping(ctx context.Context, tid string) (map[string]interface{}, error)
 	Migrate(ctx context.Context) error
-	Aggregate(ctx context.Context, query model.Query) (model.M, error)
-	Search(ctx context.Context, query model.Query) (model.M, error)
+	AggregateDevices(ctx context.Context, query model.Query) (model.M, error)
+	AggregateDeployments(ctx context.Context, query model.Query) (model.M, error)
+	SearchDevices(ctx context.Context, query model.Query) (model.M, error)
+	SearchDeployments(ctx context.Context, query model.Query) (model.M, error)
 	Ping(ctx context.Context) error
 }

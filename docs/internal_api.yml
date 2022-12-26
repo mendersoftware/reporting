@@ -52,7 +52,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SearchTerms'
+              $ref: '#/components/schemas/DeviceSearchTerms'
             example:
               page: 1
               per_page: 20
@@ -89,7 +89,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/DeviceInventory'
+                  $ref: '#/components/schemas/Device'
               example:
                 - id: "571223e6-26d8-4aae-9074-0d12ce710596"
                   attributes:
@@ -126,7 +126,7 @@ components:
         error: "<error description>"
         request_id: "eed14d55-d996-42cd-8248-e806663810a8"
 
-    Attribute:
+    DeviceAttribute:
       type: object
       properties:
         name:
@@ -144,7 +144,7 @@ components:
         - name
         - value
 
-    DeviceInventory:
+    Device:
       type: object
       properties:
         id:
@@ -153,14 +153,14 @@ components:
         attributes:
           type: array
           items:
-            $ref: '#/components/schemas/Attribute'
+            $ref: '#/components/schemas/DeviceAttribute'
         updated_ts:
           type: string
           format: date-time
           description: >-
             Timestamp of the last update to the device attributes.
 
-    FilterTerm:
+    DeviceFilterTerm:
       type: object
       properties:
         attribute:
@@ -190,7 +190,7 @@ components:
         - type
         - value
 
-    SortTerm:
+    DeviceSortTerm:
       type: object
       properties:
         attribute:
@@ -209,7 +209,7 @@ components:
         - attribute
         - order
 
-    AttributeProjection:
+    DeviceAttributeProjection:
       type: object
       properties:
         attribute:
@@ -221,7 +221,7 @@ components:
       required:
         - attribute
 
-    SearchTerms:
+    DeviceSearchTerms:
       type: object
       properties:
         page:
@@ -233,46 +233,23 @@ components:
         filters:
           type: array
           items:
-            $ref: '#/components/schemas/FilterTerm'
+            $ref: '#/components/schemas/DeviceFilterTerm'
           description: Filtering terms.
         sort:
           type: array
           items:
-            $ref: '#/components/schemas/SortTerm'
+            $ref: '#/components/schemas/DeviceSortTerm'
           description: Attribute keys to sort by.
         attributes:
           type: array
           items:
-            $ref: '#/components/schemas/AttributeProjection'
+            $ref: '#/components/schemas/DeviceAttributeProjection'
           description: Restrict the attribute result to the selected attributes.
         device_ids:
           type: array
           items:
             type: string
           description: Restrict the result to the given device IDs.
-
-    InternalDevice:
-      description: >-
-        NOTE: This is an internal flattened representation of DeviceInventory.
-        It is currently not exposed by the API.
-      type: object
-      properties:
-        id:
-          type: string
-        tenantID:
-          type: string
-        name:
-          type: string
-        attributes:
-          type: array
-          items:
-            $ref: '#/components/schemas/Attribute'
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
 
   responses:
     InternalServerError:

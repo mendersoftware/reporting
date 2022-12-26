@@ -15,22 +15,15 @@
 package http
 
 import (
-	"github.com/mendersoftware/reporting/app/reporting"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
-const (
-	ParamPageDefault    = 1
-	ParamPerPageDefault = 20
-
-	hdrTotalCount = "X-Total-Count"
-)
-
-type ManagementController struct {
-	reporting reporting.App
+func (mc *ManagementController) AggregateDeployments(c *gin.Context) {
+	c.JSON(http.StatusOK, nil)
 }
 
-func NewManagementController(r reporting.App) *ManagementController {
-	return &ManagementController{
-		reporting: r,
-	}
+func (mc *ManagementController) SearchDeployments(c *gin.Context) {
+	c.JSON(http.StatusOK, nil)
 }

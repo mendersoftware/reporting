@@ -155,7 +155,7 @@ func TestInventoryAggregateDevices(t *testing.T) {
 			q = q.WithSize(0).With(map[string]interface{}{
 				"aggs": aggrs,
 			})
-			store.On("Aggregate", contextMatcher, q).
+			store.On("AggregateDevices", contextMatcher, q).
 				Return(model.M{
 					"aggregations": map[string]interface{}{
 						"aggr": map[string]interface{}{
@@ -254,7 +254,7 @@ func TestInventoryAggregateDevices(t *testing.T) {
 			q = q.WithSize(0).With(map[string]interface{}{
 				"aggs": aggrs,
 			})
-			store.On("Aggregate", contextMatcher, q).
+			store.On("AggregateDevices", contextMatcher, q).
 				Return(model.M{
 					"aggregations": map[string]interface{}{
 						"aggr": map[string]interface{}{
@@ -423,7 +423,7 @@ func TestInventorySearchDevices(t *testing.T) {
 			store := new(mstore.Store)
 			q, _ := model.BuildQuery(*self.MappedParams)
 			q = q.Must(model.M{"terms": model.M{"id": self.Params.DeviceIDs}})
-			store.On("Search", contextMatcher, q).
+			store.On("SearchDevices", contextMatcher, q).
 				Return(model.M{"hits": map[string]interface{}{"hits": []interface{}{
 					map[string]interface{}{"_source": map[string]interface{}{
 						"id":       "194d1060-1717-44dc-a783-00038f4a8013",
@@ -492,7 +492,7 @@ func TestInventorySearchDevices(t *testing.T) {
 			store := new(mstore.Store)
 			q, _ := model.BuildQuery(*self.MappedParams)
 			q = q.Must(model.M{"terms": model.M{"id": self.Params.DeviceIDs}})
-			store.On("Search", contextMatcher, q).
+			store.On("SearchDevices", contextMatcher, q).
 				Return(model.M{"hits": map[string]interface{}{"hits": []interface{}{
 					map[string]interface{}{"_source": map[string]interface{}{
 						"id":       "194d1060-1717-44dc-a783-00038f4a8013",
@@ -525,7 +525,7 @@ func TestInventorySearchDevices(t *testing.T) {
 		Store: func(t *testing.T, self testCase) *mstore.Store {
 			store := new(mstore.Store)
 			q, _ := model.BuildQuery(*self.Params)
-			store.On("Search", contextMatcher, q).
+			store.On("SearchDevices", contextMatcher, q).
 				Return(model.M{
 					"hits": map[string]interface{}{
 						"hits": []interface{}{},
@@ -544,7 +544,7 @@ func TestInventorySearchDevices(t *testing.T) {
 		Store: func(t *testing.T, self testCase) *mstore.Store {
 			store := new(mstore.Store)
 			q, _ := model.BuildQuery(*self.Params)
-			store.On("Search", contextMatcher, q).
+			store.On("SearchDevices", contextMatcher, q).
 				Return(nil, errors.New("internal error"))
 			return store
 		},
@@ -557,7 +557,7 @@ func TestInventorySearchDevices(t *testing.T) {
 		Store: func(t *testing.T, self testCase) *mstore.Store {
 			store := new(mstore.Store)
 			q, _ := model.BuildQuery(*self.Params)
-			store.On("Search", contextMatcher, q).
+			store.On("SearchDevices", contextMatcher, q).
 				Return(model.M{
 					"hits": map[string]interface{}{
 						"hits": []interface{}{},

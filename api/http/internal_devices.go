@@ -16,36 +16,42 @@ package http
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
 
+	"github.com/mendersoftware/go-lib-micro/identity"
 	"github.com/mendersoftware/go-lib-micro/rest.utils"
-
-	"github.com/mendersoftware/reporting/app/reporting"
 )
 
-// InternalController contains internal end-points
-type InternalController struct {
-	reporting reporting.App
-}
+func (mc *InternalController) SearchDevices(c *gin.Context) {
+	tid := c.Param("tenant_id")
 
-// NewInternalController returns a new InternalController
-func NewInternalController(r reporting.App) *InternalController {
-	return &InternalController{
-		reporting: r,
-	}
-}
+	ctx := c.Request.Context()
+	ctx = identity.WithContext(ctx, &identity.Identity{Tenant: tid})
 
-// Alive responds to GET /health/alive
-func (h InternalController) Alive(c *gin.Context) {
-	c.JSON(http.StatusNoContent, nil)
-}
+	params, err := parseSearchParams(ctx, c)
 
-func (h InternalController) Health(c *gin.Context) {
-	err := h.reporting.HealthCheck(c.Request.Context())
 	if err != nil {
-		rest.RenderError(c, http.StatusInternalServerError, err)
+		rest.RenderError(c,
+			http.StatusBadRequest,
+			errors.Wrap(err, "malformed request body"),
+		)
 		return
 	}
-	c.Status(http.StatusNoContent)
+
+	res, total, err := mc.reporting.InventorySearchDevices(ctx, params)
+	if err != nil {
+		rest.RenderError(c,
+			http.StatusInternalServerError,
+			err,
+		)
+		return
+	}
+
+	pageLinkHdrs(c, params.Page, params.PerPage, total)
+
+	c.Header(hdrTotalCount, strconv.Itoa(total))
+	c.JSON(http.StatusOK, res)
 }

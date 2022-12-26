@@ -32,6 +32,8 @@ const (
 
 	URIAlive                   = "/alive"
 	URIHealth                  = "/health"
+	URIDeploymentsAggregate    = "/deployments/aggregate"
+	URIDeploymentsSearch       = "/deployments/search"
 	URIInventoryAggregate      = "/devices/aggregate"
 	URIInventoryAttrs          = "/devices/attributes"
 	URIInventorySearch         = "/devices/search"
@@ -53,16 +55,20 @@ func NewRouter(reporting reporting.App) *gin.Engine {
 	internalAPI := router.Group(URIInternal)
 	internalAPI.GET(URIAlive, internal.Alive)
 	internalAPI.GET(URIHealth, internal.Health)
-	internalAPI.POST(URIInventorySearchInternal, internal.Search)
+	internalAPI.POST(URIInventorySearchInternal, internal.SearchDevices)
 
 	mgmt := NewManagementController(reporting)
 	mgmtAPI := router.Group(URIManagement)
 	mgmtAPI.Use(identity.Middleware())
 	mgmtAPI.Use(rbac.Middleware())
-	mgmtAPI.POST(URIInventoryAggregate, mgmt.Aggregate)
-	mgmtAPI.GET(URIInventoryAttrs, mgmt.Attrs)
-	mgmtAPI.POST(URIInventorySearch, mgmt.Search)
-	mgmtAPI.GET(URIInventorySearchAttrs, mgmt.SearchAttrs)
+	// devices
+	mgmtAPI.POST(URIInventoryAggregate, mgmt.AggregateDevices)
+	mgmtAPI.GET(URIInventoryAttrs, mgmt.DeviceAttrs)
+	mgmtAPI.POST(URIInventorySearch, mgmt.SearchDevices)
+	mgmtAPI.GET(URIInventorySearchAttrs, mgmt.SearchDeviceAttrs)
+	// deployments
+	mgmtAPI.POST(URIDeploymentsAggregate, mgmt.AggregateDeployments)
+	mgmtAPI.POST(URIDeploymentsSearch, mgmt.SearchDeployments)
 
 	return router
 }

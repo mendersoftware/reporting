@@ -211,14 +211,21 @@ func cmdMigrate(args *cli.Context) error {
 func getStore(args *cli.Context) (store.Store, error) {
 	addresses := config.Config.GetStringSlice(dconfig.SettingOpenSearchAddresses)
 	devicesIndexName := config.Config.GetString(dconfig.SettingOpenSearchDevicesIndexName)
-	deviceesIndexShards := config.Config.GetInt(dconfig.SettingOpenSearchDevicesIndexShards)
-	deviceesIndexReplicas := config.Config.GetInt(
+	devicesIndexShards := config.Config.GetInt(dconfig.SettingOpenSearchDevicesIndexShards)
+	devicesIndexReplicas := config.Config.GetInt(
 		dconfig.SettingOpenSearchDevicesIndexReplicas)
+	deploymentsIndexName := config.Config.GetString(dconfig.SettingOpenSearchDeploymentsIndexName)
+	deploymentsIndexShards := config.Config.GetInt(dconfig.SettingOpenSearchDeploymentsIndexShards)
+	deploymentsIndexReplicas := config.Config.GetInt(
+		dconfig.SettingOpenSearchDeploymentsIndexReplicas)
 	store, err := opensearch.NewStore(
 		opensearch.WithServerAddresses(addresses),
 		opensearch.WithDevicesIndexName(devicesIndexName),
-		opensearch.WithDevicesIndexShards(deviceesIndexShards),
-		opensearch.WithDevicesIndexReplicas(deviceesIndexReplicas),
+		opensearch.WithDevicesIndexShards(devicesIndexShards),
+		opensearch.WithDevicesIndexReplicas(devicesIndexReplicas),
+		opensearch.WithDeploymentsIndexName(deploymentsIndexName),
+		opensearch.WithDeploymentsIndexShards(deploymentsIndexShards),
+		opensearch.WithDeploymentsIndexReplicas(deploymentsIndexReplicas),
 	)
 	if err != nil {
 		return nil, err

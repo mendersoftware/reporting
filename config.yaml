@@ -28,6 +28,24 @@
 
 # opensearch_devices_index_replicas: 0
 
+# Deployments: index name
+# Defauls to: "deployments"
+# Overwrite with environment variable: REPORTING_OPENSEARCH_DEPLOYMENTS_INDEX_NAME
+
+# opensearch_deployments_index_name: "deployments"
+
+# Deployments: number of shards
+# Defauls to: 1
+# Overwrite with environment variable: REPORTING_OPENSEARCH_DEPLOYMENTS_INDEX_SHARDS
+
+# opensearch_deployments_index_shards: 1
+
+# Deployments: number of replicas
+# Defauls to: 0
+# Overwrite with environment variable: REPORTING_OPENSEARCH_DEPLOYMENTS_INDEX_REPLICAS
+
+# opensearch_deployments_index_replicas: 0
+
 # Mongodb connection string
 # Defaults to: "mongodb://mender-mongo:27017"
 # Overwrite with environment variable: REPORTING_MONGO_URL
