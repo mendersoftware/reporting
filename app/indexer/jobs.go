@@ -30,9 +30,9 @@ import (
 	"github.com/mendersoftware/reporting/model"
 )
 
-type Services map[string]bool
-type DeviceServices map[string]Services
-type TenantDeviceServices map[string]DeviceServices
+type IDs map[string]bool
+type ActionIDs map[string]IDs
+type TenantActionIDs map[string]ActionIDs
 
 func (i *indexer) GetJobs(ctx context.Context, jobs chan *model.Job) error {
 	l := log.FromContext(ctx)
@@ -90,67 +90,83 @@ func (i *indexer) GetJobs(ctx context.Context, jobs chan *model.Job) error {
 
 func (i *indexer) ProcessJobs(ctx context.Context, jobs []*model.Job) {
 	l := log.FromContext(ctx)
-
-	devices := make([]*model.Device, 0, len(jobs))
-	removedDevices := make([]*model.Device, 0, len(jobs))
-
 	l.Debugf("Processing %d jobs", len(jobs))
-	tenantsDevicesServices := groupJobsIntoTenantDeviceServices(jobs)
-	for tenant, deviceServices := range tenantsDevicesServices {
-		deviceIDs := make([]string, 0, len(deviceServices))
-		for deviceID := range deviceServices {
-			deviceIDs = append(deviceIDs, deviceID)
+	tenantsActionIDs := groupJobsIntoTenantActionIDs(jobs)
+	for tenant, actionIDs := range tenantsActionIDs {
+		for action, IDs := range actionIDs {
+			if action == model.ActionReindex {
+				i.processJobDevices(ctx, tenant, IDs)
+			} else if action == model.ActionReindexDeployment {
+				i.processJobDeployments(ctx, tenant, IDs)
+			} else {
+				l.Warnf("ignoring unknown job action: %v", action)
+			}
 		}
-		// get devices from deviceauth
-		deviceAuthDevices, err := i.devClient.GetDevices(ctx, tenant, deviceIDs)
-		if err != nil {
-			l.Error(errors.Wrap(err, "failed to get devices from deviceauth"))
+	}
+}
+
+func (i *indexer) processJobDevices(
+	ctx context.Context,
+	tenant string,
+	IDs IDs,
+) {
+	l := log.FromContext(ctx)
+	devices := make([]*model.Device, 0, len(IDs))
+	removedDevices := make([]*model.Device, 0, len(IDs))
+
+	deviceIDs := make([]string, 0, len(IDs))
+	for deviceID := range IDs {
+		deviceIDs = append(deviceIDs, deviceID)
+	}
+	// get devices from deviceauth
+	deviceAuthDevices, err := i.devClient.GetDevices(ctx, tenant, deviceIDs)
+	if err != nil {
+		l.Error(errors.Wrap(err, "failed to get devices from deviceauth"))
+		return
+	}
+	// get devices from inventory
+	inventoryDevices, err := i.invClient.GetDevices(ctx, tenant, deviceIDs)
+	if err != nil {
+		l.Error(errors.Wrap(err, "failed to get devices from inventory"))
+		return
+	}
+	// process the results
+	devices = devices[:0]
+	removedDevices = removedDevices[:0]
+	for _, deviceID := range deviceIDs {
+		var deviceAuthDevice *deviceauth.DeviceAuthDevice
+		var inventoryDevice *inventory.Device
+		for _, d := range deviceAuthDevices {
+			if d.ID == deviceID {
+				deviceAuthDevice = &d
+				break
+			}
+		}
+		for _, d := range inventoryDevices {
+			if d.ID == inventory.DeviceID(deviceID) {
+				inventoryDevice = &d
+				break
+			}
+		}
+		if deviceAuthDevice == nil || inventoryDevice == nil {
+			removedDevices = append(removedDevices, &model.Device{
+				ID:       &deviceID,
+				TenantID: &tenant,
+			})
 			continue
 		}
-		// get devices from inventory
-		inventoryDevices, err := i.invClient.GetDevices(ctx, tenant, deviceIDs)
-		if err != nil {
-			l.Error(errors.Wrap(err, "failed to get devices from inventory"))
+		device := i.processJobDevice(ctx, tenant, deviceAuthDevice, inventoryDevice)
+		if device == nil {
 			continue
 		}
-		// process the results
-		devices = devices[:0]
-		removedDevices = removedDevices[:0]
-		for _, deviceID := range deviceIDs {
-			var deviceAuthDevice *deviceauth.DeviceAuthDevice
-			var inventoryDevice *inventory.Device
-			for _, d := range deviceAuthDevices {
-				if d.ID == deviceID {
-					deviceAuthDevice = &d
-					break
-				}
-			}
-			for _, d := range inventoryDevices {
-				if d.ID == inventory.DeviceID(deviceID) {
-					inventoryDevice = &d
-					break
-				}
-			}
-			if deviceAuthDevice == nil || inventoryDevice == nil {
-				removedDevices = append(removedDevices, &model.Device{
-					ID:       &deviceID,
-					TenantID: &tenant,
-				})
-				continue
-			}
-			device := i.processJobDevice(ctx, tenant, deviceAuthDevice, inventoryDevice)
-			if device == nil {
-				continue
-			}
-			devices = append(devices, device)
-		}
-		// bulk index the device
-		if len(devices) > 0 || len(removedDevices) > 0 {
-			err = i.store.BulkIndexDevices(ctx, devices, removedDevices)
-			if err != nil {
-				err = errors.Wrap(err, "failed to bulk index the devices")
-				l.Error(err)
-			}
+		devices = append(devices, device)
+	}
+	// bulk index the device
+	if len(devices) > 0 || len(removedDevices) > 0 {
+		err = i.store.BulkIndexDevices(ctx, devices, removedDevices)
+		if err != nil {
+			err = errors.Wrap(err, "failed to bulk index the devices")
+			l.Error(err)
 		}
 	}
 }
@@ -218,4 +234,12 @@ func (i *indexer) processJobDevice(
 	}
 	// return the device
 	return device
+}
+
+func (i *indexer) processJobDeployments(
+	ctx context.Context,
+	tenant string,
+	IDs IDs,
+) {
+
 }

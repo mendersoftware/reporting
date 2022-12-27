@@ -89,7 +89,7 @@ func TestGetJobs(t *testing.T) {
 		mock.AnythingOfType("string"),
 		mock.AnythingOfType("string"),
 		mock.MatchedBy(func(msgs chan *natsio.Msg) bool {
-			job := &model.Job{Action: "index"}
+			job := &model.Job{Action: model.ActionReindex}
 			jobData, _ := json.Marshal(job)
 			msgs <- &natsio.Msg{
 				Data: jobData,
@@ -108,7 +108,7 @@ func TestGetJobs(t *testing.T) {
 	time.Sleep(500 * time.Millisecond)
 
 	job := <-jobs
-	assert.Equal(t, job.Action, "index")
+	assert.Equal(t, job.Action, model.ActionReindex)
 
 	cancel()
 }
@@ -185,19 +185,19 @@ func TestProcessJobs(t *testing.T) {
 		"ok": {
 			jobs: []*model.Job{
 				{
-					Action:   "index",
+					Action:   model.ActionReindex,
 					TenantID: tenantID,
 					DeviceID: "1",
 					Service:  model.ServiceInventory,
 				},
 				{
-					Action:   "index",
+					Action:   model.ActionReindex,
 					TenantID: tenantID,
 					DeviceID: "2",
 					Service:  model.ServiceInventory,
 				},
 				{
-					Action:   "index",
+					Action:   model.ActionReindex,
 					TenantID: tenantID,
 					DeviceID: "3",
 					Service:  model.ServiceInventory,
@@ -276,19 +276,19 @@ func TestProcessJobs(t *testing.T) {
 		"ok with latest deployment": {
 			jobs: []*model.Job{
 				{
-					Action:   "index",
+					Action:   model.ActionReindex,
 					TenantID: tenantID,
 					DeviceID: "1",
 					Service:  model.ServiceInventory,
 				},
 				{
-					Action:   "index",
+					Action:   model.ActionReindex,
 					TenantID: tenantID,
 					DeviceID: "2",
 					Service:  model.ServiceInventory,
 				},
 				{
-					Action:   "index",
+					Action:   model.ActionReindex,
 					TenantID: tenantID,
 					DeviceID: "3",
 					Service:  model.ServiceInventory,
@@ -388,19 +388,19 @@ func TestProcessJobs(t *testing.T) {
 		"ko, failure in deviceauth": {
 			jobs: []*model.Job{
 				{
-					Action:   "index",
+					Action:   model.ActionReindex,
 					TenantID: tenantID,
 					DeviceID: "1",
 					Service:  model.ServiceInventory,
 				},
 				{
-					Action:   "index",
+					Action:   model.ActionReindex,
 					TenantID: tenantID,
 					DeviceID: "2",
 					Service:  model.ServiceInventory,
 				},
 				{
-					Action:   "index",
+					Action:   model.ActionReindex,
 					TenantID: tenantID,
 					DeviceID: "3",
 					Service:  model.ServiceInventory,
@@ -413,19 +413,19 @@ func TestProcessJobs(t *testing.T) {
 		"ko, failure in inventory": {
 			jobs: []*model.Job{
 				{
-					Action:   "index",
+					Action:   model.ActionReindex,
 					TenantID: tenantID,
 					DeviceID: "1",
 					Service:  model.ServiceInventory,
 				},
 				{
-					Action:   "index",
+					Action:   model.ActionReindex,
 					TenantID: tenantID,
 					DeviceID: "2",
 					Service:  model.ServiceInventory,
 				},
 				{
-					Action:   "index",
+					Action:   model.ActionReindex,
 					TenantID: tenantID,
 					DeviceID: "3",
 					Service:  model.ServiceInventory,
@@ -456,19 +456,19 @@ func TestProcessJobs(t *testing.T) {
 		"ko, failure in BulkIndex": {
 			jobs: []*model.Job{
 				{
-					Action:   "index",
+					Action:   model.ActionReindex,
 					TenantID: tenantID,
 					DeviceID: "1",
 					Service:  model.ServiceInventory,
 				},
 				{
-					Action:   "index",
+					Action:   model.ActionReindex,
 					TenantID: tenantID,
 					DeviceID: "2",
 					Service:  model.ServiceInventory,
 				},
 				{
-					Action:   "index",
+					Action:   model.ActionReindex,
 					TenantID: tenantID,
 					DeviceID: "3",
 					Service:  model.ServiceInventory,

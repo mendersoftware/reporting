@@ -1,4 +1,4 @@
-// Copyright 2021 Northern.tech AS
+// Copyright 2022 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -21,47 +21,64 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGroupJobsIntoTenantDeviceServices(t *testing.T) {
+func TestGroupJobsIntoTenantActionIDs(t *testing.T) {
 	jobs := []*model.Job{
 		{
+			Action:   model.ActionReindex,
 			TenantID: "t1",
 			DeviceID: "d1",
 			Service:  model.ServiceInventory,
 		},
 		{
+			Action:   model.ActionReindex,
 			TenantID: "t1",
 			DeviceID: "d1",
 			Service:  model.ServiceDeviceauth,
 		},
 		{
+			Action:   model.ActionReindex,
 			TenantID: "t1",
 			DeviceID: "d2",
 			Service:  model.ServiceInventory,
 		},
 		{
+			Action:   model.ActionReindex,
 			TenantID: "t2",
 			DeviceID: "d1",
 			Service:  model.ServiceInventory,
 		},
-	}
-
-	tenantDevicesServices := groupJobsIntoTenantDeviceServices(jobs)
-	expected := TenantDeviceServices{
-		"t1": DeviceServices{
-			"d1": Services{
-				model.ServiceInventory:  true,
-				model.ServiceDeviceauth: true,
-			},
-			"d2": Services{
-				model.ServiceInventory: true,
-			},
+		{
+			Action:   model.ActionReindexDeployment,
+			TenantID: "t2",
+			ID:       "d1",
+			Service:  model.ServiceInventory,
 		},
-		"t2": DeviceServices{
-			"d1": Services{
-				model.ServiceInventory: true,
-			},
+		{
+			Action:   model.ActionReindexDeployment,
+			TenantID: "t2",
+			ID:       "d2",
+			Service:  model.ServiceInventory,
 		},
 	}
 
-	assert.Equal(t, expected, tenantDevicesServices)
+	tenantActionIDs := groupJobsIntoTenantActionIDs(jobs)
+	expected := TenantActionIDs{
+		"t1": ActionIDs{
+			model.ActionReindex: {
+				"d1": true,
+				"d2": true,
+			},
+		},
+		"t2": ActionIDs{
+			model.ActionReindex: {
+				"d1": true,
+			},
+			model.ActionReindexDeployment: {
+				"d1": true,
+				"d2": true,
+			},
+		},
+	}
+
+	assert.Equal(t, expected, tenantActionIDs)
 }
