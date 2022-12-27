@@ -36,7 +36,7 @@ const (
 	URIInventoryAttrs          = "/devices/attributes"
 	URIInventorySearch         = "/devices/search"
 	URIInventorySearchAttrs    = "/devices/search/attributes"
-	URIInventorySearchInternal = "/inventory/tenants/:tenant_id/search"
+	URIInventorySearchInternal = "/tenants/:tenant_id/devices/search"
 )
 
 // NewRouter returns the gin router

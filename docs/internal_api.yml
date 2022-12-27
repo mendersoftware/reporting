@@ -34,11 +34,11 @@ paths:
         500:
           $ref: '#/components/responses/InternalServerError'
 
-  /inventory/tenants/{tenant_id}/search:
+  /tenants/{tenant_id}/devices/search:
     post:
       tags:
         - Internal API
-      summary: Search device inventory data.
+      summary: Search device data.
       operationId: Device Search
       parameters:
         - in: path
