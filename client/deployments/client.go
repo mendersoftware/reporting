@@ -71,6 +71,7 @@ func (c *client) GetDeployments(
 	l := log.FromContext(ctx)
 
 	url := utils.JoinURL(c.urlBase, urlDeviceDeployments)
+	url = strings.Replace(url, ":tid", tenantID, 1)
 
 	ctx, cancel := context.WithTimeout(ctx, defaultTimeout)
 	defer cancel()

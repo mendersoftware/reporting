@@ -102,10 +102,10 @@ const indexDeploymentsTemplate = `{
 				"image_description": {
 					"type": "keyword"
 				},
-				"image_name": {
+				"image_artifact_name": {
 					"type": "keyword"
 				},
-				"image_types": {
+				"image_device_types": {
 					"type": "keyword"
 				},
 				"image_signed": {

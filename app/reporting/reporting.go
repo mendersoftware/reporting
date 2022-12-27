@@ -37,6 +37,10 @@ type App interface {
 		[]model.DeviceAggregation, error)
 	SearchDevices(ctx context.Context, searchParams *model.SearchParams) (
 		[]inventory.Device, int, error)
+	AggregateDeployments(ctx context.Context, aggregateParams *model.AggregateDeploymentsParams) (
+		[]model.DeviceAggregation, error)
+	SearchDeployments(ctx context.Context, searchParams *model.DeploymentsSearchParams) (
+		[]model.Deployment, int, error)
 }
 
 type app struct {

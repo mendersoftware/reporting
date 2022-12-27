@@ -22,89 +22,20 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	"github.com/mendersoftware/reporting/client/inventory"
 	"github.com/mendersoftware/reporting/model"
 	mstore "github.com/mendersoftware/reporting/store/mocks"
 )
 
-var contextMatcher = mock.MatchedBy(func(_ context.Context) bool { return true })
-
-func TestHealthCheck(t *testing.T) {
-	t.Parallel()
-	testCases := []struct {
-		Name string
-
-		StoreErr     error
-		DatastoreErr error
-
-		Error error
-	}{
-		{
-			Name: "ok",
-		},
-		{
-			Name:     "ko, store",
-			StoreErr: errors.New("error"),
-			Error:    errors.New("error"),
-		},
-		{
-			Name:         "ko, datastore",
-			DatastoreErr: errors.New("error"),
-			Error:        errors.New("error"),
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.Name, func(t *testing.T) {
-			ctx := context.Background()
-
-			ds := &mstore.DataStore{}
-			ds.On("Ping", ctx).Return(tc.DatastoreErr)
-
-			store := &mstore.Store{}
-			if tc.DatastoreErr == nil {
-				store.On("Ping", ctx).Return(tc.StoreErr)
-			}
-			app := NewApp(store, ds)
-
-			err := app.HealthCheck(ctx)
-			if tc.Error != nil {
-				assert.Equal(t, tc.Error, err)
-			} else {
-				assert.Nil(t, err)
-			}
-		})
-	}
-}
-
-func TestGetMapping(t *testing.T) {
-	const tenantID = "tenant_id"
-	ctx := context.Background()
-
-	mapping := &model.Mapping{
-		TenantID: tenantID,
-	}
-
-	ds := &mstore.DataStore{}
-	ds.On("GetMapping", ctx, tenantID).Return(mapping, nil)
-
-	app := NewApp(nil, ds)
-	res, err := app.GetMapping(ctx, tenantID)
-	assert.NoError(t, err)
-	assert.Equal(t, mapping, res)
-}
-
-func TestAggregateDevices(t *testing.T) {
+func TestAggregateDeployments(t *testing.T) {
 	const tenantID = "tenant_id"
 	t.Parallel()
 	type testCase struct {
 		Name string
 
-		Params                 *model.AggregateParams
-		MappedParams           *model.SearchParams
-		MappedAggregatedParams []model.AggregationTerm
-		Store                  func(*testing.T, testCase) *mstore.Store
-		Mapping                model.Mapping
+		Params       *model.AggregateDeploymentsParams
+		SearchParams *model.DeploymentsSearchParams
+		Store        func(*testing.T, testCase) *mstore.Store
+		Mapping      model.Mapping
 
 		Result []model.DeviceAggregation
 		Error  error
@@ -112,50 +43,40 @@ func TestAggregateDevices(t *testing.T) {
 	testCases := []testCase{{
 		Name: "ok",
 
-		Params: &model.AggregateParams{
-			Filters: []model.FilterPredicate{{
+		Params: &model.AggregateDeploymentsParams{
+			Filters: []model.DeploymentsFilterPredicate{{
 				Attribute: "foo",
 				Value:     "bar",
-				Scope:     "inventory",
 				Type:      "$eq",
 			}},
-			Aggregations: []model.AggregationTerm{
+			Aggregations: []model.DeploymentsAggregationTerm{
 				{
 					Name:      "aggr",
 					Attribute: "attr",
-					Scope:     "inventory",
 				},
 			},
 			TenantID: tenantID,
 		},
-		MappedParams: &model.SearchParams{
-			Filters: []model.FilterPredicate{{
-				Attribute: "attribute1",
+		SearchParams: &model.DeploymentsSearchParams{
+			Filters: []model.DeploymentsFilterPredicate{{
+				Attribute: "foo",
 				Value:     "bar",
-				Scope:     "inventory",
 				Type:      "$eq",
 			}},
 		},
-		MappedAggregatedParams: []model.AggregationTerm{
-			{
-				Name:      "aggr",
-				Attribute: "attribute2",
-				Scope:     "inventory",
-			},
-		},
 		Store: func(t *testing.T, self testCase) *mstore.Store {
 			store := new(mstore.Store)
-			q, _ := model.BuildQuery(*self.MappedParams)
+			q, _ := model.BuildDeploymentsQuery(*self.SearchParams)
 			q.Must(model.M{
 				"term": model.M{
 					model.FieldNameTenantID: tenantID,
 				},
 			})
-			aggrs, _ := model.BuildAggregations(self.MappedAggregatedParams)
+			aggrs, _ := model.BuildDeploymentsAggregations(self.Params.Aggregations)
 			q = q.WithSize(0).With(map[string]interface{}{
 				"aggs": aggrs,
 			})
-			store.On("AggregateDevices", contextMatcher, q).
+			store.On("AggregateDeployments", contextMatcher, q).
 				Return(model.M{
 					"aggregations": map[string]interface{}{
 						"aggr": map[string]interface{}{
@@ -197,64 +118,46 @@ func TestAggregateDevices(t *testing.T) {
 	}, {
 		Name: "ok, subaggregations",
 
-		Params: &model.AggregateParams{
-			Filters: []model.FilterPredicate{{
+		Params: &model.AggregateDeploymentsParams{
+			Filters: []model.DeploymentsFilterPredicate{{
 				Attribute: "foo",
 				Value:     "bar",
-				Scope:     "inventory",
 				Type:      "$eq",
 			}},
-			Aggregations: []model.AggregationTerm{
+			Aggregations: []model.DeploymentsAggregationTerm{
 				{
 					Name:      "aggr",
 					Attribute: "attr",
-					Scope:     "inventory",
-					Aggregations: []model.AggregationTerm{
+					Aggregations: []model.DeploymentsAggregationTerm{
 						{
 							Name:      "subaggr",
 							Attribute: "foo",
-							Scope:     "inventory",
 						},
 					},
 				},
 			},
 			TenantID: tenantID,
 		},
-		MappedParams: &model.SearchParams{
-			Filters: []model.FilterPredicate{{
-				Attribute: "attribute1",
+		SearchParams: &model.DeploymentsSearchParams{
+			Filters: []model.DeploymentsFilterPredicate{{
+				Attribute: "foo",
 				Value:     "bar",
-				Scope:     "inventory",
 				Type:      "$eq",
 			}},
 		},
-		MappedAggregatedParams: []model.AggregationTerm{
-			{
-				Name:      "aggr",
-				Attribute: "attribute2",
-				Scope:     "inventory",
-				Aggregations: []model.AggregationTerm{
-					{
-						Name:      "subaggr",
-						Attribute: "attribute1",
-						Scope:     "inventory",
-					},
-				},
-			},
-		},
 		Store: func(t *testing.T, self testCase) *mstore.Store {
 			store := new(mstore.Store)
-			q, _ := model.BuildQuery(*self.MappedParams)
+			q, _ := model.BuildDeploymentsQuery(*self.SearchParams)
 			q.Must(model.M{
 				"term": model.M{
 					model.FieldNameTenantID: tenantID,
 				},
 			})
-			aggrs, _ := model.BuildAggregations(self.MappedAggregatedParams)
+			aggrs, _ := model.BuildDeploymentsAggregations(self.Params.Aggregations)
 			q = q.WithSize(0).With(map[string]interface{}{
 				"aggs": aggrs,
 			})
-			store.On("AggregateDevices", contextMatcher, q).
+			store.On("AggregateDeployments", contextMatcher, q).
 				Return(model.M{
 					"aggregations": map[string]interface{}{
 						"aggr": map[string]interface{}{
@@ -361,7 +264,7 @@ func TestAggregateDevices(t *testing.T) {
 			).Return(&tc.Mapping, nil).Once()
 
 			app := NewApp(store, ds)
-			res, err := app.AggregateDevices(context.Background(), tc.Params)
+			res, err := app.AggregateDeployments(context.Background(), tc.Params)
 			if tc.Error != nil {
 				if assert.Error(t, err) {
 					assert.Regexp(t, tc.Error.Error(), err.Error())
@@ -374,61 +277,43 @@ func TestAggregateDevices(t *testing.T) {
 	}
 }
 
-func TestSearchDevices(t *testing.T) {
+func TestSearchDeployments(t *testing.T) {
 	t.Parallel()
 	type testCase struct {
 		Name string
 
-		Params       *model.SearchParams
-		MappedParams *model.SearchParams
-		Store        func(*testing.T, testCase) *mstore.Store
-		Mapping      model.Mapping
+		Params  *model.DeploymentsSearchParams
+		Store   func(*testing.T, testCase) *mstore.Store
+		Mapping model.Mapping
 
-		Result     []inventory.Device
+		Result     []model.Deployment
 		TotalCount int
 		Error      error
 	}
 	testCases := []testCase{{
 		Name: "ok",
 
-		Params: &model.SearchParams{
-			Filters: []model.FilterPredicate{{
+		Params: &model.DeploymentsSearchParams{
+			Filters: []model.DeploymentsFilterPredicate{{
 				Attribute: "foo",
 				Value:     "bar",
-				Scope:     "inventory",
 				Type:      "$eq",
 			}},
-			Sort: []model.SortCriteria{{
+			Sort: []model.DeploymentsSortCriteria{{
 				Attribute: "foo",
-				Scope:     "inventory",
-				Order:     "desc",
-			}},
-			DeviceIDs: []string{"194d1060-1717-44dc-a783-00038f4a8013"},
-		},
-		MappedParams: &model.SearchParams{
-			Filters: []model.FilterPredicate{{
-				Attribute: "attribute1",
-				Value:     "bar",
-				Scope:     "inventory",
-				Type:      "$eq",
-			}},
-			Sort: []model.SortCriteria{{
-				Attribute: "attribute1",
-				Scope:     "inventory",
 				Order:     "desc",
 			}},
 			DeviceIDs: []string{"194d1060-1717-44dc-a783-00038f4a8013"},
 		},
 		Store: func(t *testing.T, self testCase) *mstore.Store {
 			store := new(mstore.Store)
-			q, _ := model.BuildQuery(*self.MappedParams)
+			q, _ := model.BuildDeploymentsQuery(*self.Params)
 			q = q.Must(model.M{"terms": model.M{"id": self.Params.DeviceIDs}})
-			store.On("SearchDevices", contextMatcher, q).
+			store.On("SearchDeployments", contextMatcher, q).
 				Return(model.M{"hits": map[string]interface{}{"hits": []interface{}{
 					map[string]interface{}{"_source": map[string]interface{}{
 						"id":       "194d1060-1717-44dc-a783-00038f4a8013",
 						"tenantID": "123456789012345678901234",
-						model.ToAttr("inventory", "attribute1", model.TypeStr): []string{"bar"},
 					}}},
 					"total": map[string]interface{}{
 						"value": float64(1),
@@ -441,63 +326,36 @@ func TestSearchDevices(t *testing.T) {
 			Inventory: []string{"inventory/foo"},
 		},
 		TotalCount: 1,
-		Result: []inventory.Device{{
+		Result: []model.Deployment{{
 			ID: "194d1060-1717-44dc-a783-00038f4a8013",
-			Attributes: inventory.DeviceAttributes{{
-				Name:  "foo",
-				Value: []string{"bar"},
-				Scope: "inventory",
-			}},
 		}},
 	}, {
 		Name: "ok with attributes",
 
-		Params: &model.SearchParams{
-			Attributes: []model.SelectAttribute{{
+		Params: &model.DeploymentsSearchParams{
+			Attributes: []model.DeploymentsSelectAttribute{{
 				Attribute: "foo",
-				Scope:     "inventory",
 			}},
-			Filters: []model.FilterPredicate{{
+			Filters: []model.DeploymentsFilterPredicate{{
 				Attribute: "foo",
 				Value:     "bar",
-				Scope:     "inventory",
 				Type:      "$eq",
 			}},
-			Sort: []model.SortCriteria{{
+			Sort: []model.DeploymentsSortCriteria{{
 				Attribute: "foo",
-				Scope:     "inventory",
-				Order:     "desc",
-			}},
-			DeviceIDs: []string{"194d1060-1717-44dc-a783-00038f4a8013"},
-		},
-		MappedParams: &model.SearchParams{
-			Attributes: []model.SelectAttribute{{
-				Attribute: "attribute1",
-				Scope:     "inventory",
-			}},
-			Filters: []model.FilterPredicate{{
-				Attribute: "attribute1",
-				Value:     "bar",
-				Scope:     "inventory",
-				Type:      "$eq",
-			}},
-			Sort: []model.SortCriteria{{
-				Attribute: "attribute1",
-				Scope:     "inventory",
 				Order:     "desc",
 			}},
 			DeviceIDs: []string{"194d1060-1717-44dc-a783-00038f4a8013"},
 		},
 		Store: func(t *testing.T, self testCase) *mstore.Store {
 			store := new(mstore.Store)
-			q, _ := model.BuildQuery(*self.MappedParams)
+			q, _ := model.BuildDeploymentsQuery(*self.Params)
 			q = q.Must(model.M{"terms": model.M{"id": self.Params.DeviceIDs}})
-			store.On("SearchDevices", contextMatcher, q).
+			store.On("SearchDeployments", contextMatcher, q).
 				Return(model.M{"hits": map[string]interface{}{"hits": []interface{}{
 					map[string]interface{}{"fields": map[string]interface{}{
 						"id":       "194d1060-1717-44dc-a783-00038f4a8013",
 						"tenantID": "123456789012345678901234",
-						model.ToAttr("inventory", "attribute1", model.TypeStr): []string{"bar"},
 					}}},
 					"total": map[string]interface{}{
 						"value": float64(1),
@@ -510,22 +368,17 @@ func TestSearchDevices(t *testing.T) {
 			Inventory: []string{"inventory/foo"},
 		},
 		TotalCount: 1,
-		Result: []inventory.Device{{
+		Result: []model.Deployment{{
 			ID: "194d1060-1717-44dc-a783-00038f4a8013",
-			Attributes: inventory.DeviceAttributes{{
-				Name:  "foo",
-				Value: []string{"bar"},
-				Scope: "inventory",
-			}},
 		}},
 	}, {
 		Name: "ok, empty result",
 
-		Params: &model.SearchParams{},
+		Params: &model.DeploymentsSearchParams{},
 		Store: func(t *testing.T, self testCase) *mstore.Store {
 			store := new(mstore.Store)
-			q, _ := model.BuildQuery(*self.Params)
-			store.On("SearchDevices", contextMatcher, q).
+			q, _ := model.BuildDeploymentsQuery(*self.Params)
+			store.On("SearchDeployments", contextMatcher, q).
 				Return(model.M{
 					"hits": map[string]interface{}{
 						"hits": []interface{}{},
@@ -536,28 +389,28 @@ func TestSearchDevices(t *testing.T) {
 				}, nil)
 			return store
 		},
-		Result: []inventory.Device{},
+		Result: []model.Deployment{},
 	}, {
 		Name: "error, internal storage-layer error",
 
-		Params: &model.SearchParams{},
+		Params: &model.DeploymentsSearchParams{},
 		Store: func(t *testing.T, self testCase) *mstore.Store {
 			store := new(mstore.Store)
-			q, _ := model.BuildQuery(*self.Params)
-			store.On("SearchDevices", contextMatcher, q).
+			q, _ := model.BuildDeploymentsQuery(*self.Params)
+			store.On("SearchDeployments", contextMatcher, q).
 				Return(nil, errors.New("internal error"))
 			return store
 		},
-		Result: []inventory.Device{},
+		Result: []model.Deployment{},
 		Error:  errors.New("internal error"),
 	}, {
 		Name: "error, parsing elastic result",
 
-		Params: &model.SearchParams{},
+		Params: &model.DeploymentsSearchParams{},
 		Store: func(t *testing.T, self testCase) *mstore.Store {
 			store := new(mstore.Store)
-			q, _ := model.BuildQuery(*self.Params)
-			store.On("SearchDevices", contextMatcher, q).
+			q, _ := model.BuildDeploymentsQuery(*self.Params)
+			store.On("SearchDeployments", contextMatcher, q).
 				Return(model.M{
 					"hits": map[string]interface{}{
 						"hits": []interface{}{},
@@ -568,16 +421,15 @@ func TestSearchDevices(t *testing.T) {
 				}, nil)
 			return store
 		},
-		Result: []inventory.Device{},
+		Result: []model.Deployment{},
 		Error:  errors.New("can't process total hits value"),
 	}, {
 		Name: "error, invalid search parameters",
 
-		Params: &model.SearchParams{
-			Filters: []model.FilterPredicate{{
+		Params: &model.DeploymentsSearchParams{
+			Filters: []model.DeploymentsFilterPredicate{{
 				Attribute: "foo",
 				Value:     true,
-				Scope:     "inventory",
 				Type:      "$useyourimagination",
 			}},
 		},
@@ -618,7 +470,7 @@ func TestSearchDevices(t *testing.T) {
 			).Return(&tc.Mapping, nil).Once()
 
 			app := NewApp(store, ds)
-			res, cnt, err := app.SearchDevices(context.Background(), tc.Params)
+			res, cnt, err := app.SearchDeployments(context.Background(), tc.Params)
 			if tc.Error != nil {
 				if assert.Error(t, err) {
 					assert.Regexp(t, tc.Error.Error(), err.Error())
@@ -626,99 +478,6 @@ func TestSearchDevices(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, tc.TotalCount, cnt)
-				assert.Equal(t, tc.Result, res)
-			}
-		})
-	}
-}
-
-func TestGetSearchableInvAttrs(t *testing.T) {
-	const tenantID = "tenant_id"
-
-	t.Parallel()
-	type testCase struct {
-		Name    string
-		Store   func(*testing.T, testCase) *mstore.Store
-		Mapping model.Mapping
-
-		Result []model.FilterAttribute
-		Error  error
-	}
-	testCases := []testCase{{
-		Name: "ok",
-
-		Store: func(t *testing.T, self testCase) *mstore.Store {
-			store := new(mstore.Store)
-			store.On("GetDevicesIndexMapping", contextMatcher, tenantID).
-				Return(map[string]interface{}{
-					"mappings": map[string]interface{}{
-						"properties": map[string]interface{}{
-							"inventory_attribute1_str": 1,
-							"inventory_attribute2_str": 1,
-							"system_attribute3_str":    1,
-						},
-					},
-				}, nil)
-			return store
-		},
-		Mapping: model.Mapping{
-			TenantID: "",
-			Inventory: []string{
-				"inventory/foo",
-				"inventory/bar",
-			},
-		},
-		Result: []model.FilterAttribute{
-			{
-				Name:  "bar",
-				Scope: "inventory",
-				Count: 1,
-			},
-			{
-				Name:  "foo",
-				Scope: "inventory",
-				Count: 1,
-			},
-			{
-				Name:  "attribute3",
-				Scope: "system",
-				Count: 1,
-			},
-		},
-	}, {
-		Name: "ko, error in GetDevicesIndexMapping",
-
-		Store: func(t *testing.T, self testCase) *mstore.Store {
-			store := new(mstore.Store)
-			store.On("GetDevicesIndexMapping", contextMatcher, tenantID).
-				Return(nil, errors.New("error"))
-			return store
-		},
-		Error: errors.New("error"),
-	}}
-	for i := range testCases {
-		tc := testCases[i]
-		t.Run(tc.Name, func(t *testing.T) {
-			t.Parallel()
-			store := tc.Store(t, tc)
-			defer store.AssertExpectations(t)
-
-			ds := &mstore.DataStore{}
-			ds.On("GetMapping",
-				mock.MatchedBy(func(_ context.Context) bool {
-					return true
-				}),
-				tenantID,
-			).Return(&tc.Mapping, nil).Once()
-
-			app := NewApp(store, ds)
-			res, err := app.GetSearchableInvAttrs(context.Background(), tenantID)
-			if tc.Error != nil {
-				if assert.Error(t, err) {
-					assert.Regexp(t, tc.Error.Error(), err.Error())
-				}
-			} else {
-				assert.NoError(t, err)
 				assert.Equal(t, tc.Result, res)
 			}
 		})

@@ -170,6 +170,45 @@ func (bi BulkItem) Marshal() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+func (s *opensearchStore) BulkIndexDeployments(ctx context.Context,
+	deployments []*model.Deployment) error {
+	var data strings.Builder
+
+	for _, deployment := range deployments {
+		actionJSON, err := json.Marshal(BulkAction{
+			Type: "index",
+			Desc: &BulkActionDesc{
+				ID:      deployment.ID,
+				Index:   s.GetDeploymentsIndex(deployment.TenantID),
+				Routing: s.GetDeploymentsRoutingKey(deployment.TenantID),
+			},
+		})
+		if err != nil {
+			return err
+		}
+		deploymentJSON, err := json.Marshal(deployment)
+		if err != nil {
+			return err
+		}
+		data.WriteString(string(actionJSON) + "\n" + string(deploymentJSON) + "\n")
+	}
+	dataString := data.String()
+
+	l := log.FromContext(ctx)
+	l.Debugf("opensearch request: %s", dataString)
+
+	req := opensearchapi.BulkRequest{
+		Body: strings.NewReader(dataString),
+	}
+	res, err := req.Do(ctx, s.client)
+	if err != nil {
+		return errors.Wrap(err, "failed to bulk index")
+	}
+	defer res.Body.Close()
+
+	return nil
+}
+
 func (s *opensearchStore) BulkIndexDevices(ctx context.Context, devices []*model.Device,
 	removedDevices []*model.Device) error {
 	var data strings.Builder

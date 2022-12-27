@@ -30,6 +30,52 @@ type App struct {
 	mock.Mock
 }
 
+// AggregateDeployments provides a mock function with given fields: ctx, aggregateParams
+func (_m *App) AggregateDeployments(ctx context.Context, aggregateParams *model.AggregateDeploymentsParams) ([]model.DeviceAggregation, error) {
+	ret := _m.Called(ctx, aggregateParams)
+
+	var r0 []model.DeviceAggregation
+	if rf, ok := ret.Get(0).(func(context.Context, *model.AggregateDeploymentsParams) []model.DeviceAggregation); ok {
+		r0 = rf(ctx, aggregateParams)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]model.DeviceAggregation)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *model.AggregateDeploymentsParams) error); ok {
+		r1 = rf(ctx, aggregateParams)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// AggregateDevices provides a mock function with given fields: ctx, aggregateParams
+func (_m *App) AggregateDevices(ctx context.Context, aggregateParams *model.AggregateParams) ([]model.DeviceAggregation, error) {
+	ret := _m.Called(ctx, aggregateParams)
+
+	var r0 []model.DeviceAggregation
+	if rf, ok := ret.Get(0).(func(context.Context, *model.AggregateParams) []model.DeviceAggregation); ok {
+		r0 = rf(ctx, aggregateParams)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]model.DeviceAggregation)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *model.AggregateParams) error); ok {
+		r1 = rf(ctx, aggregateParams)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetMapping provides a mock function with given fields: ctx, tid
 func (_m *App) GetMapping(ctx context.Context, tid string) (*model.Mapping, error) {
 	ret := _m.Called(ctx, tid)
@@ -90,27 +136,34 @@ func (_m *App) HealthCheck(ctx context.Context) error {
 	return r0
 }
 
-// AggregateDevices provides a mock function with given fields: ctx, aggregateParams
-func (_m *App) AggregateDevices(ctx context.Context, aggregateParams *model.AggregateParams) ([]model.DeviceAggregation, error) {
-	ret := _m.Called(ctx, aggregateParams)
+// SearchDeployments provides a mock function with given fields: ctx, searchParams
+func (_m *App) SearchDeployments(ctx context.Context, searchParams *model.DeploymentsSearchParams) ([]model.Deployment, int, error) {
+	ret := _m.Called(ctx, searchParams)
 
-	var r0 []model.DeviceAggregation
-	if rf, ok := ret.Get(0).(func(context.Context, *model.AggregateParams) []model.DeviceAggregation); ok {
-		r0 = rf(ctx, aggregateParams)
+	var r0 []model.Deployment
+	if rf, ok := ret.Get(0).(func(context.Context, *model.DeploymentsSearchParams) []model.Deployment); ok {
+		r0 = rf(ctx, searchParams)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]model.DeviceAggregation)
+			r0 = ret.Get(0).([]model.Deployment)
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *model.AggregateParams) error); ok {
-		r1 = rf(ctx, aggregateParams)
+	var r1 int
+	if rf, ok := ret.Get(1).(func(context.Context, *model.DeploymentsSearchParams) int); ok {
+		r1 = rf(ctx, searchParams)
 	} else {
-		r1 = ret.Error(1)
+		r1 = ret.Get(1).(int)
 	}
 
-	return r0, r1
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, *model.DeploymentsSearchParams) error); ok {
+		r2 = rf(ctx, searchParams)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // SearchDevices provides a mock function with given fields: ctx, searchParams

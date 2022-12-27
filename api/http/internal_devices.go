@@ -31,7 +31,7 @@ func (mc *InternalController) SearchDevices(c *gin.Context) {
 	ctx := c.Request.Context()
 	ctx = identity.WithContext(ctx, &identity.Identity{Tenant: tid})
 
-	params, err := parseSearchParams(ctx, c)
+	params, err := parseSearchDevicesParams(ctx, c)
 
 	if err != nil {
 		rest.RenderError(c,

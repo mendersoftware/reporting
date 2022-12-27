@@ -74,6 +74,20 @@ func (_m *Store) AggregateDevices(ctx context.Context, query model.Query) (model
 	return r0, r1
 }
 
+// BulkIndexDeployments provides a mock function with given fields: ctx, deployments
+func (_m *Store) BulkIndexDeployments(ctx context.Context, deployments []*model.Deployment) error {
+	ret := _m.Called(ctx, deployments)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []*model.Deployment) error); ok {
+		r0 = rf(ctx, deployments)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // BulkIndexDevices provides a mock function with given fields: ctx, devices, removedDevices
 func (_m *Store) BulkIndexDevices(ctx context.Context, devices []*model.Device, removedDevices []*model.Device) error {
 	ret := _m.Called(ctx, devices, removedDevices)

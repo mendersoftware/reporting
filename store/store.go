@@ -22,6 +22,7 @@ import (
 
 //go:generate ../x/mockgen.sh
 type Store interface {
+	BulkIndexDeployments(ctx context.Context, deployments []*model.Deployment) error
 	BulkIndexDevices(ctx context.Context, devices, removedDevices []*model.Device) error
 	GetDevicesIndex(tid string) string
 	GetDevicesRoutingKey(tid string) string

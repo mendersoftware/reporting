@@ -45,7 +45,7 @@ type attribute struct {
 func (mc *ManagementController) AggregateDevices(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	params, err := parseAggregateParams(ctx, c)
+	params, err := parseAggregateDevicesParams(ctx, c)
 	if err != nil {
 		rest.RenderError(c,
 			http.StatusBadRequest,
@@ -66,7 +66,8 @@ func (mc *ManagementController) AggregateDevices(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
-func parseAggregateParams(ctx context.Context, c *gin.Context) (*model.AggregateParams, error) {
+func parseAggregateDevicesParams(ctx context.Context, c *gin.Context) (
+	*model.AggregateParams, error) {
 	var aggregateParams model.AggregateParams
 
 	err := c.ShouldBindJSON(&aggregateParams)
@@ -135,7 +136,7 @@ func (mc *ManagementController) DeviceAttrs(c *gin.Context) {
 
 func (mc *ManagementController) SearchDevices(c *gin.Context) {
 	ctx := c.Request.Context()
-	params, err := parseSearchParams(ctx, c)
+	params, err := parseSearchDevicesParams(ctx, c)
 	if err != nil {
 		rest.RenderError(c,
 			http.StatusBadRequest,
@@ -159,7 +160,7 @@ func (mc *ManagementController) SearchDevices(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
-func parseSearchParams(ctx context.Context, c *gin.Context) (*model.SearchParams, error) {
+func parseSearchDevicesParams(ctx context.Context, c *gin.Context) (*model.SearchParams, error) {
 	var searchParams model.SearchParams
 
 	err := c.ShouldBindJSON(&searchParams)
