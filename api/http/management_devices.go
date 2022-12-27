@@ -54,7 +54,7 @@ func (mc *ManagementController) AggregateDevices(c *gin.Context) {
 		return
 	}
 
-	res, err := mc.reporting.InventoryAggregateDevices(ctx, params)
+	res, err := mc.reporting.AggregateDevices(ctx, params)
 	if err != nil {
 		rest.RenderError(c,
 			http.StatusInternalServerError,
@@ -144,7 +144,7 @@ func (mc *ManagementController) SearchDevices(c *gin.Context) {
 		return
 	}
 
-	res, total, err := mc.reporting.InventorySearchDevices(ctx, params)
+	res, total, err := mc.reporting.SearchDevices(ctx, params)
 	if err != nil {
 		rest.RenderError(c,
 			http.StatusInternalServerError,

@@ -71,7 +71,7 @@ func TestManagementAggregate(t *testing.T) {
 		App: func(t *testing.T, self testCase) *mapp.App {
 			app := new(mapp.App)
 
-			app.On("InventoryAggregateDevices",
+			app.On("AggregateDevices",
 				contextMatcher,
 				mock.MatchedBy(func(*model.AggregateParams) bool {
 					return true
@@ -123,7 +123,7 @@ func TestManagementAggregate(t *testing.T) {
 		App: func(t *testing.T, self testCase) *mapp.App {
 			app := new(mapp.App)
 
-			app.On("InventoryAggregateDevices",
+			app.On("AggregateDevices",
 				contextMatcher,
 				mock.MatchedBy(func(*model.AggregateParams) bool {
 					return true
@@ -456,7 +456,7 @@ func TestManagementSearch(t *testing.T) {
 		App: func(t *testing.T, self testCase) *mapp.App {
 			app := new(mapp.App)
 
-			app.On("InventorySearchDevices",
+			app.On("SearchDevices",
 				contextMatcher,
 				newSearchParamMatcher(self.Params.(*model.SearchParams))).
 				Return(self.Response, 0, nil)
@@ -524,7 +524,7 @@ func TestManagementSearch(t *testing.T) {
 		App: func(t *testing.T, self testCase) *mapp.App {
 			app := new(mapp.App)
 
-			app.On("InventorySearchDevices",
+			app.On("SearchDevices",
 				contextMatcher,
 				newSearchParamMatcher(self.Params.(*model.SearchParams))).
 				Return([]inventory.Device{}, 0, nil)
@@ -548,7 +548,7 @@ func TestManagementSearch(t *testing.T) {
 		App: func(t *testing.T, self testCase) *mapp.App {
 			app := new(mapp.App)
 
-			app.On("InventorySearchDevices",
+			app.On("SearchDevices",
 				contextMatcher,
 				newSearchParamMatcher(self.Params.(*model.SearchParams))).
 				Return([]inventory.Device{}, 0, nil)
@@ -595,7 +595,7 @@ func TestManagementSearch(t *testing.T) {
 		App: func(t *testing.T, self testCase) *mapp.App {
 			app := new(mapp.App)
 
-			app.On("InventorySearchDevices",
+			app.On("SearchDevices",
 				contextMatcher,
 				newSearchParamMatcher(self.Params.(*model.SearchParams))).
 				Return(nil, 0, errors.New("internal error"))

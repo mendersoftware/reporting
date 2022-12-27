@@ -66,7 +66,7 @@ func TestInternalSearchDevices(t *testing.T) {
 		App: func(t *testing.T, self testCase) *mapp.App {
 			app := new(mapp.App)
 
-			app.On("InventorySearchDevices",
+			app.On("SearchDevices",
 				contextMatcher,
 				newSearchParamMatcher(self.Params)).
 				Return(self.Response, 0, nil)
@@ -129,7 +129,7 @@ func TestInternalSearchDevices(t *testing.T) {
 		App: func(t *testing.T, self testCase) *mapp.App {
 			app := new(mapp.App)
 
-			app.On("InventorySearchDevices",
+			app.On("SearchDevices",
 				contextMatcher,
 				newSearchParamMatcher(self.Params)).
 				Return([]inventory.Device{}, 0, nil)
@@ -163,7 +163,7 @@ func TestInternalSearchDevices(t *testing.T) {
 		App: func(t *testing.T, self testCase) *mapp.App {
 			app := new(mapp.App)
 
-			app.On("InventorySearchDevices",
+			app.On("SearchDevices",
 				contextMatcher,
 				newSearchParamMatcher(self.Params)).
 				Return(nil, 0, errors.New("internal error"))

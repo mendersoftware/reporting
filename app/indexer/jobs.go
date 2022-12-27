@@ -170,7 +170,7 @@ func (i *indexer) processJobDevice(
 		inventoryDevice.Attributes, true, false)
 	if err != nil {
 		err = errors.Wrapf(err,
-			"failed to map inventory data for tenant %s, "+
+			"failed to map device data for tenant %s, "+
 				"device %s", tenant, inventoryDevice.ID)
 		l.Warn(err)
 	} else {
@@ -180,7 +180,7 @@ func (i *indexer) processJobDevice(
 				SetVal(invattr.Value)
 			if err := device.AppendAttr(attr); err != nil {
 				err = errors.Wrapf(err,
-					"failed to convert inventory data for tenant %s, "+
+					"failed to convert device data for tenant %s, "+
 						"device %s", tenant, inventoryDevice.ID)
 				l.Warn(err)
 			}

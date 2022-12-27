@@ -41,7 +41,7 @@ func (mc *InternalController) SearchDevices(c *gin.Context) {
 		return
 	}
 
-	res, total, err := mc.reporting.InventorySearchDevices(ctx, params)
+	res, total, err := mc.reporting.SearchDevices(ctx, params)
 	if err != nil {
 		rest.RenderError(c,
 			http.StatusInternalServerError,

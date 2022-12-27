@@ -94,7 +94,7 @@ func TestGetMapping(t *testing.T) {
 	assert.Equal(t, mapping, res)
 }
 
-func TestInventoryAggregateDevices(t *testing.T) {
+func TestAggregateDevices(t *testing.T) {
 	const tenantID = "tenant_id"
 	t.Parallel()
 	type testCase struct {
@@ -361,7 +361,7 @@ func TestInventoryAggregateDevices(t *testing.T) {
 			).Return(&tc.Mapping, nil).Once()
 
 			app := NewApp(store, ds)
-			res, err := app.InventoryAggregateDevices(context.Background(), tc.Params)
+			res, err := app.AggregateDevices(context.Background(), tc.Params)
 			if tc.Error != nil {
 				if assert.Error(t, err) {
 					assert.Regexp(t, tc.Error.Error(), err.Error())
@@ -374,7 +374,7 @@ func TestInventoryAggregateDevices(t *testing.T) {
 	}
 }
 
-func TestInventorySearchDevices(t *testing.T) {
+func TestSearchDevices(t *testing.T) {
 	t.Parallel()
 	type testCase struct {
 		Name string
@@ -618,7 +618,7 @@ func TestInventorySearchDevices(t *testing.T) {
 			).Return(&tc.Mapping, nil).Once()
 
 			app := NewApp(store, ds)
-			res, cnt, err := app.InventorySearchDevices(context.Background(), tc.Params)
+			res, cnt, err := app.SearchDevices(context.Background(), tc.Params)
 			if tc.Error != nil {
 				if assert.Error(t, err) {
 					assert.Regexp(t, tc.Error.Error(), err.Error())

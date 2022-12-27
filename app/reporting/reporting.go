@@ -33,9 +33,9 @@ type App interface {
 	HealthCheck(ctx context.Context) error
 	GetMapping(ctx context.Context, tid string) (*model.Mapping, error)
 	GetSearchableInvAttrs(ctx context.Context, tid string) ([]model.FilterAttribute, error)
-	InventoryAggregateDevices(ctx context.Context, aggregateParams *model.AggregateParams) (
+	AggregateDevices(ctx context.Context, aggregateParams *model.AggregateParams) (
 		[]model.DeviceAggregation, error)
-	InventorySearchDevices(ctx context.Context, searchParams *model.SearchParams) (
+	SearchDevices(ctx context.Context, searchParams *model.SearchParams) (
 		[]inventory.Device, int, error)
 }
 
@@ -68,8 +68,8 @@ func (app *app) GetMapping(ctx context.Context, tid string) (*model.Mapping, err
 	return app.ds.GetMapping(ctx, tid)
 }
 
-// InventoryAggregateDevices aggregates devices' inventory data
-func (app *app) InventoryAggregateDevices(
+// AggregateDevices aggregates device data
+func (app *app) AggregateDevices(
 	ctx context.Context,
 	aggregateParams *model.AggregateParams,
 ) ([]model.DeviceAggregation, error) {
@@ -174,8 +174,8 @@ func (a *app) storeToDeviceAggregations(
 	return aggs, nil
 }
 
-// InventorySearchDevices searches devices' inventory data
-func (app *app) InventorySearchDevices(
+// SearchDevices searches device data
+func (app *app) SearchDevices(
 	ctx context.Context,
 	searchParams *model.SearchParams,
 ) ([]inventory.Device, int, error) {

@@ -127,7 +127,7 @@ paths:
     post:
       tags:
         - Management API
-      summary: Aggregate device inventory data.
+      summary: Aggregate device data.
       operationId: Aggregate
       requestBody:
         content:
@@ -217,7 +217,7 @@ paths:
     post:
       tags:
         - Management API
-      summary: Search device inventory data.
+      summary: Search device data.
       operationId: Search
       requestBody:
         content:
