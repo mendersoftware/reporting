@@ -28,6 +28,29 @@ type Client struct {
 	mock.Mock
 }
 
+// GetDeployments provides a mock function with given fields: ctx, tenantID, IDs
+func (_m *Client) GetDeployments(ctx context.Context, tenantID string, IDs []string) ([]*deployments.DeviceDeployment, error) {
+	ret := _m.Called(ctx, tenantID, IDs)
+
+	var r0 []*deployments.DeviceDeployment
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string) []*deployments.DeviceDeployment); ok {
+		r0 = rf(ctx, tenantID, IDs)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*deployments.DeviceDeployment)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, []string) error); ok {
+		r1 = rf(ctx, tenantID, IDs)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetLatestFinishedDeployment provides a mock function with given fields: ctx, tenantID, deviceID
 func (_m *Client) GetLatestFinishedDeployment(ctx context.Context, tenantID string, deviceID string) (*deployments.DeviceDeployment, error) {
 	ret := _m.Called(ctx, tenantID, deviceID)

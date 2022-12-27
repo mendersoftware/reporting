@@ -24,9 +24,49 @@ type DeviceDeployment struct {
 
 // Device contains the device-specific information for a device deployment
 type Device struct {
-	Created  *time.Time `json:"created"`
-	Finished *time.Time `json:"finished,omitempty"`
-	Deleted  *time.Time `json:"deleted,omitempty"`
-	Status   string     `json:"status"`
-	DeviceId string     `json:"id"`
+	Created        *time.Time             `json:"created"`
+	Finished       *time.Time             `json:"finished,omitempty"`
+	Deleted        *time.Time             `json:"deleted,omitempty"`
+	Status         string                 `json:"status"`
+	DeviceId       string                 `json:"device_id"`
+	DeploymentId   string                 `json:"deployment_id"`
+	Id             string                 `json:"id"`
+	Image          *Image                 `json:"image"`
+	Request        *DeploymentNextRequest `json:"request"`
+	IsLogAvailable bool                   `json:"log"`
+	SubState       string                 `json:"substate,omitempty"`
+	Retries        uint                   `json:"retries,omitempty"`
+	Attempts       uint                   `json:"attempts,omitempty"`
+}
+
+type Image struct {
+	Id                    string                 `json:"id"`
+	Description           string                 `json:"description"`
+	Name                  string                 `json:"name"`
+	DeviceTypesCompatible []string               `json:"device_types_compatible"`
+	Info                  *ArtifactInfo          `json:"info"`
+	Signed                bool                   `json:"signed"`
+	Provides              Provides               `json:"artifact_provides,omitempty"`
+	Depends               map[string]interface{} `json:"artifact_depends,omitempty"`
+	ClearsProvides        []string               `json:"clears_artifact_provides,omitempty"`
+	Size                  int64                  `json:"size"`
+	Modified              *time.Time             `json:"modified" valid:"-"`
+}
+
+type ArtifactInfo struct {
+	Format  string `json:"format" valid:"required"`
+	Version uint   `json:"version" valid:"required"`
+}
+
+type Provides map[string]string
+
+type DeploymentNextRequest struct {
+	DeviceProvides   *InstalledDeviceDeployment `json:"device_provides"`
+	UpdateControlMap bool                       `json:"update_control_map"`
+}
+
+type InstalledDeviceDeployment struct {
+	ArtifactName string            `json:"artifact_name"`
+	DeviceType   string            `json:"device_type"`
+	Provides     map[string]string `json:"artifact_provides,omitempty"`
 }
