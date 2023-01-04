@@ -138,47 +138,10 @@ func (i *indexer) ProcessJobs(ctx context.Context, jobs []*model.Job) {
 				})
 				continue
 			}
-			device := model.NewDevice(tenant, string(inventoryDevice.ID))
-			// data from inventory
-			device.SetUpdatedAt(inventoryDevice.UpdatedTs)
-			attributes, err := i.mapper.MapInventoryAttributes(ctx, tenant,
-				inventoryDevice.Attributes, true, false)
-			if err != nil {
-				err = errors.Wrapf(err,
-					"failed to map inventory data for tenant %s, "+
-						"device %s", tenant, deviceID)
-				l.Warn(err)
-			} else {
-				for _, invattr := range attributes {
-					attr := model.NewInventoryAttribute(invattr.Scope).
-						SetName(invattr.Name).
-						SetVal(invattr.Value)
-					if err := device.AppendAttr(attr); err != nil {
-						err = errors.Wrapf(err,
-							"failed to convert inventory data for tenant %s, "+
-								"device %s", tenant, deviceID)
-						l.Warn(err)
-					}
-				}
+			device := i.processJobDevice(ctx, tenant, deviceAuthDevice, inventoryDevice)
+			if device == nil {
+				continue
 			}
-			// data from device auth
-			_ = device.AppendAttr(&model.InventoryAttribute{
-				Scope:  model.ScopeIdentity,
-				Name:   model.AttrNameStatus,
-				String: []string{deviceAuthDevice.Status},
-			})
-			for name, value := range deviceAuthDevice.IdDataStruct {
-				attr := model.NewInventoryAttribute(model.ScopeIdentity).
-					SetName(name).
-					SetVal(value)
-				if err := device.AppendAttr(attr); err != nil {
-					err = errors.Wrapf(err,
-						"failed to convert identity data for tenant %s, "+
-							"device %s", tenant, deviceID)
-					l.Warn(err)
-				}
-			}
-			// append the device
 			devices = append(devices, device)
 		}
 		// bulk index the device
@@ -190,4 +153,69 @@ func (i *indexer) ProcessJobs(ctx context.Context, jobs []*model.Job) {
 			}
 		}
 	}
+}
+
+func (i *indexer) processJobDevice(
+	ctx context.Context,
+	tenant string,
+	deviceAuthDevice *deviceauth.DeviceAuthDevice,
+	inventoryDevice *inventory.Device,
+) *model.Device {
+	l := log.FromContext(ctx)
+	//
+	device := model.NewDevice(tenant, string(inventoryDevice.ID))
+	// data from inventory
+	device.SetUpdatedAt(inventoryDevice.UpdatedTs)
+	attributes, err := i.mapper.MapInventoryAttributes(ctx, tenant,
+		inventoryDevice.Attributes, true, false)
+	if err != nil {
+		err = errors.Wrapf(err,
+			"failed to map inventory data for tenant %s, "+
+				"device %s", tenant, inventoryDevice.ID)
+		l.Warn(err)
+	} else {
+		for _, invattr := range attributes {
+			attr := model.NewInventoryAttribute(invattr.Scope).
+				SetName(invattr.Name).
+				SetVal(invattr.Value)
+			if err := device.AppendAttr(attr); err != nil {
+				err = errors.Wrapf(err,
+					"failed to convert inventory data for tenant %s, "+
+						"device %s", tenant, inventoryDevice.ID)
+				l.Warn(err)
+			}
+		}
+	}
+	// data from device auth
+	_ = device.AppendAttr(&model.InventoryAttribute{
+		Scope:  model.ScopeIdentity,
+		Name:   model.AttrNameStatus,
+		String: []string{deviceAuthDevice.Status},
+	})
+	for name, value := range deviceAuthDevice.IdDataStruct {
+		attr := model.NewInventoryAttribute(model.ScopeIdentity).
+			SetName(name).
+			SetVal(value)
+		if err := device.AppendAttr(attr); err != nil {
+			err = errors.Wrapf(err,
+				"failed to convert identity data for tenant %s, "+
+					"device %s", tenant, inventoryDevice.ID)
+			l.Warn(err)
+		}
+	}
+	// latest deployment
+	deviceDeployment, err := i.deplClient.GetLatestFinishedDeployment(ctx, tenant,
+		string(inventoryDevice.ID))
+	if err != nil {
+		l.Error(errors.Wrap(err, "failed to get device deployments from deployments"))
+		return nil
+	} else if deviceDeployment != nil {
+		_ = device.AppendAttr(&model.InventoryAttribute{
+			Scope:  model.ScopeSystem,
+			Name:   model.AttrNameLatestDeploymentStatus,
+			String: []string{deviceDeployment.Device.Status},
+		})
+	}
+	// return the device
+	return device
 }

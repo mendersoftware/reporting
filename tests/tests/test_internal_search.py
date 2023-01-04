@@ -402,6 +402,45 @@ class TestInternalSearch:
                     ),
                 ],
             ),
+            _TestCase(
+                tenant_id="123456789012345678901234",
+                search_terms=internal_api.models.SearchTerms(
+                    filters=[
+                        internal_api.models.FilterTerm(
+                            attribute="latest_deployment_status",
+                            value="success",
+                            type="$eq",
+                            scope="system",
+                        )
+                    ],
+                    sort=[
+                        internal_api.models.SortTerm(
+                            attribute="string", scope="inventory", order="asc"
+                        )
+                    ],
+                ),
+                http_code=200,
+                result=[
+                    internal_api.models.DeviceInventory(
+                        id="463e12dd-1adb-4f62-965e-b0a9ba2c93ff",
+                        attributes=[
+                            internal_api.models.Attribute(
+                                name="string",
+                                value="Lorem ipsum dolor sit amet",
+                                scope="inventory",
+                            ),
+                            internal_api.models.Attribute(
+                                name="number", value=2 ** 47, scope="inventory"
+                            ),
+                            internal_api.models.Attribute(
+                                name="latest_deployment_status",
+                                value="success",
+                                scope="system",
+                            ),
+                        ],
+                    ),
+                ],
+            ),
         ],
         ids=[
             "ok, $eq",
@@ -411,6 +450,7 @@ class TestInternalSearch:
             "ok, $ne + sort",
             "ok, $exists",
             "ok, $regex + sort",
+            "ok, latest_deployment_status",
         ],
     )
     def test_internal_search(self, test_case, setup_test_context):

@@ -24,6 +24,8 @@ import (
 
 	natsio "github.com/nats-io/nats.go"
 
+	"github.com/mendersoftware/reporting/client/deployments"
+	deployments_mocks "github.com/mendersoftware/reporting/client/deployments/mocks"
 	"github.com/mendersoftware/reporting/client/deviceauth"
 	deviceauth_mocks "github.com/mendersoftware/reporting/client/deviceauth/mocks"
 	"github.com/mendersoftware/reporting/client/inventory"
@@ -61,7 +63,7 @@ func TestGetJobsSubscriptionError(t *testing.T) {
 
 	defer nats.AssertExpectations(t)
 
-	indexer := NewIndexer(nil, nil, nats, nil, nil)
+	indexer := NewIndexer(nil, nil, nats, nil, nil, nil)
 	err := indexer.GetJobs(ctx, jobs)
 	assert.Equal(t, "failed to subscribe to the nats JetStream: subscription error", err.Error())
 
@@ -99,7 +101,7 @@ func TestGetJobs(t *testing.T) {
 
 	defer nats.AssertExpectations(t)
 
-	indexer := NewIndexer(nil, nil, nats, nil, nil)
+	indexer := NewIndexer(nil, nil, nats, nil, nil, nil)
 	err := indexer.GetJobs(ctx, jobs)
 	assert.Nil(t, err)
 
@@ -140,7 +142,7 @@ func TestGetJobsError(t *testing.T) {
 
 	defer nats.AssertExpectations(t)
 
-	indexer := NewIndexer(nil, nil, nats, nil, nil)
+	indexer := NewIndexer(nil, nil, nats, nil, nil, nil)
 	err := indexer.GetJobs(ctx, jobs)
 	assert.Nil(t, err)
 
@@ -172,6 +174,9 @@ func TestProcessJobs(t *testing.T) {
 		inventoryDeviceIDs []string
 		inventoryDevices   []inventory.Device
 		inventoryErr       error
+
+		deploymentsDevice *deployments.DeviceDeployment
+		deploymentsErr    error
 
 		bulkIndexDevices       []*model.Device
 		bulkIndexRemoveDevices []*model.Device
@@ -257,6 +262,118 @@ func TestProcessJobs(t *testing.T) {
 							Scope:  model.ScopeIdentity,
 							Name:   "mac",
 							String: []string{"00:11:22:33:55"},
+						},
+					},
+				},
+			},
+			bulkIndexRemoveDevices: []*model.Device{
+				{
+					ID:       strptr("3"),
+					TenantID: strptr(tenantID),
+				},
+			},
+		},
+		"ok with latest deployment": {
+			jobs: []*model.Job{
+				{
+					Action:   "index",
+					TenantID: tenantID,
+					DeviceID: "1",
+					Service:  model.ServiceInventory,
+				},
+				{
+					Action:   "index",
+					TenantID: tenantID,
+					DeviceID: "2",
+					Service:  model.ServiceInventory,
+				},
+				{
+					Action:   "index",
+					TenantID: tenantID,
+					DeviceID: "3",
+					Service:  model.ServiceInventory,
+				},
+			},
+
+			deviceauthDeviceIDs: []string{"1", "2", "3"},
+			deviceauthDevices: []deviceauth.DeviceAuthDevice{
+				{
+					ID:     "1",
+					Status: "active",
+					IdDataStruct: map[string]string{
+						"mac": "00:11:22:33:44",
+					},
+				},
+				{
+					ID:     "2",
+					Status: "pending",
+					IdDataStruct: map[string]string{
+						"mac": "00:11:22:33:55",
+					},
+				},
+			},
+
+			inventoryDeviceIDs: []string{"1", "2"},
+			inventoryDevices: []inventory.Device{
+				{
+					ID: "1",
+				},
+				{
+					ID: "2",
+				},
+			},
+
+			deploymentsDevice: &deployments.DeviceDeployment{
+				Device: &deployments.Device{
+					Status: "success",
+				},
+			},
+			deploymentsErr: nil,
+
+			bulkIndexDevices: []*model.Device{
+				{
+					ID:       strptr("1"),
+					TenantID: strptr(tenantID),
+					IdentityAttributes: model.InventoryAttributes{
+						{
+							Scope:  model.ScopeIdentity,
+							Name:   model.AttrNameStatus,
+							String: []string{"active"},
+						},
+						{
+							Scope:  model.ScopeIdentity,
+							Name:   "mac",
+							String: []string{"00:11:22:33:44"},
+						},
+					},
+					SystemAttributes: model.InventoryAttributes{
+						{
+							Scope:  model.ScopeSystem,
+							Name:   model.AttrNameLatestDeploymentStatus,
+							String: []string{"success"},
+						},
+					},
+				},
+				{
+					ID:       strptr("2"),
+					TenantID: strptr(tenantID),
+					IdentityAttributes: model.InventoryAttributes{
+						{
+							Scope:  model.ScopeIdentity,
+							Name:   model.AttrNameStatus,
+							String: []string{"pending"},
+						},
+						{
+							Scope:  model.ScopeIdentity,
+							Name:   "mac",
+							String: []string{"00:11:22:33:55"},
+						},
+					},
+					SystemAttributes: model.InventoryAttributes{
+						{
+							Scope:  model.ScopeSystem,
+							Name:   model.AttrNameLatestDeploymentStatus,
+							String: []string{"success"},
 						},
 					},
 				},
@@ -475,6 +592,16 @@ func TestProcessJobs(t *testing.T) {
 				).Return(tc.inventoryDevices, tc.inventoryErr)
 			}
 
+			deplClient := &deployments_mocks.Client{}
+			defer deplClient.AssertExpectations(t)
+			if tc.deviceauthErr == nil && tc.inventoryErr == nil {
+				deplClient.On("GetLatestFinishedDeployment",
+					ctx,
+					tenantID,
+					mock.AnythingOfType("string"),
+				).Return(tc.deploymentsDevice, tc.deploymentsErr)
+			}
+
 			ds := &store_mocks.DataStore{}
 			ds.On("UpdateAndGetMapping",
 				ctx,
@@ -485,7 +612,7 @@ func TestProcessJobs(t *testing.T) {
 				Inventory: []string{},
 			}, nil)
 
-			indexer := NewIndexer(store, ds, nil, devClient, invClient)
+			indexer := NewIndexer(store, ds, nil, devClient, invClient, deplClient)
 
 			indexer.ProcessJobs(ctx, tc.jobs)
 		})
