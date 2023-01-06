@@ -1,4 +1,4 @@
-// Copyright 2022 Northern.tech AS
+// Copyright 2023 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ type Deployment struct {
 	ArtifactName       string                   `json:"artifact_name,omitempty"`
 	Devices            []string                 `json:"devices,omitempty"`
 	FilterId           string                   `json:"filter_id,omitempty"`
+	PhaseId            string                   `json:"phase_id,omitempty"`
 	AllDevices         bool                     `json:"all_devices,omitempty"`
 	ForceInstallation  bool                     `json:"force_installation,omitempty"`
 	Group              string                   `json:"group"`
