@@ -295,6 +295,8 @@ func (i *indexer) processJobDeployment(
 		TenantID:                    tenant,
 		DeploymentName:              deployment.Deployment.Name,
 		DeploymentArtifactName:      deployment.Deployment.ArtifactName,
+		DeploymentType:              deployment.Deployment.Type,
+		DeploymentCreated:           deployment.Deployment.Created,
 		DeploymentFilterID:          deployment.Deployment.FilterId,
 		DeploymentAllDevices:        deployment.Deployment.AllDevices,
 		DeploymentForceInstallation: deployment.Deployment.ForceInstallation,

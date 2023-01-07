@@ -1,4 +1,4 @@
-# Copyright 2022 Northern.tech AS
+# Copyright 2023 Northern.tech AS
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -198,7 +198,7 @@ class TestManagementSearch:
                 result=[],
             ),
         ],
-        ids=["ok", "error, missing index for tenant", "error, unauthorized access",],
+        ids=["ok", "error, missing index for tenant", "error, unauthorized access"],
     )
     def test_search(self, test_case, setup_test_context):
         conf = None

@@ -410,16 +410,21 @@ components:
         id:
           type: string
           description: Device Deployment ID.
+        tenantID:
+          type: string
         device_id:
           type: string
         deployment_id:
-          type: string
-        tenant_id:
           type: string
         deployment_name:
           type: string
         deployment_artifact_name:
           type: string
+        deployment_type:
+          type: string
+        deployment_created:
+          type: string
+          format: date-time
         deployment_filter_id:
           type: string
         deployment_all_devices:
@@ -464,7 +469,9 @@ components:
         image_artifact_name:
           type: string
         image_device_types:
-          type: string
+          type: array
+          items:
+            type: string
         image_signed:
           type: boolean
         image_artifact_info_format:

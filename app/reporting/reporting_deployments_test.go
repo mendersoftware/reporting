@@ -1,4 +1,4 @@
-// Copyright 2022 Northern.tech AS
+// Copyright 2023 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -327,7 +327,8 @@ func TestSearchDeployments(t *testing.T) {
 		},
 		TotalCount: 1,
 		Result: []model.Deployment{{
-			ID: "194d1060-1717-44dc-a783-00038f4a8013",
+			ID:       "194d1060-1717-44dc-a783-00038f4a8013",
+			TenantID: "123456789012345678901234",
 		}},
 	}, {
 		Name: "ok with attributes",
@@ -369,7 +370,8 @@ func TestSearchDeployments(t *testing.T) {
 		},
 		TotalCount: 1,
 		Result: []model.Deployment{{
-			ID: "194d1060-1717-44dc-a783-00038f4a8013",
+			ID:       "194d1060-1717-44dc-a783-00038f4a8013",
+			TenantID: "123456789012345678901234",
 		}},
 	}, {
 		Name: "ok, empty result",
