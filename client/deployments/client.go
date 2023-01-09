@@ -1,4 +1,4 @@
-// Copyright 2022 Northern.tech AS
+// Copyright 2023 Northern.tech AS
 //
 //	Licensed under the Apache License, Version 2.0 (the "License");
 //	you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ const (
 	urlDeviceDeployments   = "/api/internal/v1/deployments/tenants/:tid/deployments/devices"
 	urlDeviceDeploymentsID = urlDeviceDeployments + "/:id"
 	defaultTimeout         = 10 * time.Second
+	maxPerPage             = 100
 )
 
 //go:generate ../../x/mockgen.sh
@@ -81,9 +82,14 @@ func (c *client) GetDeployments(
 		return nil, errors.Wrapf(err, "failed to create request")
 	}
 
+	nIDs := len(IDs)
+	if nIDs > maxPerPage {
+		return nil, errors.New("too many IDs")
+	}
+
 	q := req.URL.Query()
 	q.Add("page", "1")
-	q.Add("per_page", strconv.Itoa(len(IDs)))
+	q.Add("per_page", strconv.Itoa(nIDs))
 	for _, id := range IDs {
 		q.Add("id", id)
 	}
