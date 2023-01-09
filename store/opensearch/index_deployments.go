@@ -33,7 +33,7 @@ const indexDeploymentsTemplate = `{
 				"id": {
 					"type": "keyword"
 				},
-				"tenantID": {
+				"tenant_id": {
 					"type": "keyword"
 				},
 				"device_id": {

@@ -18,7 +18,7 @@ import "time"
 
 type Deployment struct {
 	ID                          string              `json:"id"`
-	TenantID                    string              `json:"tenantID"`
+	TenantID                    string              `json:"tenant_id"`
 	DeviceID                    string              `json:"device_id"`
 	DeploymentID                string              `json:"deployment_id"`
 	DeploymentName              string              `json:"deployment_name"`

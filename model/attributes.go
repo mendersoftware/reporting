@@ -45,7 +45,7 @@ const (
 
 const (
 	FieldNameID       = "id"
-	FieldNameTenantID = "tenantID"
+	FieldNameTenantID = "tenant_id"
 )
 
 // type enum/suffixes

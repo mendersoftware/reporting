@@ -410,7 +410,7 @@ components:
         id:
           type: string
           description: Device Deployment ID.
-        tenantID:
+        tenant_id:
           type: string
         device_id:
           type: string

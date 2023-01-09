@@ -1,4 +1,4 @@
-// Copyright 2022 Northern.tech AS
+// Copyright 2023 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -426,8 +426,8 @@ func TestSearchDevices(t *testing.T) {
 			store.On("SearchDevices", contextMatcher, q).
 				Return(model.M{"hits": map[string]interface{}{"hits": []interface{}{
 					map[string]interface{}{"_source": map[string]interface{}{
-						"id":       "194d1060-1717-44dc-a783-00038f4a8013",
-						"tenantID": "123456789012345678901234",
+						"id":        "194d1060-1717-44dc-a783-00038f4a8013",
+						"tenant_id": "123456789012345678901234",
 						model.ToAttr("inventory", "attribute1", model.TypeStr): []string{"bar"},
 					}}},
 					"total": map[string]interface{}{
@@ -495,8 +495,8 @@ func TestSearchDevices(t *testing.T) {
 			store.On("SearchDevices", contextMatcher, q).
 				Return(model.M{"hits": map[string]interface{}{"hits": []interface{}{
 					map[string]interface{}{"fields": map[string]interface{}{
-						"id":       "194d1060-1717-44dc-a783-00038f4a8013",
-						"tenantID": "123456789012345678901234",
+						"id":        "194d1060-1717-44dc-a783-00038f4a8013",
+						"tenant_id": "123456789012345678901234",
 						model.ToAttr("inventory", "attribute1", model.TypeStr): []string{"bar"},
 					}}},
 					"total": map[string]interface{}{

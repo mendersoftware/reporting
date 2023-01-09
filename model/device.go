@@ -1,4 +1,4 @@
-// Copyright 2021 Northern.tech AS
+// Copyright 2023 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -23,13 +23,13 @@ import (
 
 type Device struct {
 	ID                  *string             `json:"id"`
-	TenantID            *string             `json:"tenantID,omitempty"`
-	IdentityAttributes  InventoryAttributes `json:"identityAttributes,omitempty"`
-	InventoryAttributes InventoryAttributes `json:"inventoryAttributes,omitempty"`
-	MonitorAttributes   InventoryAttributes `json:"monitorAttributes,omitempty"`
-	SystemAttributes    InventoryAttributes `json:"systemAttributes,omitempty"`
-	TagsAttributes      InventoryAttributes `json:"tagsAttributes,omitempty"`
-	UpdatedAt           *time.Time          `json:"updatedAt,omitempty"`
+	TenantID            *string             `json:"tenant_id,omitempty"`
+	IdentityAttributes  InventoryAttributes `json:"identity_attributes,omitempty"`
+	InventoryAttributes InventoryAttributes `json:"inventory_attributes,omitempty"`
+	MonitorAttributes   InventoryAttributes `json:"monitor_attributes,omitempty"`
+	SystemAttributes    InventoryAttributes `json:"system_attributes,omitempty"`
+	TagsAttributes      InventoryAttributes `json:"tags_attributes,omitempty"`
+	UpdatedAt           *time.Time          `json:"updated_at,omitempty"`
 }
 
 func NewDevice(tenantID, id string) *Device {
