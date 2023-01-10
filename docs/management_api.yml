@@ -355,7 +355,7 @@ components:
           maxItems: 100
           items:
             $ref: '#/components/schemas/DeploymentAggregationTerm'
-          description: Sub-aggregation terms.
+          description: Sub-aggregation terms; it supports up to 5 nested subaggregations.
       required:
         - name
         - field
@@ -596,7 +596,7 @@ components:
           maxItems: 100
           items:
             $ref: '#/components/schemas/DeviceAggregationTerm'
-          description: Sub-aggregation terms.
+          description: Sub-aggregation terms; it supports up to 5 nested subaggregations.
       required:
         - name
         - field

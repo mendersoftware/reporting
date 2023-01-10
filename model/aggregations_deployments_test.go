@@ -21,17 +21,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAggregateParamsValidate(t *testing.T) {
+func TestAggregateDeploymentsParamsValidate(t *testing.T) {
 	testCases := map[string]struct {
-		params AggregateParams
+		params AggregateDeploymentsParams
 		err    error
 	}{
 		"ok, empty": {
-			params: AggregateParams{
-				Aggregations: []AggregationTerm{
+			params: AggregateDeploymentsParams{
+				Aggregations: []DeploymentsAggregationTerm{
 					{
 						Name:      "mac",
-						Scope:     ScopeIdentity,
 						Attribute: "mac",
 						Limit:     10,
 					},
@@ -39,19 +38,17 @@ func TestAggregateParamsValidate(t *testing.T) {
 			},
 		},
 		"ok, full example": {
-			params: AggregateParams{
-				Filters: []FilterPredicate{
+			params: AggregateDeploymentsParams{
+				Filters: []DeploymentsFilterPredicate{
 					{
-						Scope:     ScopeIdentity,
 						Attribute: "mac",
 						Type:      "$eq",
 						Value:     "00:11:22:33:44",
 					},
 				},
-				Aggregations: []AggregationTerm{
+				Aggregations: []DeploymentsAggregationTerm{
 					{
 						Name:      "mac",
-						Scope:     ScopeIdentity,
 						Attribute: "mac",
 						Limit:     10,
 					},
@@ -59,57 +56,53 @@ func TestAggregateParamsValidate(t *testing.T) {
 			},
 		},
 		"ko, filter fails validation": {
-			params: AggregateParams{
-				Filters: []FilterPredicate{
+			params: AggregateDeploymentsParams{
+				Filters: []DeploymentsFilterPredicate{
 					{
 						Value: "",
 					},
 				},
-				Aggregations: []AggregationTerm{
+				Aggregations: []DeploymentsAggregationTerm{
 					{
 						Name:      "mac",
-						Scope:     ScopeIdentity,
 						Attribute: "mac",
 						Limit:     10,
 					},
 				},
 			},
-			err: errors.New("attribute: cannot be blank; scope: cannot be blank; type: cannot be blank."),
+			err: errors.New("attribute: cannot be blank; type: cannot be blank."),
 		},
 		"ko, aggregation fails validation": {
-			params: AggregateParams{
-				Filters: []FilterPredicate{
+			params: AggregateDeploymentsParams{
+				Filters: []DeploymentsFilterPredicate{
 					{
-						Scope:     ScopeIdentity,
 						Attribute: "mac",
 						Type:      "$eq",
 						Value:     "00:11:22:33:44",
 					},
 				},
-				Aggregations: []AggregationTerm{
+				Aggregations: []DeploymentsAggregationTerm{
 					{
 						Name: "",
 					},
 				},
 			},
-			err: errors.New("aggregations: (0: (attribute: cannot be blank; name: cannot be blank; scope: cannot be blank.).)."),
+			err: errors.New("aggregations: (0: (attribute: cannot be blank; name: cannot be blank.).)."),
 		},
 		"ko, nested aggregation fails validation": {
-			params: AggregateParams{
-				Filters: []FilterPredicate{
+			params: AggregateDeploymentsParams{
+				Filters: []DeploymentsFilterPredicate{
 					{
-						Scope:     ScopeIdentity,
 						Attribute: "mac",
 						Type:      "$eq",
 						Value:     "00:11:22:33:44",
 					},
 				},
-				Aggregations: []AggregationTerm{
+				Aggregations: []DeploymentsAggregationTerm{
 					{
 						Name:      "mac",
-						Scope:     ScopeIdentity,
 						Attribute: "mac",
-						Aggregations: []AggregationTerm{
+						Aggregations: []DeploymentsAggregationTerm{
 							{
 								Name: "",
 							},
@@ -118,58 +111,50 @@ func TestAggregateParamsValidate(t *testing.T) {
 					},
 				},
 			},
-			err: errors.New("aggregations: (0: (aggregations: (0: (attribute: cannot be blank; name: cannot be blank; scope: cannot be blank.).).).)."),
+			err: errors.New("aggregations: (0: (aggregations: (0: (attribute: cannot be blank; name: cannot be blank.).).).)."),
 		},
 		"ko, too many nested aggregations": {
-			params: AggregateParams{
-				Filters: []FilterPredicate{
+			params: AggregateDeploymentsParams{
+				Filters: []DeploymentsFilterPredicate{
 					{
-						Scope:     ScopeIdentity,
 						Attribute: "mac",
 						Type:      "$eq",
 						Value:     "00:11:22:33:44",
 					},
 				},
-				Aggregations: []AggregationTerm{
+				Aggregations: []DeploymentsAggregationTerm{
 					{
 						Name:      "mac",
-						Scope:     ScopeIdentity,
 						Attribute: "mac",
 						Limit:     10,
-						Aggregations: []AggregationTerm{
+						Aggregations: []DeploymentsAggregationTerm{
 							{
 								Name:      "mac",
-								Scope:     ScopeIdentity,
 								Attribute: "mac",
 								Limit:     10,
-								Aggregations: []AggregationTerm{
+								Aggregations: []DeploymentsAggregationTerm{
 									{
 										Name:      "mac",
-										Scope:     ScopeIdentity,
 										Attribute: "mac",
 										Limit:     10,
-										Aggregations: []AggregationTerm{
+										Aggregations: []DeploymentsAggregationTerm{
 											{
 												Name:      "mac",
-												Scope:     ScopeIdentity,
 												Attribute: "mac",
 												Limit:     10,
-												Aggregations: []AggregationTerm{
+												Aggregations: []DeploymentsAggregationTerm{
 													{
 														Name:      "mac",
-														Scope:     ScopeIdentity,
 														Attribute: "mac",
 														Limit:     10,
-														Aggregations: []AggregationTerm{
+														Aggregations: []DeploymentsAggregationTerm{
 															{
 																Name:      "mac",
-																Scope:     ScopeIdentity,
 																Attribute: "mac",
 																Limit:     10,
-																Aggregations: []AggregationTerm{
+																Aggregations: []DeploymentsAggregationTerm{
 																	{
 																		Name:      "mac",
-																		Scope:     ScopeIdentity,
 																		Attribute: "mac",
 																		Limit:     10,
 																	},
@@ -203,58 +188,54 @@ func TestAggregateParamsValidate(t *testing.T) {
 	}
 }
 
-func TestBuildAggregations(t *testing.T) {
+func TestBuildDeploymentsAggregations(t *testing.T) {
 	testCases := map[string]struct {
-		terms []AggregationTerm
+		terms []DeploymentsAggregationTerm
 		res   *Aggregations
 		err   error
 	}{
 		"ok": {
-			terms: []AggregationTerm{
+			terms: []DeploymentsAggregationTerm{
 				{
 					Name:      "aggregation",
 					Attribute: "attribute",
-					Scope:     "scope",
 				},
 			},
 			res: &Aggregations{
 				"aggregation": map[string]interface{}{
 					"terms": map[string]interface{}{
-						"field": "scope_attribute_str",
+						"field": "attribute",
 						"size":  defaultAggregationLimit,
 					},
 				},
 			},
 		},
 		"ok, with limit": {
-			terms: []AggregationTerm{
+			terms: []DeploymentsAggregationTerm{
 				{
 					Name:      "aggregation",
 					Attribute: "attribute",
-					Scope:     "scope",
 					Limit:     11,
 				},
 			},
 			res: &Aggregations{
 				"aggregation": map[string]interface{}{
 					"terms": map[string]interface{}{
-						"field": "scope_attribute_str",
+						"field": "attribute",
 						"size":  11,
 					},
 				},
 			},
 		},
 		"ok, with subaggrgations": {
-			terms: []AggregationTerm{
+			terms: []DeploymentsAggregationTerm{
 				{
 					Name:      "aggregation",
 					Attribute: "attribute",
-					Scope:     "scope",
-					Aggregations: []AggregationTerm{
+					Aggregations: []DeploymentsAggregationTerm{
 						{
 							Name:      "aggregation",
 							Attribute: "attribute",
-							Scope:     "scope",
 						},
 					},
 				},
@@ -262,13 +243,13 @@ func TestBuildAggregations(t *testing.T) {
 			res: &Aggregations{
 				"aggregation": map[string]interface{}{
 					"terms": map[string]interface{}{
-						"field": "scope_attribute_str",
+						"field": "attribute",
 						"size":  defaultAggregationLimit,
 					},
 					"aggs": &Aggregations{
 						"aggregation": map[string]interface{}{
 							"terms": map[string]interface{}{
-								"field": "scope_attribute_str",
+								"field": "attribute",
 								"size":  defaultAggregationLimit,
 							},
 						},
@@ -280,7 +261,7 @@ func TestBuildAggregations(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			res, err := BuildAggregations(tc.terms)
+			res, err := BuildDeploymentsAggregations(tc.terms)
 			if tc.err != nil {
 				assert.EqualError(t, err, tc.err.Error())
 			} else {

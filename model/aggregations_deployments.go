@@ -1,4 +1,4 @@
-// Copyright 2022 Northern.tech AS
+// Copyright 2023 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -14,7 +14,10 @@
 
 package model
 
-import validation "github.com/go-ozzo/ozzo-validation/v4"
+import (
+	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/pkg/errors"
+)
 
 type AggregateDeploymentsParams struct {
 	Aggregations []DeploymentsAggregationTerm `json:"aggregations"`
@@ -27,6 +30,24 @@ type DeploymentsAggregationTerm struct {
 	Attribute    string                       `json:"attribute"`
 	Limit        int                          `json:"limit"`
 	Aggregations []DeploymentsAggregationTerm `json:"aggregations"`
+}
+
+func checkMaxNestedDeploymentsAggregationsWithLimit(value interface{}, limit uint) error {
+	if limit <= 0 {
+		return errors.Errorf("too many nested aggregations, limit is %d", maxNestedAggregations)
+	}
+	if aggs, ok := value.([]DeploymentsAggregationTerm); ok {
+		for _, agg := range aggs {
+			if len(agg.Aggregations) > 0 {
+				return checkMaxNestedDeploymentsAggregationsWithLimit(agg.Aggregations, limit-1)
+			}
+		}
+	}
+	return nil
+}
+
+func checkMaxNestedDeploymentsAggregations(value interface{}) error {
+	return checkMaxNestedDeploymentsAggregationsWithLimit(value, maxNestedAggregations)
 }
 
 func (sp AggregateDeploymentsParams) Validate() error {
@@ -52,7 +73,10 @@ func (f DeploymentsAggregationTerm) Validate() error {
 		validation.Field(&f.Attribute, validation.Required),
 		validation.Field(&f.Limit, validation.Min(0)),
 		validation.Field(&f.Aggregations, validation.When(
-			len(f.Aggregations) > 0, validation.Length(0, maxAggregationTerms))),
+			len(f.Aggregations) > 0,
+			validation.Length(0, maxAggregationTerms),
+			validation.By(checkMaxNestedDeploymentsAggregations),
+		)),
 	)
 }
 
