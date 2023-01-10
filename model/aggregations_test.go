@@ -22,6 +22,16 @@ import (
 )
 
 func TestAggregateParamsValidate(t *testing.T) {
+	tooManyAggregationTerms := make([]AggregationTerm, maxAggregationTerms+1)
+	for i := 0; i < maxAggregationTerms+1; i++ {
+		tooManyAggregationTerms[i] = AggregationTerm{
+			Name:      "mac",
+			Scope:     ScopeIdentity,
+			Attribute: "mac",
+			Limit:     10,
+		}
+	}
+
 	testCases := map[string]struct {
 		params AggregateParams
 		err    error
@@ -119,6 +129,28 @@ func TestAggregateParamsValidate(t *testing.T) {
 				},
 			},
 			err: errors.New("aggregations: (0: (aggregations: (0: (attribute: cannot be blank; name: cannot be blank; scope: cannot be blank.).).).)."),
+		},
+		"ko, nested aggregation fails validation (too many terms)": {
+			params: AggregateParams{
+				Filters: []FilterPredicate{
+					{
+						Scope:     ScopeIdentity,
+						Attribute: "mac",
+						Type:      "$eq",
+						Value:     "00:11:22:33:44",
+					},
+				},
+				Aggregations: []AggregationTerm{
+					{
+						Name:         "mac",
+						Scope:        ScopeIdentity,
+						Attribute:    "mac",
+						Aggregations: tooManyAggregationTerms,
+						Limit:        10,
+					},
+				},
+			},
+			err: errors.New("aggregations: (0: (aggregations: the length must be no more than 100.).)."),
 		},
 		"ko, too many nested aggregations": {
 			params: AggregateParams{
