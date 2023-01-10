@@ -1,4 +1,4 @@
-// Copyright 2022 Northern.tech AS
+// Copyright 2023 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ const (
 
 const (
 	FieldNameID       = "id"
-	FieldNameTenantID = "tenantID"
+	FieldNameTenantID = "tenant_id"
 )
 
 // type enum/suffixes
@@ -66,5 +66,8 @@ var (
 // toAttr composes the flat-style attribute name based on
 // scope, name, and type
 func ToAttr(scope, name string, typ Type) string {
+	if scope == "" {
+		return Dedot(name)
+	}
 	return scope + "_" + Dedot(name) + "_" + attrSuffixes[typ]
 }

@@ -1,4 +1,4 @@
-// Copyright 2021 Northern.tech AS
+// Copyright 2022 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -16,18 +16,24 @@ package indexer
 
 import "github.com/mendersoftware/reporting/model"
 
-func groupJobsIntoTenantDeviceServices(jobs []*model.Job) TenantDeviceServices {
-	tenantsDevicesServices := make(TenantDeviceServices)
+func groupJobsIntoTenantActionIDs(jobs []*model.Job) TenantActionIDs {
+	tenantsActionIDs := make(TenantActionIDs)
 	for _, job := range jobs {
-		if _, ok := tenantsDevicesServices[job.TenantID]; !ok {
-			tenantsDevicesServices[job.TenantID] = make(DeviceServices)
+		if _, ok := tenantsActionIDs[job.TenantID]; !ok {
+			tenantsActionIDs[job.TenantID] = make(ActionIDs)
 		}
-		if _, ok := tenantsDevicesServices[job.TenantID][job.DeviceID]; !ok {
-			tenantsDevicesServices[job.TenantID][job.DeviceID] = make(Services)
+		if _, ok := tenantsActionIDs[job.TenantID][job.Action]; !ok {
+			tenantsActionIDs[job.TenantID][job.Action] = make(IDs)
 		}
-		if _, ok := tenantsDevicesServices[job.TenantID][job.DeviceID][job.Service]; !ok {
-			tenantsDevicesServices[job.TenantID][job.DeviceID][job.Service] = true
+		var ID string
+		if job.Action == model.ActionReindex {
+			ID = job.DeviceID
+		} else if job.Action == model.ActionReindexDeployment {
+			ID = job.ID
+		}
+		if _, ok := tenantsActionIDs[job.TenantID][job.Action][ID]; !ok {
+			tenantsActionIDs[job.TenantID][job.Action][ID] = true
 		}
 	}
-	return tenantsDevicesServices
+	return tenantsActionIDs
 }

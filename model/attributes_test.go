@@ -1,4 +1,4 @@
-// Copyright 2021 Northern.tech AS
+// Copyright 2023 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -23,4 +23,7 @@ import (
 func TestToAttr(t *testing.T) {
 	attr := ToAttr(ScopeIdentity, AttrNameStatus, TypeStr)
 	assert.Equal(t, "identity_status_str", attr)
+
+	attr = ToAttr("", "noscope", TypeStr)
+	assert.Equal(t, "noscope", attr)
 }

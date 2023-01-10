@@ -28,8 +28,8 @@ type Store struct {
 	mock.Mock
 }
 
-// Aggregate provides a mock function with given fields: ctx, query
-func (_m *Store) Aggregate(ctx context.Context, query model.Query) (model.M, error) {
+// AggregateDeployments provides a mock function with given fields: ctx, query
+func (_m *Store) AggregateDeployments(ctx context.Context, query model.Query) (model.M, error) {
 	ret := _m.Called(ctx, query)
 
 	var r0 model.M
@@ -51,6 +51,43 @@ func (_m *Store) Aggregate(ctx context.Context, query model.Query) (model.M, err
 	return r0, r1
 }
 
+// AggregateDevices provides a mock function with given fields: ctx, query
+func (_m *Store) AggregateDevices(ctx context.Context, query model.Query) (model.M, error) {
+	ret := _m.Called(ctx, query)
+
+	var r0 model.M
+	if rf, ok := ret.Get(0).(func(context.Context, model.Query) model.M); ok {
+		r0 = rf(ctx, query)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(model.M)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, model.Query) error); ok {
+		r1 = rf(ctx, query)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// BulkIndexDeployments provides a mock function with given fields: ctx, deployments
+func (_m *Store) BulkIndexDeployments(ctx context.Context, deployments []*model.Deployment) error {
+	ret := _m.Called(ctx, deployments)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []*model.Deployment) error); ok {
+		r0 = rf(ctx, deployments)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // BulkIndexDevices provides a mock function with given fields: ctx, devices, removedDevices
 func (_m *Store) BulkIndexDevices(ctx context.Context, devices []*model.Device, removedDevices []*model.Device) error {
 	ret := _m.Called(ctx, devices, removedDevices)
@@ -60,6 +97,57 @@ func (_m *Store) BulkIndexDevices(ctx context.Context, devices []*model.Device, 
 		r0 = rf(ctx, devices, removedDevices)
 	} else {
 		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// GetDeploymentsIndex provides a mock function with given fields: tid
+func (_m *Store) GetDeploymentsIndex(tid string) string {
+	ret := _m.Called(tid)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(tid)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// GetDeploymentsIndexMapping provides a mock function with given fields: ctx, tid
+func (_m *Store) GetDeploymentsIndexMapping(ctx context.Context, tid string) (map[string]interface{}, error) {
+	ret := _m.Called(ctx, tid)
+
+	var r0 map[string]interface{}
+	if rf, ok := ret.Get(0).(func(context.Context, string) map[string]interface{}); ok {
+		r0 = rf(ctx, tid)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]interface{})
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, tid)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetDeploymentsRoutingKey provides a mock function with given fields: tid
+func (_m *Store) GetDeploymentsRoutingKey(tid string) string {
+	ret := _m.Called(tid)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(tid)
+	} else {
+		r0 = ret.Get(0).(string)
 	}
 
 	return r0
@@ -144,8 +232,31 @@ func (_m *Store) Ping(ctx context.Context) error {
 	return r0
 }
 
-// Search provides a mock function with given fields: ctx, query
-func (_m *Store) Search(ctx context.Context, query model.Query) (model.M, error) {
+// SearchDeployments provides a mock function with given fields: ctx, query
+func (_m *Store) SearchDeployments(ctx context.Context, query model.Query) (model.M, error) {
+	ret := _m.Called(ctx, query)
+
+	var r0 model.M
+	if rf, ok := ret.Get(0).(func(context.Context, model.Query) model.M); ok {
+		r0 = rf(ctx, query)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(model.M)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, model.Query) error); ok {
+		r1 = rf(ctx, query)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// SearchDevices provides a mock function with given fields: ctx, query
+func (_m *Store) SearchDevices(ctx context.Context, query model.Query) (model.M, error) {
 	ret := _m.Called(ctx, query)
 
 	var r0 model.M

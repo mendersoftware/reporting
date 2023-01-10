@@ -33,10 +33,14 @@ type App interface {
 	HealthCheck(ctx context.Context) error
 	GetMapping(ctx context.Context, tid string) (*model.Mapping, error)
 	GetSearchableInvAttrs(ctx context.Context, tid string) ([]model.FilterAttribute, error)
-	InventoryAggregateDevices(ctx context.Context, aggregateParams *model.AggregateParams) (
+	AggregateDevices(ctx context.Context, aggregateParams *model.AggregateParams) (
 		[]model.DeviceAggregation, error)
-	InventorySearchDevices(ctx context.Context, searchParams *model.SearchParams) (
+	SearchDevices(ctx context.Context, searchParams *model.SearchParams) (
 		[]inventory.Device, int, error)
+	AggregateDeployments(ctx context.Context, aggregateParams *model.AggregateDeploymentsParams) (
+		[]model.DeviceAggregation, error)
+	SearchDeployments(ctx context.Context, searchParams *model.DeploymentsSearchParams) (
+		[]model.Deployment, int, error)
 }
 
 type app struct {
@@ -68,8 +72,8 @@ func (app *app) GetMapping(ctx context.Context, tid string) (*model.Mapping, err
 	return app.ds.GetMapping(ctx, tid)
 }
 
-// InventoryAggregateDevices aggregates devices' inventory data
-func (app *app) InventoryAggregateDevices(
+// AggregateDevices aggregates device data
+func (app *app) AggregateDevices(
 	ctx context.Context,
 	aggregateParams *model.AggregateParams,
 ) ([]model.DeviceAggregation, error) {
@@ -105,7 +109,7 @@ func (app *app) InventoryAggregateDevices(
 	query = query.WithSize(0).With(map[string]interface{}{
 		"aggs": aggregations,
 	})
-	esRes, err := app.store.Aggregate(ctx, query)
+	esRes, err := app.store.AggregateDevices(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -174,8 +178,8 @@ func (a *app) storeToDeviceAggregations(
 	return aggs, nil
 }
 
-// InventorySearchDevices searches devices' inventory data
-func (app *app) InventorySearchDevices(
+// SearchDevices searches device data
+func (app *app) SearchDevices(
 	ctx context.Context,
 	searchParams *model.SearchParams,
 ) ([]inventory.Device, int, error) {
@@ -203,7 +207,7 @@ func (app *app) InventorySearchDevices(
 		})
 	}
 
-	esRes, err := app.store.Search(ctx, query)
+	esRes, err := app.store.SearchDevices(ctx, query)
 	if err != nil {
 		return nil, 0, err
 	}

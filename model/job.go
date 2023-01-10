@@ -1,4 +1,4 @@
-// Copyright 2021 Northern.tech AS
+// Copyright 2022 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -15,9 +15,11 @@
 package model
 
 type Job struct {
-	Action    string `json:"action"`
-	RequestID string `json:"request_id"`
-	TenantID  string `json:"tenant_id"`
-	DeviceID  string `json:"device_id"`
-	Service   string `json:"service"`
+	Action       string `json:"action"`
+	RequestID    string `json:"request_id"`
+	TenantID     string `json:"tenant_id"`
+	ID           string `json:"id"`
+	DeviceID     string `json:"device_id"`
+	DeploymentID string `json:"deployment_id"`
+	Service      string `json:"service"`
 }

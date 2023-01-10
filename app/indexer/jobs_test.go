@@ -89,7 +89,7 @@ func TestGetJobs(t *testing.T) {
 		mock.AnythingOfType("string"),
 		mock.AnythingOfType("string"),
 		mock.MatchedBy(func(msgs chan *natsio.Msg) bool {
-			job := &model.Job{Action: "index"}
+			job := &model.Job{Action: model.ActionReindex}
 			jobData, _ := json.Marshal(job)
 			msgs <- &natsio.Msg{
 				Data: jobData,
@@ -108,7 +108,7 @@ func TestGetJobs(t *testing.T) {
 	time.Sleep(500 * time.Millisecond)
 
 	job := <-jobs
-	assert.Equal(t, job.Action, "index")
+	assert.Equal(t, job.Action, model.ActionReindex)
 
 	cancel()
 }
@@ -178,6 +178,9 @@ func TestProcessJobs(t *testing.T) {
 		deploymentsDevice *deployments.DeviceDeployment
 		deploymentsErr    error
 
+		updateMapping       []string
+		updateMappingResult []string
+
 		bulkIndexDevices       []*model.Device
 		bulkIndexRemoveDevices []*model.Device
 		bulkIndexErr           error
@@ -185,19 +188,19 @@ func TestProcessJobs(t *testing.T) {
 		"ok": {
 			jobs: []*model.Job{
 				{
-					Action:   "index",
+					Action:   model.ActionReindex,
 					TenantID: tenantID,
 					DeviceID: "1",
 					Service:  model.ServiceInventory,
 				},
 				{
-					Action:   "index",
+					Action:   model.ActionReindex,
 					TenantID: tenantID,
 					DeviceID: "2",
 					Service:  model.ServiceInventory,
 				},
 				{
-					Action:   "index",
+					Action:   model.ActionReindex,
 					TenantID: tenantID,
 					DeviceID: "3",
 					Service:  model.ServiceInventory,
@@ -226,11 +229,21 @@ func TestProcessJobs(t *testing.T) {
 			inventoryDevices: []inventory.Device{
 				{
 					ID: "1",
+					Attributes: inventory.DeviceAttributes{
+						{
+							Scope: model.ScopeInventory,
+							Name:  "mac",
+							Value: "00:11:22:33:55",
+						},
+					},
 				},
 				{
 					ID: "2",
 				},
 			},
+
+			updateMapping:       []string{"inventory/mac"},
+			updateMappingResult: []string{"inventory/mac"},
 
 			bulkIndexDevices: []*model.Device{
 				{
@@ -246,6 +259,13 @@ func TestProcessJobs(t *testing.T) {
 							Scope:  model.ScopeIdentity,
 							Name:   "mac",
 							String: []string{"00:11:22:33:44"},
+						},
+					},
+					InventoryAttributes: model.InventoryAttributes{
+						{
+							Scope:  model.ScopeInventory,
+							Name:   "attribute1",
+							String: []string{"00:11:22:33:55"},
 						},
 					},
 				},
@@ -276,19 +296,19 @@ func TestProcessJobs(t *testing.T) {
 		"ok with latest deployment": {
 			jobs: []*model.Job{
 				{
-					Action:   "index",
+					Action:   model.ActionReindex,
 					TenantID: tenantID,
 					DeviceID: "1",
 					Service:  model.ServiceInventory,
 				},
 				{
-					Action:   "index",
+					Action:   model.ActionReindex,
 					TenantID: tenantID,
 					DeviceID: "2",
 					Service:  model.ServiceInventory,
 				},
 				{
-					Action:   "index",
+					Action:   model.ActionReindex,
 					TenantID: tenantID,
 					DeviceID: "3",
 					Service:  model.ServiceInventory,
@@ -329,6 +349,9 @@ func TestProcessJobs(t *testing.T) {
 				},
 			},
 			deploymentsErr: nil,
+
+			updateMapping:       []string{},
+			updateMappingResult: []string{},
 
 			bulkIndexDevices: []*model.Device{
 				{
@@ -388,19 +411,19 @@ func TestProcessJobs(t *testing.T) {
 		"ko, failure in deviceauth": {
 			jobs: []*model.Job{
 				{
-					Action:   "index",
+					Action:   model.ActionReindex,
 					TenantID: tenantID,
 					DeviceID: "1",
 					Service:  model.ServiceInventory,
 				},
 				{
-					Action:   "index",
+					Action:   model.ActionReindex,
 					TenantID: tenantID,
 					DeviceID: "2",
 					Service:  model.ServiceInventory,
 				},
 				{
-					Action:   "index",
+					Action:   model.ActionReindex,
 					TenantID: tenantID,
 					DeviceID: "3",
 					Service:  model.ServiceInventory,
@@ -413,19 +436,19 @@ func TestProcessJobs(t *testing.T) {
 		"ko, failure in inventory": {
 			jobs: []*model.Job{
 				{
-					Action:   "index",
+					Action:   model.ActionReindex,
 					TenantID: tenantID,
 					DeviceID: "1",
 					Service:  model.ServiceInventory,
 				},
 				{
-					Action:   "index",
+					Action:   model.ActionReindex,
 					TenantID: tenantID,
 					DeviceID: "2",
 					Service:  model.ServiceInventory,
 				},
 				{
-					Action:   "index",
+					Action:   model.ActionReindex,
 					TenantID: tenantID,
 					DeviceID: "3",
 					Service:  model.ServiceInventory,
@@ -456,19 +479,19 @@ func TestProcessJobs(t *testing.T) {
 		"ko, failure in BulkIndex": {
 			jobs: []*model.Job{
 				{
-					Action:   "index",
+					Action:   model.ActionReindex,
 					TenantID: tenantID,
 					DeviceID: "1",
 					Service:  model.ServiceInventory,
 				},
 				{
-					Action:   "index",
+					Action:   model.ActionReindex,
 					TenantID: tenantID,
 					DeviceID: "2",
 					Service:  model.ServiceInventory,
 				},
 				{
-					Action:   "index",
+					Action:   model.ActionReindex,
 					TenantID: tenantID,
 					DeviceID: "3",
 					Service:  model.ServiceInventory,
@@ -502,6 +525,9 @@ func TestProcessJobs(t *testing.T) {
 					ID: "2",
 				},
 			},
+
+			updateMapping:       []string{},
+			updateMappingResult: []string{},
 
 			bulkIndexDevices: []*model.Device{
 				{
@@ -606,14 +632,160 @@ func TestProcessJobs(t *testing.T) {
 			ds.On("UpdateAndGetMapping",
 				ctx,
 				tenantID,
-				[]string{},
+				tc.updateMapping,
 			).Return(&model.Mapping{
 				TenantID:  tenantID,
-				Inventory: []string{},
+				Inventory: tc.updateMappingResult,
 			}, nil)
 
 			indexer := NewIndexer(store, ds, nil, devClient, invClient, deplClient)
 
+			indexer.ProcessJobs(ctx, tc.jobs)
+		})
+	}
+}
+
+func TestProcessJobsDeployments(t *testing.T) {
+	const tenantID = "tenant"
+
+	now := time.Now().Truncate(0)
+	five_seconds_ago := now.Add(-5 * time.Second)
+
+	testCases := map[string]struct {
+		jobs []*model.Job
+
+		getDeploymentsIDs []string
+		getDeployments    []*deployments.DeviceDeployment
+		getDeploymentsErr error
+
+		bulkIndexDeployments []*model.Deployment
+		bulkIndexErr         error
+	}{
+		"ok": {
+			jobs: []*model.Job{
+				{
+					Action:   model.ActionReindexDeployment,
+					TenantID: tenantID,
+					ID:       "92be929e-f924-49d0-9b98-3dec6c504901",
+					Service:  model.ServiceDeployments,
+				},
+				{
+					Action:   model.ActionReindexDeployment,
+					TenantID: tenantID,
+					ID:       "92be929e-f924-49d0-9b98-3dec6c504902",
+					Service:  model.ServiceDeployments,
+				},
+				{
+					Action:   model.ActionReindexDeployment,
+					TenantID: tenantID,
+					ID:       "92be929e-f924-49d0-9b98-3dec6c504903",
+					Service:  model.ServiceInventory,
+				},
+			},
+
+			getDeployments: []*deployments.DeviceDeployment{
+				{
+					ID:         "92be929e-f924-49d0-9b98-3dec6c504901",
+					Deployment: &deployments.Deployment{},
+					Device: &deployments.Device{
+						Created:  &five_seconds_ago,
+						Finished: &now,
+						Status:   "finished",
+						Image: &deployments.Image{
+							Info: &deployments.ArtifactInfo{},
+						},
+					},
+				},
+				{
+					ID:         "92be929e-f924-49d0-9b98-3dec6c504902",
+					Deployment: &deployments.Deployment{},
+					Device: &deployments.Device{
+						Created:  &five_seconds_ago,
+						Finished: &now,
+						Status:   "finished",
+						Image: &deployments.Image{
+							Info: &deployments.ArtifactInfo{},
+						},
+					},
+				},
+				{
+					ID:         "92be929e-f924-49d0-9b98-3dec6c504903",
+					Deployment: &deployments.Deployment{},
+					Device: &deployments.Device{
+						Created: &five_seconds_ago,
+						Status:  "downloading",
+						Image: &deployments.Image{
+							Info: &deployments.ArtifactInfo{},
+						},
+					},
+				},
+			},
+			bulkIndexDeployments: []*model.Deployment{
+				{
+					ID:                   "92be929e-f924-49d0-9b98-3dec6c504901",
+					TenantID:             tenantID,
+					DeviceCreated:        &five_seconds_ago,
+					DeviceFinished:       &now,
+					DeviceElapsedSeconds: 5,
+					DeviceStatus:         "finished",
+				},
+				{
+					ID:                   "92be929e-f924-49d0-9b98-3dec6c504902",
+					TenantID:             tenantID,
+					DeviceCreated:        &five_seconds_ago,
+					DeviceFinished:       &now,
+					DeviceElapsedSeconds: 5,
+					DeviceStatus:         "finished",
+				},
+				{
+					ID:            "92be929e-f924-49d0-9b98-3dec6c504903",
+					TenantID:      tenantID,
+					DeviceCreated: &five_seconds_ago,
+					DeviceStatus:  "downloading",
+				},
+			},
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			ctx := context.Background()
+
+			store := &store_mocks.Store{}
+			defer store.AssertExpectations(t)
+
+			if tc.getDeploymentsErr == nil {
+				store.On("BulkIndexDeployments",
+					ctx,
+					mock.MatchedBy(func(deployments []*model.Deployment) bool {
+						for _, i := range deployments {
+							found := false
+							for _, j := range tc.bulkIndexDeployments {
+								if assert.ObjectsAreEqual(i, j) {
+									found = true
+									break
+								}
+							}
+							if !found {
+								return false
+							}
+						}
+
+						return true
+					}),
+				).Return(tc.bulkIndexErr)
+			}
+
+			deplClient := &deployments_mocks.Client{}
+			defer deplClient.AssertExpectations(t)
+
+			deplClient.On("GetDeployments",
+				ctx,
+				tenantID,
+				mock.AnythingOfType("[]string"),
+			).Return(tc.getDeployments, tc.getDeploymentsErr)
+
+			indexer := NewIndexer(store, nil, nil, nil, nil, deplClient)
 			indexer.ProcessJobs(ctx, tc.jobs)
 		})
 	}

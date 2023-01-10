@@ -1,4 +1,4 @@
-# Copyright 2022 Northern.tech AS
+# Copyright 2023 Northern.tech AS
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -26,7 +26,8 @@ from urllib.parse import urljoin
 
 import requests
 
-from internal_api.models import InternalDevice, Attribute
+from internal_api.models import Device, DeviceAttribute
+from management_api.models import Deployment
 
 type_decoder = {
     str: "str",
@@ -36,20 +37,35 @@ type_decoder = {
 }
 
 
-def index_device(device: InternalDevice):
+def index_deployment(tenant_id: str, deployment: Deployment):
+    requests.post(
+        "http://mender-workflows-server:8080/api/v1/workflow/reindex_reporting_deployment",
+        json={
+            "action": "reindex",
+            "request_id": "req",
+            "tenant_id": tenant_id,
+            "id": deployment.id,
+            "device_id": deployment.device_id,
+            "deployment_id": deployment.deployment_id,
+            "service": "inventory",
+        },
+    )
+
+
+def index_device(tenant_id: str, device: Device):
     requests.post(
         "http://mender-workflows-server:8080/api/v1/workflow/reindex_reporting",
         json={
             "action": "reindex",
             "request_id": "req",
-            "tenant_id": device.tenant_id,
+            "tenant_id": tenant_id,
             "device_id": device.id,
             "service": "inventory",
         },
     )
 
 
-def attributes_to_document(attrs: list[Attribute]) -> dict[str, object]:
+def attributes_to_document(attrs: list[DeviceAttribute]) -> dict[str, object]:
     doc = {}
     if attrs is not None:
         for attr in attrs:

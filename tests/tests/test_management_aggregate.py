@@ -1,4 +1,4 @@
-# Copyright 2022 Northern.tech AS
+# Copyright 2023 Northern.tech AS
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -34,17 +34,17 @@ class TestManagementSearch:
                     index=[idx["index"]], body={"query": {"match_all": {}}}
                 )
 
-        for dev in self._test_set:
-            utils.index_device(dev)
+        for tenant_id, dev in self._test_set:
+            utils.index_device(tenant_id, dev)
 
         time.sleep(5)
 
     class _TestCase:
         def __init__(
             self,
-            aggregation_terms: management_api.models.AggregationTerms,
+            aggregation_terms: management_api.models.DeviceAggregationTerms,
             http_code: int,
-            result: Union[list[management_api.models.Aggregation], str],
+            result: Union[list[management_api.models.DeviceAggregation], str],
             authorization: str = None,
         ):
             self.aggregation_terms = aggregation_terms
@@ -53,69 +53,76 @@ class TestManagementSearch:
             self.authorization = authorization
 
     _test_set = [
-        internal_api.models.InternalDevice(
-            id="463e12dd-1adb-4f62-965e-b0a9ba2c93ff",
-            tenant_id="123456789012345678901234",
-            name="bagelBone",
-            attributes=[
-                management_api.models.Attribute(
-                    name="string", value="Lorem ipsum dolor sit amet", scope="inventory"
-                ),
-                management_api.models.Attribute(
-                    name="number", value=2 ** 47, scope="inventory"
-                ),
-            ],
+        (
+            "123456789012345678901234",
+            internal_api.models.Device(
+                id="463e12dd-1adb-4f62-965e-b0a9ba2c93ff",
+                attributes=[
+                    management_api.models.DeviceAttribute(
+                        name="string",
+                        value="Lorem ipsum dolor sit amet",
+                        scope="inventory",
+                    ),
+                    management_api.models.DeviceAttribute(
+                        name="number", value=2 ** 47, scope="inventory"
+                    ),
+                ],
+            ),
         ),
-        internal_api.models.InternalDevice(
-            id="d8b04e01-690d-41ce-8c6d-ab079a04d488",
-            tenant_id="123456789012345678901234",
-            name="blueberryPi",
-            attributes=[
-                management_api.models.Attribute(
-                    name="string",
-                    value="consectetur adipiscing elit",
-                    scope="inventory",
-                ),
-                management_api.models.Attribute(
-                    name="number", value=420.69, scope="inventory"
-                ),
-            ],
+        (
+            "123456789012345678901234",
+            internal_api.models.Device(
+                id="d8b04e01-690d-41ce-8c6d-ab079a04d488",
+                attributes=[
+                    management_api.models.DeviceAttribute(
+                        name="string",
+                        value="consectetur adipiscing elit",
+                        scope="inventory",
+                    ),
+                    management_api.models.DeviceAttribute(
+                        name="number", value=420.69, scope="inventory"
+                    ),
+                ],
+            ),
         ),
-        internal_api.models.InternalDevice(
-            id="ad707aab-916b-4ec9-a43f-0031b2bcf9ad",
-            tenant_id="123456789012345678901234",
-            name="birch32",
-            attributes=[
-                management_api.models.Attribute(
-                    name="string", value="sed do eiusmod tempor", scope="inventory",
-                ),
-            ],
+        (
+            "123456789012345678901234",
+            internal_api.models.Device(
+                id="ad707aab-916b-4ec9-a43f-0031b2bcf9ad",
+                attributes=[
+                    management_api.models.DeviceAttribute(
+                        name="string", value="sed do eiusmod tempor", scope="inventory",
+                    ),
+                ],
+            ),
         ),
-        internal_api.models.InternalDevice(
-            id="85388603-5852-437f-89c4-7549502893d5",
-            tenant_id="123456789012345678901234",
-            name="birch32",
-            attributes=[
-                management_api.models.Attribute(
-                    name="string", value="incididunt ut labore", scope="inventory",
-                ),
-                management_api.models.Attribute(
-                    name="number", value=0.0, scope="inventory"
-                ),
-            ],
+        (
+            "123456789012345678901234",
+            internal_api.models.Device(
+                id="85388603-5852-437f-89c4-7549502893d5",
+                attributes=[
+                    management_api.models.DeviceAttribute(
+                        name="string", value="incididunt ut labore", scope="inventory",
+                    ),
+                    management_api.models.DeviceAttribute(
+                        name="number", value=0.0, scope="inventory"
+                    ),
+                ],
+            ),
         ),
-        internal_api.models.InternalDevice(
-            id="98efdb94-26c2-42eb-828d-12a5d6eb698c",
-            tenant_id="098765432109876543210987",
-            name="shepherdsPi",
-            attributes=[
-                management_api.models.Attribute(
-                    name="string", value="sample text", scope="inventory",
-                ),
-                management_api.models.Attribute(
-                    name="number", value=1234, scope="inventory"
-                ),
-            ],
+        (
+            "098765432109876543210987",
+            internal_api.models.Device(
+                id="98efdb94-26c2-42eb-828d-12a5d6eb698c",
+                attributes=[
+                    management_api.models.DeviceAttribute(
+                        name="string", value="sample text", scope="inventory",
+                    ),
+                    management_api.models.DeviceAttribute(
+                        name="number", value=1234, scope="inventory"
+                    ),
+                ],
+            ),
         ),
     ]
 
@@ -124,9 +131,9 @@ class TestManagementSearch:
         argvalues=[
             _TestCase(
                 authorization=utils.generate_jwt(tenant_id="123456789012345678901234"),
-                aggregation_terms=management_api.models.AggregationTerms(
+                aggregation_terms=management_api.models.DeviceAggregationTerms(
                     filters=[
-                        management_api.models.FilterTerm(
+                        management_api.models.DeviceFilterTerm(
                             attribute="string",
                             value="Lorem ipsum dolor sit amet",
                             type="$ne",
@@ -134,7 +141,7 @@ class TestManagementSearch:
                         )
                     ],
                     aggregations=[
-                        management_api.models.AggregationTerm(
+                        management_api.models.DeviceAggregationTerm(
                             name="string",
                             attribute="string",
                             scope="inventory",
@@ -144,17 +151,17 @@ class TestManagementSearch:
                 ),
                 http_code=200,
                 result=[
-                    management_api.models.Aggregation(
+                    management_api.models.DeviceAggregation(
                         name="string",
                         other_count=0,
                         items=[
-                            management_api.models.AggregationItem(
+                            management_api.models.DeviceAggregationItem(
                                 key="consectetur adipiscing elit", count=1,
                             ),
-                            management_api.models.AggregationItem(
+                            management_api.models.DeviceAggregationItem(
                                 key="incididunt ut labore", count=1,
                             ),
-                            management_api.models.AggregationItem(
+                            management_api.models.DeviceAggregationItem(
                                 key="sed do eiusmod tempor", count=1,
                             ),
                         ],
@@ -163,9 +170,9 @@ class TestManagementSearch:
             ),
             _TestCase(
                 authorization=utils.generate_jwt(tenant_id="anIllegalTenantID"),
-                aggregation_terms=management_api.models.AggregationTerms(
+                aggregation_terms=management_api.models.DeviceAggregationTerms(
                     aggregations=[
-                        management_api.models.AggregationTerm(
+                        management_api.models.DeviceAggregationTerm(
                             name="string",
                             attribute="string",
                             scope="inventory",
@@ -177,9 +184,9 @@ class TestManagementSearch:
                 result=[],
             ),
             _TestCase(
-                aggregation_terms=management_api.models.AggregationTerms(
+                aggregation_terms=management_api.models.DeviceAggregationTerms(
                     aggregations=[
-                        management_api.models.AggregationTerm(
+                        management_api.models.DeviceAggregationTerm(
                             name="string",
                             attribute="string",
                             scope="inventory",
@@ -191,7 +198,7 @@ class TestManagementSearch:
                 result=[],
             ),
         ],
-        ids=["ok", "error, missing index for tenant", "error, unauthorized access",],
+        ids=["ok", "error, missing index for tenant", "error, unauthorized access"],
     )
     def test_search(self, test_case, setup_test_context):
         conf = None
@@ -202,7 +209,7 @@ class TestManagementSearch:
         client = management_api.ManagementAPIClient(api_client=api_client)
         try:
             body, status, headers = client.aggregate_with_http_info(
-                aggregation_terms=test_case.aggregation_terms
+                device_aggregation_terms=test_case.aggregation_terms
             )
         except management_api.ApiException as r:
             body = r.body
