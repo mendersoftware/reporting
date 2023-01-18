@@ -1,4 +1,4 @@
-// Copyright 2022 Northern.tech AS
+// Copyright 2023 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -117,17 +117,23 @@ func (mc *ManagementController) DeviceAttrs(c *gin.Context) {
 		mapping = &model.Mapping{}
 	}
 
-	attributesList := make([]attribute, 0, len(mapping.Inventory))
-	for _, attr := range mapping.Inventory {
-		parts := strings.SplitN(attr, string(os.PathSeparator), 2)
-		attributesList = append(attributesList, attribute{
-			Name:  parts[1],
-			Scope: parts[0],
-		})
+	n := model.MaxMappingInventoryAttributes
+	if n > len(mapping.Inventory) {
+		n = len(mapping.Inventory)
+	}
+	attributesList := make([]attribute, 0, n)
+	if mapping.Inventory != nil {
+		for _, attr := range mapping.Inventory[:n] {
+			parts := strings.SplitN(attr, string(os.PathSeparator), 2)
+			attributesList = append(attributesList, attribute{
+				Name:  parts[1],
+				Scope: parts[0],
+			})
+		}
 	}
 	res := &attributes{
 		Limit:      model.MaxMappingInventoryAttributes,
-		Count:      len(mapping.Inventory),
+		Count:      len(attributesList),
 		Attributes: attributesList,
 	}
 
