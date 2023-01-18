@@ -96,7 +96,7 @@ func (mc *ManagementController) DeviceAttrs(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	var tenantID string
-	if id := identity.FromContext(ctx); id != nil && id.Tenant != "" {
+	if id := identity.FromContext(ctx); id != nil {
 		tenantID = id.Tenant
 	} else {
 		rest.RenderError(c,
