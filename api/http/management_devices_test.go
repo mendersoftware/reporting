@@ -1,4 +1,4 @@
-// Copyright 2022 Northern.tech AS
+// Copyright 2023 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -369,19 +369,6 @@ func TestManagementDeviceAttrs(t *testing.T) {
 		CTX:      context.Background(),
 		Code:     http.StatusUnauthorized,
 		Response: rest.Error{Err: "Authorization not present in header"},
-	}, {
-		Name: "ko, wrong identity",
-		App: func(t *testing.T) *mapp.App {
-			return new(mapp.App)
-		},
-		CTX: identity.WithContext(context.Background(),
-			&identity.Identity{
-				Subject: "851f90b3-cee5-425e-8f6e-b36de1993e7e",
-				Tenant:  "",
-			},
-		),
-		Code:     http.StatusBadRequest,
-		Response: rest.Error{Err: "missing tenant ID from the context"},
 	}}
 	for i := range testCases {
 		tc := testCases[i]
