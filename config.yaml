@@ -28,6 +28,24 @@
 
 # opensearch_devices_index_replicas: 0
 
+# Deployments: index name
+# Defauls to: "deployments"
+# Overwrite with environment variable: REPORTING_OPENSEARCH_DEPLOYMENTS_INDEX_NAME
+
+# opensearch_deployments_index_name: "deployments"
+
+# Deployments: number of shards
+# Defauls to: 1
+# Overwrite with environment variable: REPORTING_OPENSEARCH_DEPLOYMENTS_INDEX_SHARDS
+
+# opensearch_deployments_index_shards: 1
+
+# Deployments: number of replicas
+# Defauls to: 0
+# Overwrite with environment variable: REPORTING_OPENSEARCH_DEPLOYMENTS_INDEX_REPLICAS
+
+# opensearch_deployments_index_replicas: 0
+
 # Mongodb connection string
 # Defaults to: "mongodb://mender-mongo:27017"
 # Overwrite with environment variable: REPORTING_MONGO_URL
@@ -99,9 +117,15 @@ nats_uri: "nats://mender-nats:4222"
 
 # reindex_max_time_msec: 1000
 
+# Address of the deployments service
+# Defaults to: http://mender-deployments:8080/
+# Overwrite with environment variable: REPORTING_DEPLOYMENTS_ADDR
+
+# deployments_addr: "http://mender-deployments:8080/"
+
 # Address of the device auth service
 # Defaults to: http://mender-device-auth:8080/
-# Overwrite with environment variable: REPORTING_DEVICEEAUTH_ADDR
+# Overwrite with environment variable: REPORTING_DEVICEAUTH_ADDR
 
 # deviceauth_addr: "http://mender-device-auth:8080/"
 
@@ -109,4 +133,4 @@ nats_uri: "nats://mender-nats:4222"
 # Defaults to: http://mender-inventory:8080/
 # Overwrite with environment variable: REPORTING_INVENTORY_ADDR
 
-# deviceauth_addr: "http://mender-inventory:8080/"
+# inventory_addr: "http://mender-inventory:8080/"

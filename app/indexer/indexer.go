@@ -17,6 +17,7 @@ package indexer
 import (
 	"context"
 
+	"github.com/mendersoftware/reporting/client/deployments"
 	"github.com/mendersoftware/reporting/client/deviceauth"
 	"github.com/mendersoftware/reporting/client/inventory"
 	"github.com/mendersoftware/reporting/client/nats"
@@ -32,11 +33,12 @@ type Indexer interface {
 }
 
 type indexer struct {
-	store     store.Store
-	mapper    mapping.Mapper
-	nats      nats.Client
-	devClient deviceauth.Client
-	invClient inventory.Client
+	store      store.Store
+	mapper     mapping.Mapper
+	nats       nats.Client
+	devClient  deviceauth.Client
+	invClient  inventory.Client
+	deplClient deployments.Client
 }
 
 func NewIndexer(
@@ -45,13 +47,15 @@ func NewIndexer(
 	nats nats.Client,
 	devClient deviceauth.Client,
 	invClient inventory.Client,
+	deplClient deployments.Client,
 ) Indexer {
 	mapper := mapping.NewMapper(ds)
 	return &indexer{
-		store:     store,
-		mapper:    mapper,
-		nats:      nats,
-		devClient: devClient,
-		invClient: invClient,
+		store:      store,
+		mapper:     mapper,
+		nats:       nats,
+		devClient:  devClient,
+		invClient:  invClient,
+		deplClient: deplClient,
 	}
 }

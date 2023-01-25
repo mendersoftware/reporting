@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -37,11 +38,14 @@ import (
 type StoreOption func(*opensearchStore)
 
 type opensearchStore struct {
-	addresses            []string
-	devicesIndexName     string
-	devicesIndexShards   int
-	devicesIndexReplicas int
-	client               *opensearch.Client
+	addresses                []string
+	devicesIndexName         string
+	devicesIndexShards       int
+	devicesIndexReplicas     int
+	deploymentsIndexName     string
+	deploymentsIndexShards   int
+	deploymentsIndexReplicas int
+	client                   *opensearch.Client
 }
 
 func NewStore(opts ...StoreOption) (store.Store, error) {
@@ -83,6 +87,24 @@ func WithDevicesIndexShards(indexShards int) StoreOption {
 func WithDevicesIndexReplicas(indexReplicas int) StoreOption {
 	return func(s *opensearchStore) {
 		s.devicesIndexReplicas = indexReplicas
+	}
+}
+
+func WithDeploymentsIndexName(indexName string) StoreOption {
+	return func(s *opensearchStore) {
+		s.deploymentsIndexName = indexName
+	}
+}
+
+func WithDeploymentsIndexShards(indexShards int) StoreOption {
+	return func(s *opensearchStore) {
+		s.deploymentsIndexShards = indexShards
+	}
+}
+
+func WithDeploymentsIndexReplicas(indexReplicas int) StoreOption {
+	return func(s *opensearchStore) {
+		s.deploymentsIndexReplicas = indexReplicas
 	}
 }
 
@@ -148,6 +170,45 @@ func (bi BulkItem) Marshal() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+func (s *opensearchStore) BulkIndexDeployments(ctx context.Context,
+	deployments []*model.Deployment) error {
+	var data strings.Builder
+
+	for _, deployment := range deployments {
+		actionJSON, err := json.Marshal(BulkAction{
+			Type: "index",
+			Desc: &BulkActionDesc{
+				ID:      deployment.ID,
+				Index:   s.GetDeploymentsIndex(deployment.TenantID),
+				Routing: s.GetDeploymentsRoutingKey(deployment.TenantID),
+			},
+		})
+		if err != nil {
+			return err
+		}
+		deploymentJSON, err := json.Marshal(deployment)
+		if err != nil {
+			return err
+		}
+		data.WriteString(string(actionJSON) + "\n" + string(deploymentJSON) + "\n")
+	}
+	dataString := data.String()
+
+	l := log.FromContext(ctx)
+	l.Debugf("opensearch request: %s", dataString)
+
+	req := opensearchapi.BulkRequest{
+		Body: strings.NewReader(dataString),
+	}
+	res, err := req.Do(ctx, s.client)
+	if err != nil {
+		return errors.Wrap(err, "failed to bulk index")
+	}
+	defer res.Body.Close()
+
+	return nil
+}
+
 func (s *opensearchStore) BulkIndexDevices(ctx context.Context, devices []*model.Device,
 	removedDevices []*model.Device) error {
 	var data strings.Builder
@@ -204,22 +265,35 @@ func (s *opensearchStore) BulkIndexDevices(ctx context.Context, devices []*model
 
 func (s *opensearchStore) Migrate(ctx context.Context) error {
 	indexName := s.GetDevicesIndex("")
-	err := s.migratePutIndexTemplate(ctx, indexName)
+	template := fmt.Sprintf(indexDevicesTemplate,
+		indexName,
+		s.devicesIndexShards,
+		s.devicesIndexReplicas,
+	)
+	err := s.migratePutIndexTemplate(ctx, indexName, template)
+	if err == nil {
+		err = s.migrateCreateIndex(ctx, indexName)
+	}
+	if err == nil {
+		indexName = s.GetDeploymentsIndex("")
+		template = fmt.Sprintf(indexDeploymentsTemplate,
+			indexName,
+			s.devicesIndexShards,
+			s.devicesIndexReplicas,
+		)
+		err = s.migratePutIndexTemplate(ctx, indexName, template)
+	}
 	if err == nil {
 		err = s.migrateCreateIndex(ctx, indexName)
 	}
 	return err
 }
 
-func (s *opensearchStore) migratePutIndexTemplate(ctx context.Context, indexName string) error {
+func (s *opensearchStore) migratePutIndexTemplate(ctx context.Context,
+	indexName, template string) error {
 	l := log.FromContext(ctx)
 	l.Infof("put the index template for %s", indexName)
 
-	template := fmt.Sprintf(indexDevicesTemplate,
-		indexName,
-		s.devicesIndexShards,
-		s.devicesIndexReplicas,
-	)
 	req := opensearchapi.IndicesPutIndexTemplateRequest{
 		Name: indexName,
 		Body: strings.NewReader(template),
@@ -232,7 +306,8 @@ func (s *opensearchStore) migratePutIndexTemplate(ctx context.Context, indexName
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		return errors.New("failed to set up the index template")
+		body, _ := ioutil.ReadAll(res.Body)
+		return errors.Errorf("failed to set up the index template: %s", string(body))
 	}
 	return nil
 }
@@ -278,7 +353,24 @@ func (s *opensearchStore) Ping(ctx context.Context) error {
 	return errors.Wrap(err, "failed to ping opensearch")
 }
 
-func (s *opensearchStore) Aggregate(ctx context.Context, query model.Query) (model.M, error) {
+func (s *opensearchStore) AggregateDevices(ctx context.Context,
+	query model.Query) (model.M, error) {
+	id := identity.FromContext(ctx)
+	indexName := s.GetDevicesIndex(id.Tenant)
+	routingKey := s.GetDevicesRoutingKey(id.Tenant)
+	return s.aggregate(ctx, indexName, routingKey, query)
+}
+
+func (s *opensearchStore) AggregateDeployments(ctx context.Context,
+	query model.Query) (model.M, error) {
+	id := identity.FromContext(ctx)
+	indexName := s.GetDeploymentsIndex(id.Tenant)
+	routingKey := s.GetDeploymentsRoutingKey(id.Tenant)
+	return s.aggregate(ctx, indexName, routingKey, query)
+}
+
+func (s *opensearchStore) aggregate(ctx context.Context, indexName, routingKey string,
+	query model.Query) (model.M, error) {
 	l := log.FromContext(ctx)
 
 	var buf bytes.Buffer
@@ -288,15 +380,12 @@ func (s *opensearchStore) Aggregate(ctx context.Context, query model.Query) (mod
 
 	l.Debugf("es query: %v", buf.String())
 
-	id := identity.FromContext(ctx)
-
 	searchRequests := []func(*opensearchapi.SearchRequest){
 		s.client.Search.WithContext(ctx),
-		s.client.Search.WithIndex(s.GetDevicesIndex(id.Tenant)),
+		s.client.Search.WithIndex(indexName),
 		s.client.Search.WithBody(&buf),
 		s.client.Search.WithTrackTotalHits(false),
 	}
-	routingKey := s.GetDevicesRoutingKey(id.Tenant)
 	if routingKey != "" {
 		searchRequests = append(searchRequests, s.client.Search.WithRouting(routingKey))
 	}
@@ -317,11 +406,26 @@ func (s *opensearchStore) Aggregate(ctx context.Context, query model.Query) (mod
 	}
 
 	l.Debugf("opensearch response: %v", ret)
-
 	return ret, nil
 }
 
-func (s *opensearchStore) Search(ctx context.Context, query model.Query) (model.M, error) {
+func (s *opensearchStore) SearchDevices(ctx context.Context, query model.Query) (model.M, error) {
+	id := identity.FromContext(ctx)
+	indexName := s.GetDevicesIndex(id.Tenant)
+	routingKey := s.GetDevicesRoutingKey(id.Tenant)
+	return s.search(ctx, indexName, routingKey, query)
+}
+
+func (s *opensearchStore) SearchDeployments(ctx context.Context,
+	query model.Query) (model.M, error) {
+	id := identity.FromContext(ctx)
+	indexName := s.GetDeploymentsIndex(id.Tenant)
+	routingKey := s.GetDeploymentsRoutingKey(id.Tenant)
+	return s.search(ctx, indexName, routingKey, query)
+}
+
+func (s *opensearchStore) search(ctx context.Context, indexName, routingKey string,
+	query model.Query) (model.M, error) {
 	l := log.FromContext(ctx)
 
 	var buf bytes.Buffer
@@ -331,15 +435,12 @@ func (s *opensearchStore) Search(ctx context.Context, query model.Query) (model.
 
 	l.Debugf("es query: %v", buf.String())
 
-	id := identity.FromContext(ctx)
-
 	searchRequests := []func(*opensearchapi.SearchRequest){
 		s.client.Search.WithContext(ctx),
-		s.client.Search.WithIndex(s.GetDevicesIndex(id.Tenant)),
+		s.client.Search.WithIndex(indexName),
 		s.client.Search.WithBody(&buf),
 		s.client.Search.WithTrackTotalHits(true),
 	}
-	routingKey := s.GetDevicesRoutingKey(id.Tenant)
 	if routingKey != "" {
 		searchRequests = append(searchRequests, s.client.Search.WithRouting(routingKey))
 	}
@@ -360,7 +461,6 @@ func (s *opensearchStore) Search(ctx context.Context, query model.Query) (model.
 	}
 
 	l.Debugf("opensearch response: %v", ret)
-
 	return ret, nil
 }
 
@@ -369,9 +469,22 @@ func (s *opensearchStore) Search(ctx context.Context, query model.Query) (model.
 // see: https://opensearch.org/docs/latest/api-reference/index-apis/get-index/
 func (s *opensearchStore) GetDevicesIndexMapping(ctx context.Context,
 	tid string) (map[string]interface{}, error) {
-	l := log.FromContext(ctx)
 	idx := s.GetDevicesIndex(tid)
+	return s.getIndexMapping(ctx, tid, idx)
+}
 
+// GetDeploymentsIndexMapping retrieves the "deployments*" index definition for tenant 'tid'
+// existing fields, incl. inventory attributes, are found under 'properties'
+// see: https://opensearch.org/docs/latest/api-reference/index-apis/get-index/
+func (s *opensearchStore) GetDeploymentsIndexMapping(ctx context.Context,
+	tid string) (map[string]interface{}, error) {
+	idx := s.GetDeploymentsIndex(tid)
+	return s.getIndexMapping(ctx, tid, idx)
+}
+
+func (s *opensearchStore) getIndexMapping(ctx context.Context,
+	tid, idx string) (map[string]interface{}, error) {
+	l := log.FromContext(ctx)
 	req := opensearchapi.IndicesGetRequest{
 		Index: []string{idx},
 	}
@@ -404,8 +517,7 @@ func (s *opensearchStore) GetDevicesIndexMapping(ctx context.Context,
 		return nil, errors.New("can't parse index defintion response")
 	}
 
-	l.Debugf("devices index for tid %s\n%s\n", tid, indexM)
-
+	l.Debugf("index for tid %s\n%s\n", tid, indexM)
 	return indexM, nil
 }
 
@@ -414,7 +526,17 @@ func (s *opensearchStore) GetDevicesIndex(tid string) string {
 	return s.devicesIndexName
 }
 
+// GetDeploymentsIndex returns the index name for the tenant tid
+func (s *opensearchStore) GetDeploymentsIndex(tid string) string {
+	return s.deploymentsIndexName
+}
+
 // GetDevicesRoutingKey returns the routing key for the tenant tid
 func (s *opensearchStore) GetDevicesRoutingKey(tid string) string {
+	return tid
+}
+
+// GetDeploymentsRoutingKey returns the routing key for the tenant tid
+func (s *opensearchStore) GetDeploymentsRoutingKey(tid string) string {
 	return tid
 }

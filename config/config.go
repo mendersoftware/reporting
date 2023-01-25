@@ -50,6 +50,32 @@ const (
 	// opensearch devices index replicas
 	SettingOpenSearchDevicesIndexReplicasDefault = 0
 
+	// SettingOpenSearchDeploymentsIndexName is the config key for the opensearch deployments
+	// index name
+	SettingOpenSearchDeploymentsIndexName = "opensearch_deployments_index_name"
+	// SettingOpenSearchDeploymentsIndexNameDefault is the default value for the opensearch
+	// deployments index name
+	SettingOpenSearchDeploymentsIndexNameDefault = "deployments"
+
+	// SettingOpenSearchDeploymentsIndexShards is the config key for the opensearch deployments
+	// index shards
+	SettingOpenSearchDeploymentsIndexShards = "opensearch_deployments_index_shards"
+	// SettingOpenSearchDeploymentsIndexShardsDefault is the default value for the opensearch
+	// deployments index shards
+	SettingOpenSearchDeploymentsIndexShardsDefault = 1
+
+	// SettingOpenSearchDeploymentsIndexReplicas is the config key for the opensearch deployments
+	// index replicas
+	SettingOpenSearchDeploymentsIndexReplicas = "opensearch_deployments_index_replicas"
+	// SettingOpenSearchDeploymentsIndexReplicasDefault is the default value for the
+	// opensearch deployments index replicas
+	SettingOpenSearchDeploymentsIndexReplicasDefault = 0
+
+	// SettingDeploymentsAddr is the config key for the deviceauth service address
+	SettingDeploymentsAddr = "deployments_addr"
+	// SettingDeploymentsAddrDefault is the default value for the deployments service address
+	SettingDeploymentsAddrDefault = "http://mender-deployments:8080/"
+
 	// SettingDeviceAuthAddr is the config key for the deviceauth service address
 	SettingDeviceAuthAddr = "deviceauth_addr"
 	// SettingDeviceAuthAddrDefault is the default value for the deviceauth service address
@@ -133,7 +159,14 @@ var (
 			Value: SettingOpenSearchDevicesIndexShardsDefault},
 		{Key: SettingOpenSearchDevicesIndexReplicas,
 			Value: SettingOpenSearchDevicesIndexReplicasDefault},
+		{Key: SettingOpenSearchDeploymentsIndexName,
+			Value: SettingOpenSearchDeploymentsIndexNameDefault},
+		{Key: SettingOpenSearchDeploymentsIndexShards,
+			Value: SettingOpenSearchDeploymentsIndexShardsDefault},
+		{Key: SettingOpenSearchDeploymentsIndexReplicas,
+			Value: SettingOpenSearchDeploymentsIndexReplicasDefault},
 		{Key: SettingDebugLog, Value: SettingDebugLogDefault},
+		{Key: SettingDeploymentsAddr, Value: SettingDeploymentsAddrDefault},
 		{Key: SettingDeviceAuthAddr, Value: SettingDeviceAuthAddrDefault},
 		{Key: SettingInventoryAddr, Value: SettingInventoryAddrDefault},
 		{Key: SettingMongo, Value: SettingMongoDefault},

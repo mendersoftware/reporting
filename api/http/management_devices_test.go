@@ -1,4 +1,4 @@
-// Copyright 2022 Northern.tech AS
+// Copyright 2023 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ func GenerateJWT(id identity.Identity) string {
 	return JWT
 }
 
-func TestManagementAggregate(t *testing.T) {
+func TestManagementAggregateDevices(t *testing.T) {
 	t.Parallel()
 	type testCase struct {
 		Name string
@@ -71,7 +71,7 @@ func TestManagementAggregate(t *testing.T) {
 		App: func(t *testing.T, self testCase) *mapp.App {
 			app := new(mapp.App)
 
-			app.On("InventoryAggregateDevices",
+			app.On("AggregateDevices",
 				contextMatcher,
 				mock.MatchedBy(func(*model.AggregateParams) bool {
 					return true
@@ -123,7 +123,7 @@ func TestManagementAggregate(t *testing.T) {
 		App: func(t *testing.T, self testCase) *mapp.App {
 			app := new(mapp.App)
 
-			app.On("InventoryAggregateDevices",
+			app.On("AggregateDevices",
 				contextMatcher,
 				mock.MatchedBy(func(*model.AggregateParams) bool {
 					return true
@@ -246,7 +246,7 @@ func TestManagementAggregate(t *testing.T) {
 	}
 }
 
-func TestManagementAttrs(t *testing.T) {
+func TestManagementDeviceAttrs(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
 		Name string
@@ -369,19 +369,6 @@ func TestManagementAttrs(t *testing.T) {
 		CTX:      context.Background(),
 		Code:     http.StatusUnauthorized,
 		Response: rest.Error{Err: "Authorization not present in header"},
-	}, {
-		Name: "ko, wrong identity",
-		App: func(t *testing.T) *mapp.App {
-			return new(mapp.App)
-		},
-		CTX: identity.WithContext(context.Background(),
-			&identity.Identity{
-				Subject: "851f90b3-cee5-425e-8f6e-b36de1993e7e",
-				Tenant:  "",
-			},
-		),
-		Code:     http.StatusBadRequest,
-		Response: rest.Error{Err: "missing tenant ID from the context"},
 	}}
 	for i := range testCases {
 		tc := testCases[i]
@@ -424,7 +411,7 @@ func TestManagementAttrs(t *testing.T) {
 	}
 }
 
-func TestManagementSearch(t *testing.T) {
+func TestManagementSearchDevices(t *testing.T) {
 	t.Parallel()
 	var newSearchParamMatcher = func(expected *model.SearchParams) interface{} {
 		return mock.MatchedBy(func(actual *model.SearchParams) bool {
@@ -456,7 +443,7 @@ func TestManagementSearch(t *testing.T) {
 		App: func(t *testing.T, self testCase) *mapp.App {
 			app := new(mapp.App)
 
-			app.On("InventorySearchDevices",
+			app.On("SearchDevices",
 				contextMatcher,
 				newSearchParamMatcher(self.Params.(*model.SearchParams))).
 				Return(self.Response, 0, nil)
@@ -524,7 +511,7 @@ func TestManagementSearch(t *testing.T) {
 		App: func(t *testing.T, self testCase) *mapp.App {
 			app := new(mapp.App)
 
-			app.On("InventorySearchDevices",
+			app.On("SearchDevices",
 				contextMatcher,
 				newSearchParamMatcher(self.Params.(*model.SearchParams))).
 				Return([]inventory.Device{}, 0, nil)
@@ -548,7 +535,7 @@ func TestManagementSearch(t *testing.T) {
 		App: func(t *testing.T, self testCase) *mapp.App {
 			app := new(mapp.App)
 
-			app.On("InventorySearchDevices",
+			app.On("SearchDevices",
 				contextMatcher,
 				newSearchParamMatcher(self.Params.(*model.SearchParams))).
 				Return([]inventory.Device{}, 0, nil)
@@ -595,7 +582,7 @@ func TestManagementSearch(t *testing.T) {
 		App: func(t *testing.T, self testCase) *mapp.App {
 			app := new(mapp.App)
 
-			app.On("InventorySearchDevices",
+			app.On("SearchDevices",
 				contextMatcher,
 				newSearchParamMatcher(self.Params.(*model.SearchParams))).
 				Return(nil, 0, errors.New("internal error"))
@@ -692,6 +679,157 @@ func TestManagementSearch(t *testing.T) {
 
 			switch res := tc.Response.(type) {
 			case []inventory.Device:
+				b, _ := json.Marshal(res)
+				assert.JSONEq(t, string(b), w.Body.String())
+
+			case rest.Error:
+				var actual rest.Error
+				dec := json.NewDecoder(w.Body)
+				dec.DisallowUnknownFields()
+				err := dec.Decode(&actual)
+				if assert.NoError(t, err, "response schema did not match expected rest.Error") {
+					assert.EqualError(t, res, actual.Error())
+				}
+
+			case nil:
+				assert.Empty(t, w.Body.String())
+
+			default:
+				panic("[TEST ERR] Dunno what to compare!")
+			}
+
+		})
+	}
+}
+
+func TestSearchDevicesAttrs(t *testing.T) {
+	t.Parallel()
+	type testCase struct {
+		Name string
+
+		App func(*testing.T, testCase) *mapp.App
+		CTX context.Context
+
+		Code     int
+		Response interface{}
+	}
+	testCases := []testCase{{
+		Name: "ok",
+
+		App: func(t *testing.T, self testCase) *mapp.App {
+			app := new(mapp.App)
+
+			app.On("GetSearchableInvAttrs",
+				contextMatcher,
+				"123456789012345678901234",
+			).Return([]model.FilterAttribute{
+				{
+					Scope: model.ScopeInventory,
+					Name:  "attribute",
+					Count: 1,
+				},
+			}, nil)
+
+			return app
+		},
+		CTX: identity.WithContext(context.Background(),
+			&identity.Identity{
+				Subject: "851f90b3-cee5-425e-8f6e-b36de1993e7e",
+				Tenant:  "123456789012345678901234",
+			},
+		),
+
+		Code: http.StatusOK,
+		Response: []model.FilterAttribute{
+			{
+				Scope: model.ScopeInventory,
+				Name:  "attribute",
+				Count: 1,
+			},
+		},
+	}, {
+		Name: "ok, empty result",
+
+		App: func(t *testing.T, self testCase) *mapp.App {
+			app := new(mapp.App)
+
+			app.On("GetSearchableInvAttrs",
+				contextMatcher,
+				"123456789012345678901234",
+			).Return([]model.FilterAttribute{}, nil)
+
+			return app
+		},
+		CTX: identity.WithContext(context.Background(),
+			&identity.Identity{
+				Subject: "851f90b3-cee5-425e-8f6e-b36de1993e7e",
+				Tenant:  "123456789012345678901234",
+			},
+		),
+
+		Code:     http.StatusOK,
+		Response: []model.FilterAttribute{},
+	}, {
+		Name: "error, internal app error",
+
+		App: func(t *testing.T, self testCase) *mapp.App {
+			app := new(mapp.App)
+
+			app.On("GetSearchableInvAttrs",
+				contextMatcher,
+				"123456789012345678901234",
+			).Return(nil, errors.New("internal error"))
+
+			return app
+		},
+		CTX: identity.WithContext(context.Background(),
+			&identity.Identity{
+				Subject: "851f90b3-cee5-425e-8f6e-b36de1993e7e",
+				Tenant:  "123456789012345678901234",
+			},
+		),
+
+		Code:     http.StatusInternalServerError,
+		Response: rest.Error{Err: "internal error"},
+	}, {
+		Name: "error, request identity not present",
+
+		App: func(t *testing.T, self testCase) *mapp.App {
+			return new(mapp.App)
+		},
+		CTX: identity.WithContext(context.Background(), nil),
+
+		Code:     http.StatusUnauthorized,
+		Response: rest.Error{Err: "Authorization not present in header"},
+	}}
+	for i := range testCases {
+		tc := testCases[i]
+		t.Run(tc.Name, func(t *testing.T) {
+			t.Parallel()
+			var app *mapp.App
+			if tc.App == nil {
+				app = new(mapp.App)
+			} else {
+				app = tc.App(t, tc)
+			}
+			defer app.AssertExpectations(t)
+			router := NewRouter(app)
+
+			req, _ := http.NewRequest(
+				http.MethodGet,
+				URIManagement+URIInventorySearchAttrs,
+				nil,
+			)
+			if id := identity.FromContext(tc.CTX); id != nil {
+				req.Header.Set("Authorization", "Bearer "+GenerateJWT(*id))
+			}
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+
+			assert.Equal(t, tc.Code, w.Code)
+
+			switch res := tc.Response.(type) {
+			case []model.FilterAttribute:
 				b, _ := json.Marshal(res)
 				assert.JSONEq(t, string(b), w.Body.String())
 

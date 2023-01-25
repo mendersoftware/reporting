@@ -34,17 +34,17 @@ class TestManagementSearch:
                     index=[idx["index"]], body={"query": {"match_all": {}}}
                 )
 
-        for dev in self._test_set:
-            utils.index_device(dev)
+        for tenant_id, dev in self._test_set:
+            utils.index_device(tenant_id, dev)
 
         time.sleep(5)
 
     class _TestCase:
         def __init__(
             self,
-            search_terms: management_api.models.SearchTerms,
+            search_terms: management_api.models.DeviceSearchTerms,
             http_code: int,
-            result: Union[list[management_api.models.DeviceInventory], str],
+            result: Union[list[management_api.models.Device], str],
             authorization: str = None,
         ):
             self.search_terms = search_terms
@@ -53,69 +53,76 @@ class TestManagementSearch:
             self.authorization = authorization
 
     _test_set = [
-        internal_api.models.InternalDevice(
-            id="463e12dd-1adb-4f62-965e-b0a9ba2c93ff",
-            tenant_id="123456789012345678901234",
-            name="bagelBone",
-            attributes=[
-                management_api.models.Attribute(
-                    name="string", value="Lorem ipsum dolor sit amet", scope="inventory"
-                ),
-                management_api.models.Attribute(
-                    name="number", value=2 ** 47, scope="inventory"
-                ),
-            ],
+        (
+            "123456789012345678901234",
+            internal_api.models.Device(
+                id="463e12dd-1adb-4f62-965e-b0a9ba2c93ff",
+                attributes=[
+                    management_api.models.DeviceAttribute(
+                        name="string",
+                        value="Lorem ipsum dolor sit amet",
+                        scope="inventory",
+                    ),
+                    management_api.models.DeviceAttribute(
+                        name="number", value=2 ** 47, scope="inventory"
+                    ),
+                ],
+            ),
         ),
-        internal_api.models.InternalDevice(
-            id="d8b04e01-690d-41ce-8c6d-ab079a04d488",
-            tenant_id="123456789012345678901234",
-            name="blueberryPi",
-            attributes=[
-                management_api.models.Attribute(
-                    name="string",
-                    value="consectetur adipiscing elit",
-                    scope="inventory",
-                ),
-                management_api.models.Attribute(
-                    name="number", value=420.69, scope="inventory"
-                ),
-            ],
+        (
+            "123456789012345678901234",
+            internal_api.models.Device(
+                id="d8b04e01-690d-41ce-8c6d-ab079a04d488",
+                attributes=[
+                    management_api.models.DeviceAttribute(
+                        name="string",
+                        value="consectetur adipiscing elit",
+                        scope="inventory",
+                    ),
+                    management_api.models.DeviceAttribute(
+                        name="number", value=420.69, scope="inventory"
+                    ),
+                ],
+            ),
         ),
-        internal_api.models.InternalDevice(
-            id="ad707aab-916b-4ec9-a43f-0031b2bcf9ad",
-            tenant_id="123456789012345678901234",
-            name="birch32",
-            attributes=[
-                management_api.models.Attribute(
-                    name="string", value="sed do eiusmod tempor", scope="inventory",
-                ),
-            ],
+        (
+            "123456789012345678901234",
+            internal_api.models.Device(
+                id="ad707aab-916b-4ec9-a43f-0031b2bcf9ad",
+                attributes=[
+                    management_api.models.DeviceAttribute(
+                        name="string", value="sed do eiusmod tempor", scope="inventory",
+                    ),
+                ],
+            ),
         ),
-        internal_api.models.InternalDevice(
-            id="85388603-5852-437f-89c4-7549502893d5",
-            tenant_id="123456789012345678901234",
-            name="birch32",
-            attributes=[
-                management_api.models.Attribute(
-                    name="string", value="incididunt ut labore", scope="inventory",
-                ),
-                management_api.models.Attribute(
-                    name="number", value=0.0, scope="inventory"
-                ),
-            ],
+        (
+            "123456789012345678901234",
+            internal_api.models.Device(
+                id="85388603-5852-437f-89c4-7549502893d5",
+                attributes=[
+                    management_api.models.DeviceAttribute(
+                        name="string", value="incididunt ut labore", scope="inventory",
+                    ),
+                    management_api.models.DeviceAttribute(
+                        name="number", value=0.0, scope="inventory"
+                    ),
+                ],
+            ),
         ),
-        internal_api.models.InternalDevice(
-            id="98efdb94-26c2-42eb-828d-12a5d6eb698c",
-            tenant_id="098765432109876543210987",
-            name="shepherdsPi",
-            attributes=[
-                management_api.models.Attribute(
-                    name="string", value="sample text", scope="inventory",
-                ),
-                management_api.models.Attribute(
-                    name="number", value=1234, scope="inventory"
-                ),
-            ],
+        (
+            "098765432109876543210987",
+            internal_api.models.Device(
+                id="98efdb94-26c2-42eb-828d-12a5d6eb698c",
+                attributes=[
+                    management_api.models.DeviceAttribute(
+                        name="string", value="sample text", scope="inventory",
+                    ),
+                    management_api.models.DeviceAttribute(
+                        name="number", value=1234, scope="inventory"
+                    ),
+                ],
+            ),
         ),
     ]
 
@@ -124,9 +131,9 @@ class TestManagementSearch:
         argvalues=[
             _TestCase(
                 authorization=utils.generate_jwt(tenant_id="123456789012345678901234"),
-                search_terms=management_api.models.SearchTerms(
+                search_terms=management_api.models.DeviceSearchTerms(
                     filters=[
-                        management_api.models.FilterTerm(
+                        management_api.models.DeviceFilterTerm(
                             attribute="string",
                             value="Lorem ipsum dolor sit amet",
                             type="$ne",
@@ -134,45 +141,45 @@ class TestManagementSearch:
                         )
                     ],
                     sort=[
-                        management_api.models.SortTerm(
+                        management_api.models.DeviceSortTerm(
                             attribute="string", scope="inventory", order="desc"
                         )
                     ],
                 ),
                 http_code=200,
                 result=[
-                    management_api.models.DeviceInventory(
+                    management_api.models.Device(
                         id="ad707aab-916b-4ec9-a43f-0031b2bcf9ad",
                         attributes=[
-                            management_api.models.Attribute(
+                            management_api.models.DeviceAttribute(
                                 name="string",
                                 value="sed do eiusmod tempor",
                                 scope="inventory",
                             ),
                         ],
                     ),
-                    management_api.models.DeviceInventory(
+                    management_api.models.Device(
                         id="85388603-5852-437f-89c4-7549502893d5",
                         attributes=[
-                            management_api.models.Attribute(
+                            management_api.models.DeviceAttribute(
                                 name="string",
                                 value="incididunt ut labore",
                                 scope="inventory",
                             ),
-                            management_api.models.Attribute(
+                            management_api.models.DeviceAttribute(
                                 name="number", value=0.0, scope="inventory"
                             ),
                         ],
                     ),
-                    management_api.models.DeviceInventory(
+                    management_api.models.Device(
                         id="d8b04e01-690d-41ce-8c6d-ab079a04d488",
                         attributes=[
-                            management_api.models.Attribute(
+                            management_api.models.DeviceAttribute(
                                 name="string",
                                 value="consectetur adipiscing elit",
                                 scope="inventory",
                             ),
-                            management_api.models.Attribute(
+                            management_api.models.DeviceAttribute(
                                 name="number", value=420.69, scope="inventory"
                             ),
                         ],
@@ -181,9 +188,9 @@ class TestManagementSearch:
             ),
             _TestCase(
                 authorization=utils.generate_jwt(tenant_id="123456789012345678901234"),
-                search_terms=management_api.models.SearchTerms(
+                search_terms=management_api.models.DeviceSearchTerms(
                     filters=[
-                        management_api.models.FilterTerm(
+                        management_api.models.DeviceFilterTerm(
                             attribute="number",
                             value=2 ** 47,
                             type="$gte",
@@ -193,13 +200,13 @@ class TestManagementSearch:
                 ),
                 http_code=200,
                 result=[
-                    management_api.models.DeviceInventory(
+                    management_api.models.Device(
                         id="463e12dd-1adb-4f62-965e-b0a9ba2c93ff",
                         attributes=[
-                            management_api.models.Attribute(
+                            management_api.models.DeviceAttribute(
                                 name="number", value=2 ** 47, scope="inventory"
                             ),
-                            management_api.models.Attribute(
+                            management_api.models.DeviceAttribute(
                                 name="string",
                                 value="Lorem ipsum dolor sit amet",
                                 scope="inventory",
@@ -210,9 +217,9 @@ class TestManagementSearch:
             ),
             _TestCase(
                 authorization=utils.generate_jwt(tenant_id="123456789012345678901234"),
-                search_terms=management_api.models.SearchTerms(
+                search_terms=management_api.models.DeviceSearchTerms(
                     filters=[
-                        management_api.models.FilterTerm(
+                        management_api.models.DeviceFilterTerm(
                             attribute="string",
                             value=[
                                 "Lorem ipsum dolor sit amet",
@@ -223,30 +230,30 @@ class TestManagementSearch:
                         )
                     ],
                     sort=[
-                        management_api.models.SortTerm(
+                        management_api.models.DeviceSortTerm(
                             attribute="number", scope="inventory", order="asc"
                         )
                     ],
                 ),
                 http_code=200,
                 result=[
-                    management_api.models.DeviceInventory(
+                    management_api.models.Device(
                         id="85388603-5852-437f-89c4-7549502893d5",
                         attributes=[
-                            management_api.models.Attribute(
+                            management_api.models.DeviceAttribute(
                                 name="string",
                                 value="incididunt ut labore",
                                 scope="inventory",
                             ),
-                            management_api.models.Attribute(
+                            management_api.models.DeviceAttribute(
                                 name="number", value=0.0, scope="inventory"
                             ),
                         ],
                     ),
-                    management_api.models.DeviceInventory(
+                    management_api.models.Device(
                         id="ad707aab-916b-4ec9-a43f-0031b2bcf9ad",
                         attributes=[
-                            management_api.models.Attribute(
+                            management_api.models.DeviceAttribute(
                                 name="string",
                                 value="sed do eiusmod tempor",
                                 scope="inventory",
@@ -257,9 +264,9 @@ class TestManagementSearch:
             ),
             _TestCase(
                 authorization=utils.generate_jwt(tenant_id="123456789012345678901234"),
-                search_terms=management_api.models.SearchTerms(
+                search_terms=management_api.models.DeviceSearchTerms(
                     filters=[
-                        management_api.models.FilterTerm(
+                        management_api.models.DeviceFilterTerm(
                             attribute="number",
                             value=2 ** 47,
                             type="$lte",
@@ -267,48 +274,48 @@ class TestManagementSearch:
                         )
                     ],
                     sort=[
-                        management_api.models.SortTerm(
+                        management_api.models.DeviceSortTerm(
                             attribute="number", scope="inventory", order="asc"
                         )
                     ],
                 ),
                 http_code=200,
                 result=[
-                    management_api.models.DeviceInventory(
+                    management_api.models.Device(
                         id="85388603-5852-437f-89c4-7549502893d5",
                         attributes=[
-                            management_api.models.Attribute(
+                            management_api.models.DeviceAttribute(
                                 name="string",
                                 value="incididunt ut labore",
                                 scope="inventory",
                             ),
-                            management_api.models.Attribute(
+                            management_api.models.DeviceAttribute(
                                 name="number", value=0.0, scope="inventory"
                             ),
                         ],
                     ),
-                    management_api.models.DeviceInventory(
+                    management_api.models.Device(
                         id="d8b04e01-690d-41ce-8c6d-ab079a04d488",
                         attributes=[
-                            management_api.models.Attribute(
+                            management_api.models.DeviceAttribute(
                                 name="string",
                                 value="consectetur adipiscing elit",
                                 scope="inventory",
                             ),
-                            management_api.models.Attribute(
+                            management_api.models.DeviceAttribute(
                                 name="number", value=420.69, scope="inventory"
                             ),
                         ],
                     ),
-                    management_api.models.DeviceInventory(
+                    management_api.models.Device(
                         id="463e12dd-1adb-4f62-965e-b0a9ba2c93ff",
                         attributes=[
-                            management_api.models.Attribute(
+                            management_api.models.DeviceAttribute(
                                 name="string",
                                 value="Lorem ipsum dolor sit amet",
                                 scope="inventory",
                             ),
-                            management_api.models.Attribute(
+                            management_api.models.DeviceAttribute(
                                 name="number", value=2 ** 47, scope="inventory"
                             ),
                         ],
@@ -317,9 +324,9 @@ class TestManagementSearch:
             ),
             _TestCase(
                 authorization=utils.generate_jwt(tenant_id="123456789012345678901234"),
-                search_terms=management_api.models.SearchTerms(
+                search_terms=management_api.models.DeviceSearchTerms(
                     filters=[
-                        management_api.models.FilterTerm(
+                        management_api.models.DeviceFilterTerm(
                             attribute="string",
                             value="consectetur adipiscing elit",
                             type="$ne",
@@ -327,43 +334,43 @@ class TestManagementSearch:
                         )
                     ],
                     sort=[
-                        management_api.models.SortTerm(
+                        management_api.models.DeviceSortTerm(
                             attribute="string", scope="inventory", order="asc"
                         )
                     ],
                 ),
                 http_code=200,
                 result=[
-                    management_api.models.DeviceInventory(
+                    management_api.models.Device(
                         id="463e12dd-1adb-4f62-965e-b0a9ba2c93ff",
                         attributes=[
-                            management_api.models.Attribute(
+                            management_api.models.DeviceAttribute(
                                 name="string",
                                 value="Lorem ipsum dolor sit amet",
                                 scope="inventory",
                             ),
-                            management_api.models.Attribute(
+                            management_api.models.DeviceAttribute(
                                 name="number", value=2 ** 47, scope="inventory"
                             ),
                         ],
                     ),
-                    management_api.models.DeviceInventory(
+                    management_api.models.Device(
                         id="85388603-5852-437f-89c4-7549502893d5",
                         attributes=[
-                            management_api.models.Attribute(
+                            management_api.models.DeviceAttribute(
                                 name="string",
                                 value="incididunt ut labore",
                                 scope="inventory",
                             ),
-                            management_api.models.Attribute(
+                            management_api.models.DeviceAttribute(
                                 name="number", value=0.0, scope="inventory"
                             ),
                         ],
                     ),
-                    management_api.models.DeviceInventory(
+                    management_api.models.Device(
                         id="ad707aab-916b-4ec9-a43f-0031b2bcf9ad",
                         attributes=[
-                            management_api.models.Attribute(
+                            management_api.models.DeviceAttribute(
                                 name="string",
                                 value="sed do eiusmod tempor",
                                 scope="inventory",
@@ -374,9 +381,9 @@ class TestManagementSearch:
             ),
             _TestCase(
                 authorization=utils.generate_jwt(tenant_id="123456789012345678901234"),
-                search_terms=management_api.models.SearchTerms(
+                search_terms=management_api.models.DeviceSearchTerms(
                     filters=[
-                        management_api.models.FilterTerm(
+                        management_api.models.DeviceFilterTerm(
                             attribute="number",
                             value=False,
                             type="$exists",
@@ -386,10 +393,10 @@ class TestManagementSearch:
                 ),
                 http_code=200,
                 result=[
-                    management_api.models.DeviceInventory(
+                    management_api.models.Device(
                         id="ad707aab-916b-4ec9-a43f-0031b2bcf9ad",
                         attributes=[
-                            management_api.models.Attribute(
+                            management_api.models.DeviceAttribute(
                                 name="string",
                                 value="sed do eiusmod tempor",
                                 scope="inventory",
@@ -400,9 +407,9 @@ class TestManagementSearch:
             ),
             _TestCase(
                 authorization=utils.generate_jwt(tenant_id="123456789012345678901234"),
-                search_terms=management_api.models.SearchTerms(
+                search_terms=management_api.models.DeviceSearchTerms(
                     filters=[
-                        management_api.models.FilterTerm(
+                        management_api.models.DeviceFilterTerm(
                             attribute="string",
                             value="(Lorem|consectetur).*",
                             type="$regex",
@@ -410,35 +417,35 @@ class TestManagementSearch:
                         )
                     ],
                     sort=[
-                        management_api.models.SortTerm(
+                        management_api.models.DeviceSortTerm(
                             attribute="string", scope="inventory", order="asc"
                         )
                     ],
                 ),
                 http_code=200,
                 result=[
-                    management_api.models.DeviceInventory(
+                    management_api.models.Device(
                         id="463e12dd-1adb-4f62-965e-b0a9ba2c93ff",
                         attributes=[
-                            management_api.models.Attribute(
+                            management_api.models.DeviceAttribute(
                                 name="string",
                                 value="Lorem ipsum dolor sit amet",
                                 scope="inventory",
                             ),
-                            management_api.models.Attribute(
+                            management_api.models.DeviceAttribute(
                                 name="number", value=2 ** 47, scope="inventory"
                             ),
                         ],
                     ),
-                    management_api.models.DeviceInventory(
+                    management_api.models.Device(
                         id="d8b04e01-690d-41ce-8c6d-ab079a04d488",
                         attributes=[
-                            management_api.models.Attribute(
+                            management_api.models.DeviceAttribute(
                                 name="string",
                                 value="consectetur adipiscing elit",
                                 scope="inventory",
                             ),
-                            management_api.models.Attribute(
+                            management_api.models.DeviceAttribute(
                                 name="number", value=420.69, scope="inventory"
                             ),
                         ],
@@ -446,10 +453,49 @@ class TestManagementSearch:
                 ],
             ),
             _TestCase(
-                authorization=utils.generate_jwt(tenant_id="anIllegalTenantID"),
-                search_terms=management_api.models.SearchTerms(
+                authorization=utils.generate_jwt(tenant_id="123456789012345678901234"),
+                search_terms=management_api.models.DeviceSearchTerms(
                     filters=[
-                        management_api.models.FilterTerm(
+                        management_api.models.DeviceFilterTerm(
+                            attribute="latest_deployment_status",
+                            value="success",
+                            type="$eq",
+                            scope="system",
+                        )
+                    ],
+                    sort=[
+                        management_api.models.DeviceSortTerm(
+                            attribute="string", scope="inventory", order="asc"
+                        )
+                    ],
+                ),
+                http_code=200,
+                result=[
+                    management_api.models.Device(
+                        id="463e12dd-1adb-4f62-965e-b0a9ba2c93ff",
+                        attributes=[
+                            management_api.models.DeviceAttribute(
+                                name="string",
+                                value="Lorem ipsum dolor sit amet",
+                                scope="inventory",
+                            ),
+                            management_api.models.DeviceAttribute(
+                                name="number", value=2 ** 47, scope="inventory"
+                            ),
+                            management_api.models.DeviceAttribute(
+                                name="latest_deployment_status",
+                                value="success",
+                                scope="system",
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+            _TestCase(
+                authorization=utils.generate_jwt(tenant_id="anIllegalTenantID"),
+                search_terms=management_api.models.DeviceSearchTerms(
+                    filters=[
+                        management_api.models.DeviceFilterTerm(
                             attribute="foo", value="bar", type="$eq", scope="inventory",
                         )
                     ],
@@ -458,9 +504,9 @@ class TestManagementSearch:
                 result=[],
             ),
             _TestCase(
-                search_terms=management_api.models.SearchTerms(
+                search_terms=management_api.models.DeviceSearchTerms(
                     filters=[
-                        management_api.models.FilterTerm(
+                        management_api.models.DeviceFilterTerm(
                             attribute="foo", value="bar", type="$eq", scope="inventory",
                         )
                     ],
@@ -477,6 +523,7 @@ class TestManagementSearch:
             "ok, $ne + sort",
             "ok, $exists",
             "ok, $regex + sort",
+            "ok, latest_deployment_status",
             "error, missing index for tenant",
             "error, unauthorized access",
         ],
@@ -490,7 +537,7 @@ class TestManagementSearch:
         client = management_api.ManagementAPIClient(api_client=api_client)
         try:
             body, status, headers = client.search_with_http_info(
-                search_terms=test_case.search_terms
+                device_search_terms=test_case.search_terms
             )
         except management_api.ApiException as r:
             body = r.body

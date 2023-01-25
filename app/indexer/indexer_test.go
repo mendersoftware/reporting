@@ -21,6 +21,6 @@ import (
 )
 
 func TestNewIndexer(t *testing.T) {
-	indexer := NewIndexer(nil, nil, nil, nil, nil)
+	indexer := NewIndexer(nil, nil, nil, nil, nil, nil)
 	assert.NotNil(t, indexer)
 }
