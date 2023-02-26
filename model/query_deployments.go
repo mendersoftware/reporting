@@ -1,4 +1,4 @@
-// Copyright 2022 Northern.tech AS
+// Copyright 2023 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -39,11 +39,6 @@ func BuildDeploymentsQuery(params DeploymentsSearchParams) (Query, error) {
 	if len(params.Attributes) > 0 {
 		sel := NewDeploymentsSelect(params.Attributes)
 		query = sel.AddTo(query)
-	}
-
-	if len(params.DeviceIDs) > 0 {
-		devs := NewDevIDsFilter(params.DeviceIDs)
-		query = devs.AddTo(query)
 	}
 
 	return query, nil
