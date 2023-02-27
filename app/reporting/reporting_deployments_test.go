@@ -308,7 +308,87 @@ func TestSearchDeployments(t *testing.T) {
 		Store: func(t *testing.T, self testCase) *mstore.Store {
 			store := new(mstore.Store)
 			q, _ := model.BuildDeploymentsQuery(*self.Params)
-			q = q.Must(model.M{"terms": model.M{"id": self.Params.DeviceIDs}})
+			q = q.Must(model.M{"terms": model.M{model.FieldNameDeviceID: self.Params.DeviceIDs}})
+			store.On("SearchDeployments", contextMatcher, q).
+				Return(model.M{"hits": map[string]interface{}{"hits": []interface{}{
+					map[string]interface{}{"_source": map[string]interface{}{
+						"id":        "194d1060-1717-44dc-a783-00038f4a8013",
+						"tenant_id": "123456789012345678901234",
+					}}},
+					"total": map[string]interface{}{
+						"value": float64(1),
+					}},
+				}, nil)
+			return store
+		},
+		Mapping: model.Mapping{
+			TenantID:  "",
+			Inventory: []string{"inventory/foo"},
+		},
+		TotalCount: 1,
+		Result: []model.Deployment{{
+			ID:       "194d1060-1717-44dc-a783-00038f4a8013",
+			TenantID: "123456789012345678901234",
+		}},
+	}, {
+		Name: "ok with deployment_ids",
+
+		Params: &model.DeploymentsSearchParams{
+			Filters: []model.DeploymentsFilterPredicate{{
+				Attribute: "foo",
+				Value:     "bar",
+				Type:      "$eq",
+			}},
+			Sort: []model.DeploymentsSortCriteria{{
+				Attribute: "foo",
+				Order:     "desc",
+			}},
+			DeploymentIDs: []string{"194d1060-1717-44dc-a783-00038f4a8013"},
+		},
+		Store: func(t *testing.T, self testCase) *mstore.Store {
+			store := new(mstore.Store)
+			q, _ := model.BuildDeploymentsQuery(*self.Params)
+			q = q.Must(model.M{"terms": model.M{model.FieldNameDeploymentID: self.Params.DeploymentIDs}})
+			store.On("SearchDeployments", contextMatcher, q).
+				Return(model.M{"hits": map[string]interface{}{"hits": []interface{}{
+					map[string]interface{}{"_source": map[string]interface{}{
+						"id":        "194d1060-1717-44dc-a783-00038f4a8013",
+						"tenant_id": "123456789012345678901234",
+					}}},
+					"total": map[string]interface{}{
+						"value": float64(1),
+					}},
+				}, nil)
+			return store
+		},
+		Mapping: model.Mapping{
+			TenantID:  "",
+			Inventory: []string{"inventory/foo"},
+		},
+		TotalCount: 1,
+		Result: []model.Deployment{{
+			ID:       "194d1060-1717-44dc-a783-00038f4a8013",
+			TenantID: "123456789012345678901234",
+		}},
+	}, {
+		Name: "ok with tenant_id",
+
+		Params: &model.DeploymentsSearchParams{
+			Filters: []model.DeploymentsFilterPredicate{{
+				Attribute: "foo",
+				Value:     "bar",
+				Type:      "$eq",
+			}},
+			Sort: []model.DeploymentsSortCriteria{{
+				Attribute: "foo",
+				Order:     "desc",
+			}},
+			TenantID: "194d1060-1717-44dc-a783-00038f4a8013",
+		},
+		Store: func(t *testing.T, self testCase) *mstore.Store {
+			store := new(mstore.Store)
+			q, _ := model.BuildDeploymentsQuery(*self.Params)
+			q = q.Must(model.M{"term": model.M{model.FieldNameTenantID: self.Params.TenantID}})
 			store.On("SearchDeployments", contextMatcher, q).
 				Return(model.M{"hits": map[string]interface{}{"hits": []interface{}{
 					map[string]interface{}{"_source": map[string]interface{}{
@@ -351,7 +431,7 @@ func TestSearchDeployments(t *testing.T) {
 		Store: func(t *testing.T, self testCase) *mstore.Store {
 			store := new(mstore.Store)
 			q, _ := model.BuildDeploymentsQuery(*self.Params)
-			q = q.Must(model.M{"terms": model.M{"id": self.Params.DeviceIDs}})
+			q = q.Must(model.M{"terms": model.M{model.FieldNameDeviceID: self.Params.DeviceIDs}})
 			store.On("SearchDeployments", contextMatcher, q).
 				Return(model.M{"hits": map[string]interface{}{"hits": []interface{}{
 					map[string]interface{}{"fields": map[string]interface{}{
