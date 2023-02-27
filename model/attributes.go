@@ -44,8 +44,10 @@ const (
 )
 
 const (
-	FieldNameID       = "id"
-	FieldNameTenantID = "tenant_id"
+	FieldNameID           = "id"
+	FieldNameDeploymentID = "deployment_id"
+	FieldNameDeviceID     = "device_id"
+	FieldNameTenantID     = "tenant_id"
 )
 
 // type enum/suffixes

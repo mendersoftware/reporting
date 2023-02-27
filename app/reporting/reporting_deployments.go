@@ -1,4 +1,4 @@
-// Copyright 2022 Northern.tech AS
+// Copyright 2023 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -90,7 +90,15 @@ func (app *app) SearchDeployments(
 	if len(searchParams.DeviceIDs) > 0 {
 		query = query.Must(model.M{
 			"terms": model.M{
-				model.FieldNameID: searchParams.DeviceIDs,
+				model.FieldNameDeviceID: searchParams.DeviceIDs,
+			},
+		})
+	}
+
+	if len(searchParams.DeploymentIDs) > 0 {
+		query = query.Must(model.M{
+			"terms": model.M{
+				model.FieldNameDeploymentID: searchParams.DeploymentIDs,
 			},
 		})
 	}
