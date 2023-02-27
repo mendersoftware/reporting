@@ -48,6 +48,9 @@ const indexDeploymentsTemplate = `{
 				"deployment_artifact_name": {
 					"type": "keyword"
 				},
+				"deployment_created": {
+					"type": "date"
+				},
 				"deployment_filter_id": {
 					"type": "keyword"
 				},
