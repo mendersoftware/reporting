@@ -13,7 +13,7 @@ security:
   - ManagementJWT: []
 
 paths:
-  /deployments/aggregate:
+  /deployments/devices/aggregate:
     post:
       tags:
         - Management API
@@ -55,7 +55,7 @@ paths:
         500:
           $ref: '#/components/responses/InternalServerError'
 
-  /deployments/search:
+  /deployments/devices/search:
     post:
       tags:
         - Management API
