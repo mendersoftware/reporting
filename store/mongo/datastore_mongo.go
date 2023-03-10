@@ -1,4 +1,4 @@
-// Copyright 2022 Northern.tech AS
+// Copyright 2023 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import (
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	mopts "go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/mendersoftware/reporting/model"
@@ -179,19 +178,33 @@ func (db *MongoStore) UpdateAndGetMapping(ctx context.Context, tenantID string,
 			},
 		},
 	}
-	upsert := true
-	after := options.After
-	opts := &mopts.FindOneAndUpdateOptions{
-		ReturnDocument: &after,
-		Upsert:         &upsert,
+	projection := bson.M{
+		"tenant_id": 1,
+		"inventory": bson.M{
+			"$slice": model.MaxMappingInventoryAttributes,
+		},
 	}
-	res := db.client.
+	opts := mopts.FindOneAndUpdate().
+		SetReturnDocument(mopts.After).
+		SetUpsert(true).
+		SetProjection(projection)
+	mapping := &model.Mapping{}
+	err := db.client.
 		Database(db.config.DbName).
 		Collection(collNameMapping).
-		FindOneAndUpdate(ctx, query, update, opts)
+		FindOneAndUpdate(ctx, query, update, opts).
+		Decode(mapping)
 
-	mapping := &model.Mapping{}
-	err := res.Decode(mapping)
+	if mongo.IsDuplicateKeyError(err) {
+		// Tenant attribute quota already full
+		err = db.client.
+			Database(db.config.DbName).
+			Collection(collNameMapping).
+			FindOne(ctx, bson.D{{Key: "tenant_id", Value: tenantID}},
+				mopts.FindOne().SetProjection(projection),
+			).
+			Decode(mapping)
+	}
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to update and get the mapping")
 	}
