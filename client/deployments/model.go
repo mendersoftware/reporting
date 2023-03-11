@@ -67,17 +67,17 @@ type Device struct {
 }
 
 type Image struct {
-	Id                    string              `json:"id"`
-	Description           string              `json:"description"`
-	Name                  string              `json:"name"`
-	DeviceTypesCompatible []string            `json:"device_types_compatible"`
-	Info                  *ArtifactInfo       `json:"info"`
-	Signed                bool                `json:"signed"`
-	Provides              map[string]string   `json:"artifact_provides,omitempty"`
-	Depends               map[string][]string `json:"artifact_depends,omitempty"`
-	ClearsProvides        []string            `json:"clears_artifact_provides,omitempty"`
-	Size                  int64               `json:"size"`
-	Modified              *time.Time          `json:"modified" valid:"-"`
+	Id                    string                 `json:"id"`
+	Description           string                 `json:"description"`
+	Name                  string                 `json:"name"`
+	DeviceTypesCompatible []string               `json:"device_types_compatible"`
+	Info                  *ArtifactInfo          `json:"info"`
+	Signed                bool                   `json:"signed"`
+	Provides              map[string]string      `json:"artifact_provides,omitempty"`
+	Depends               map[string]interface{} `json:"artifact_depends,omitempty"`
+	ClearsProvides        []string               `json:"clears_artifact_provides,omitempty"`
+	Size                  int64                  `json:"size"`
+	Modified              *time.Time             `json:"modified" valid:"-"`
 }
 
 type ArtifactInfo struct {
