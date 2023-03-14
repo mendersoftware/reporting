@@ -1,4 +1,4 @@
-// Copyright 2022 Northern.tech AS
+// Copyright 2023 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -207,13 +207,13 @@ func TestUpdateAndGetMapping(t *testing.T) {
 	assert.NotNil(t, mapping)
 
 	assert.Equal(t, tenantID, mapping.TenantID)
-	assert.Len(t, mapping.Inventory, 3+model.MaxMappingInventoryAttributes)
+	assert.Len(t, mapping.Inventory, model.MaxMappingInventoryAttributes)
 
-	// adding d1 to the mapping will fail
+	// d1 will not be added to the map
 	const d1 = "d1"
-	mapping, err = ds.UpdateAndGetMapping(ctx, tenantID, []string{d1})
-	assert.Error(t, err)
-	assert.Nil(t, mapping)
+	mappingAfter, err := ds.UpdateAndGetMapping(ctx, tenantID, []string{d1})
+	assert.NoError(t, err)
+	assert.Equal(t, mapping, mappingAfter)
 
 	// get the mapping
 	mapping, err = ds.GetMapping(ctx, tenantID)
