@@ -1,4 +1,4 @@
-// Copyright 2022 Northern.tech AS
+// Copyright 2023 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -125,37 +125,32 @@ func cmdServer(args *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	if args.Bool("automigrate") {
-		ctx := context.Background()
-		err := store.Migrate(ctx)
-		if err != nil {
-			return err
-		}
-	}
 	ctx := context.Background()
 	ds, err := getDatastore(args)
 	if err != nil {
 		return err
 	}
 	defer ds.Close(ctx)
-	err = ds.Migrate(ctx, mongo.DbVersion, args.Bool("automigrate"))
-	if err != nil {
-		return err
+	if args.Bool("automigrate") {
+		nats, err := getNatsClient()
+		if err != nil {
+			return err
+		}
+		ctx := context.Background()
+		err = migrate(ctx, store, ds, nats)
+		nats.Close()
+		if err != nil {
+			return err
+		}
 	}
 	return server.InitAndRun(config.Config, store, ds)
 }
 
 func getNatsClient() (nats.Client, error) {
 	natsURI := config.Config.GetString(dconfig.SettingNatsURI)
-	nats, err := nats.NewClientWithDefaults(natsURI)
+	nats, err := nats.NewClient(natsURI)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to connect to nats")
-	}
-
-	streamName := config.Config.GetString(dconfig.SettingNatsStreamName)
-	nats = nats.WithStreamName(streamName)
-	if err != nil {
-		return nil, err
 	}
 	return nats, nil
 }
@@ -164,13 +159,6 @@ func cmdIndexer(args *cli.Context) error {
 	store, err := getStore(args)
 	if err != nil {
 		return err
-	}
-	if args.Bool("automigrate") {
-		ctx := context.Background()
-		err := store.Migrate(ctx)
-		if err != nil {
-			return err
-		}
 	}
 	nats, err := getNatsClient()
 	if err != nil {
@@ -183,20 +171,19 @@ func cmdIndexer(args *cli.Context) error {
 		return err
 	}
 	defer ds.Close(ctx)
-	err = ds.Migrate(ctx, mongo.DbVersion, args.Bool("automigrate"))
-	if err != nil {
-		return err
+	if args.Bool("automigrate") {
+		err = migrate(ctx, store, ds, nats)
+		if err != nil {
+			return err
+		}
+
 	}
 	return indexer.InitAndRun(config.Config, store, ds, nats)
 }
 
 func cmdMigrate(args *cli.Context) error {
-	store, err := getStore(args)
-	if err != nil {
-		return err
-	}
 	ctx := context.Background()
-	err = store.Migrate(ctx)
+	store, err := getStore(args)
 	if err != nil {
 		return err
 	}
@@ -204,8 +191,27 @@ func cmdMigrate(args *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	defer ds.Close(ctx)
-	return ds.Migrate(ctx, mongo.DbVersion, true)
+	nats, err := getNatsClient()
+	if err != nil {
+		return err
+	}
+	return migrate(ctx, store, ds, nats)
+}
+
+func migrate(ctx context.Context, store store.Store, ds store.DataStore, nats nats.Client) error {
+	err := store.Migrate(ctx)
+	if err != nil {
+		return err
+	}
+	err = ds.Migrate(ctx, mongo.DbVersion, true)
+	if err != nil {
+		return err
+	}
+	dur := config.Config.GetString(dconfig.SettingNatsSubscriberDurable)
+	stream := config.Config.GetString(dconfig.SettingNatsStreamName)
+	topic := config.Config.GetString(dconfig.SettingNatsSubscriberTopic)
+	sub := stream + "." + topic
+	return nats.Migrate(ctx, sub, dur, true)
 }
 
 func getStore(args *cli.Context) (store.Store, error) {
