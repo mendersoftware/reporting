@@ -157,7 +157,7 @@ func workerRoutine(
 	l.Infof("Worker %s waiting for jobs", workerName)
 	ctx = log.WithContext(ctx, l)
 	for jobs := range jobQ {
-		l.Infof("processing %d jobs", len(jobs))
+		l.Infof("Worker %s processing %d jobs", workerName, len(jobs))
 		indexer.ProcessJobs(ctx, jobs)
 		jobPool <- jobs
 	}
