@@ -1,4 +1,4 @@
-// Copyright 2022 Northern.tech AS
+// Copyright 2023 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -137,6 +137,11 @@ const (
 	SettingReindexBatchSize        = "reindex_batch_size"
 	SettingReindexBatchSizeDefault = 100
 
+	// SettingWorkerConcurrency defines the number of concurrent worker
+	// threads that exist at the same time (defaults to 10)
+	SettingWorkerConcurrency        = "worker_concurrency"
+	SettingWorkerConcurrencyDefault = 10
+
 	// SettingReindexTimeMsec is the max time after which reindexing is triggered
 	// (even if buffered requests didn't reach reindex_batch_size yet)
 	SettingReindexMaxTimeMsec        = "reindex_max_time_msec"
@@ -177,5 +182,6 @@ var (
 		{Key: SettingNatsSubscriberDurable, Value: SettingNatsSubscriberDurableDefault},
 		{Key: SettingReindexMaxTimeMsec, Value: SettingReindexMaxTimeMsecDefault},
 		{Key: SettingReindexBatchSize, Value: SettingReindexBatchSizeDefault},
+		{Key: SettingWorkerConcurrency, Value: SettingWorkerConcurrencyDefault},
 	}
 )

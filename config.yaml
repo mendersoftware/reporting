@@ -111,6 +111,11 @@ nats_uri: "nats://mender-nats:4222"
 
 # reindex_batch_size: 100
 
+# Worker concurrency sets the number of parallell worker routines
+# Defauls to: 10
+# Overwrite with environment variable: REPORTING_WORKER_CONCURRENCY
+# worker_concurrency: 10
+
 # Reindex max time, after which reindexing is triggered.
 # Defauls to: 1000
 # Overwrite with environment variable: REPORTING_REINDEX_MAX_TIME_MSEC
