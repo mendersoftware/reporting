@@ -1,4 +1,4 @@
-// Copyright 2022 Northern.tech AS
+// Copyright 2023 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -16,13 +16,17 @@ package indexer
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"os"
 	"os/signal"
+	"strconv"
 	"time"
 
 	"golang.org/x/sys/unix"
 
 	"github.com/mendersoftware/go-lib-micro/config"
+	"github.com/mendersoftware/go-lib-micro/log"
 
 	"github.com/mendersoftware/reporting/client/deployments"
 	"github.com/mendersoftware/reporting/client/deviceauth"
@@ -33,7 +37,9 @@ import (
 	"github.com/mendersoftware/reporting/store"
 )
 
-const jobsChanSize = 1000
+const (
+	jobsChanSize = 1000
+)
 
 // InitAndRun initializes the indexer and runs it
 func InitAndRun(conf config.Reader, store store.Store, ds store.DataStore, nats nats.Client) error {
@@ -53,7 +59,7 @@ func InitAndRun(conf config.Reader, store store.Store, ds store.DataStore, nats 
 	)
 
 	indexer := NewIndexer(store, ds, nats, devClient, invClient, deplClient)
-	jobs := make(chan *model.Job, jobsChanSize)
+	jobs := make(chan model.Job, jobsChanSize)
 
 	err := indexer.GetJobs(ctx, jobs)
 	if err != nil {
@@ -64,33 +70,74 @@ func InitAndRun(conf config.Reader, store store.Store, ds store.DataStore, nats 
 	signal.Notify(quit, unix.SIGINT, unix.SIGTERM)
 
 	batchSize := conf.GetInt(rconfig.SettingReindexBatchSize)
-	jobsList := make([]*model.Job, batchSize)
+	if batchSize <= 0 {
+		return fmt.Errorf(
+			"%s: must be a positive integer",
+			rconfig.SettingReindexBatchSize,
+		)
+	}
+	workerConcurrency := conf.GetInt(rconfig.SettingWorkerConcurrency)
+	if workerConcurrency <= 0 {
+		return fmt.Errorf(
+			"%s: must be a positive integer",
+			rconfig.SettingWorkerConcurrency,
+		)
+	}
 	jobsListSize := 0
+
+	dispatch := make(chan []model.Job)
+	jobPool := make(chan []model.Job, workerConcurrency)
+	for i := 0; i < workerConcurrency; i++ {
+		jobPool <- make([]model.Job, batchSize)
+		go workerRoutine(ctx, strconv.Itoa(i+1), indexer, dispatch, jobPool)
+	}
 
 	maxTimeMs := conf.GetInt(rconfig.SettingReindexMaxTimeMsec)
 	tickerTimeout := time.Duration(maxTimeMs) * time.Millisecond
 	ticker := time.NewTimer(tickerTimeout)
-
+	jobsList := <-jobPool
 	for {
 		select {
 		case <-ticker.C:
+			ticker.Reset(tickerTimeout)
 			if jobsListSize > 0 {
-				indexer.ProcessJobs(ctx, jobsList[0:jobsListSize])
+				dispatch <- jobsList[:jobsListSize]
+				jobsList = (<-jobPool)[:batchSize]
 				jobsListSize = 0
 			}
-			ticker.Reset(tickerTimeout)
 
-		case job := <-jobs:
+		case job, open := <-jobs:
+			if !open {
+				return errors.New("Jetstream closed")
+			}
 			jobsList[jobsListSize] = job
 			jobsListSize++
 			if jobsListSize == batchSize {
-				indexer.ProcessJobs(ctx, jobsList[0:jobsListSize])
 				ticker.Reset(tickerTimeout)
+				dispatch <- jobsList[:jobsListSize]
+				jobsList = (<-jobPool)[:]
 				jobsListSize = 0
 			}
 
 		case <-quit:
 			return nil
 		}
+	}
+}
+
+func workerRoutine(
+	ctx context.Context,
+	workerName string,
+	indexer Indexer,
+	jobQ <-chan []model.Job,
+	jobPool chan<- []model.Job) {
+	l := log.FromContext(ctx)
+	l.Data["worker"] = workerName
+	l.Infof("Worker %s waiting for jobs", workerName)
+	ctx = log.WithContext(ctx, l)
+	for jobs := range jobQ {
+		l.Infof("processing %d jobs", len(jobs))
+		indexer.ProcessJobs(ctx, jobs)
+		jobPool <- jobs
 	}
 }

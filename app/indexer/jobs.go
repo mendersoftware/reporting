@@ -16,9 +16,7 @@ package indexer
 
 import (
 	"context"
-	"encoding/json"
 
-	natsio "github.com/nats-io/nats.go"
 	"github.com/pkg/errors"
 
 	"github.com/mendersoftware/go-lib-micro/config"
@@ -35,61 +33,22 @@ type IDs map[string]bool
 type ActionIDs map[string]IDs
 type TenantActionIDs map[string]ActionIDs
 
-func (i *indexer) GetJobs(ctx context.Context, jobs chan *model.Job) error {
-	l := log.FromContext(ctx)
-
+func (i *indexer) GetJobs(ctx context.Context, jobs chan model.Job) error {
 	streamName := config.Config.GetString(rconfig.SettingNatsStreamName)
-	err := i.nats.JetStreamCreateStream(streamName)
-	if err != nil {
-		return errors.Wrap(err, "failed to create the nats JetStream stream")
-	}
 
 	topic := config.Config.GetString(rconfig.SettingNatsSubscriberTopic)
 	subject := streamName + "." + topic
 	durableName := config.Config.GetString(rconfig.SettingNatsSubscriberDurable)
 
-	channel := make(chan *natsio.Msg, 1)
-	unsubscribe, err := i.nats.JetStreamSubscribe(ctx, subject, durableName, channel)
+	err := i.nats.JetStreamSubscribe(ctx, subject, durableName, jobs)
 	if err != nil {
 		return errors.Wrap(err, "failed to subscribe to the nats JetStream")
 	}
 
-	go func() {
-		l.Info("Reindexer ready to receive messages")
-		defer func() {
-			_ = unsubscribe()
-		}()
-
-		for {
-			select {
-			case msg := <-channel:
-				job := &model.Job{}
-				err := json.Unmarshal(msg.Data, job)
-				if err != nil {
-					err = errors.Wrap(err, "failed to unmarshall message")
-					l.Error(err)
-					if err := msg.Term(); err != nil {
-						err = errors.Wrap(err, "failed to term the message")
-						l.Error(err)
-					}
-					continue
-				}
-				if err = msg.Ack(); err != nil {
-					err = errors.Wrap(err, "failed to ack the message")
-					l.Error(err)
-				}
-				jobs <- job
-
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
-
 	return nil
 }
 
-func (i *indexer) ProcessJobs(ctx context.Context, jobs []*model.Job) {
+func (i *indexer) ProcessJobs(ctx context.Context, jobs []model.Job) {
 	l := log.FromContext(ctx)
 	l.Debugf("Processing %d jobs", len(jobs))
 	tenantsActionIDs := groupJobsIntoTenantActionIDs(jobs)

@@ -1,4 +1,4 @@
-// Copyright 2022 Northern.tech AS
+// Copyright 2023 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -16,13 +16,10 @@ package indexer
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"sort"
 	"testing"
 	"time"
-
-	natsio "github.com/nats-io/nats.go"
 
 	"github.com/mendersoftware/reporting/client/deployments"
 	deployments_mocks "github.com/mendersoftware/reporting/client/deployments/mocks"
@@ -30,7 +27,6 @@ import (
 	deviceauth_mocks "github.com/mendersoftware/reporting/client/deviceauth/mocks"
 	"github.com/mendersoftware/reporting/client/inventory"
 	inventory_mocks "github.com/mendersoftware/reporting/client/inventory/mocks"
-	"github.com/mendersoftware/reporting/client/nats"
 	nats_mocks "github.com/mendersoftware/reporting/client/nats/mocks"
 	"github.com/mendersoftware/reporting/model"
 	store_mocks "github.com/mendersoftware/reporting/store/mocks"
@@ -41,25 +37,17 @@ import (
 func TestGetJobsSubscriptionError(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	jobs := make(chan *model.Job, 1)
-
-	var unsubscribe nats.UnsubscribeFunc = func() error {
-		return nil
-	}
+	jobs := make(chan model.Job, 1)
 
 	subscriptionError := errors.New("subscription error")
 
 	nats := &nats_mocks.Client{}
-	nats.On("JetStreamCreateStream",
-		mock.AnythingOfType("string"),
-	).Return(nil)
-
 	nats.On("JetStreamSubscribe",
 		ctx,
 		mock.AnythingOfType("string"),
 		mock.AnythingOfType("string"),
-		mock.AnythingOfType("chan *nats.Msg"),
-	).Return(unsubscribe, subscriptionError)
+		mock.AnythingOfType("chan model.Job"),
+	).Return(subscriptionError)
 
 	defer nats.AssertExpectations(t)
 
@@ -73,31 +61,18 @@ func TestGetJobsSubscriptionError(t *testing.T) {
 func TestGetJobs(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	jobs := make(chan *model.Job, 1)
-
-	var unsubscribe nats.UnsubscribeFunc = func() error {
-		return nil
-	}
+	jobs := make(chan model.Job, 1)
 
 	nats := &nats_mocks.Client{}
-	nats.On("JetStreamCreateStream",
-		mock.AnythingOfType("string"),
-	).Return(nil)
-
 	nats.On("JetStreamSubscribe",
 		ctx,
 		mock.AnythingOfType("string"),
 		mock.AnythingOfType("string"),
-		mock.MatchedBy(func(msgs chan *natsio.Msg) bool {
-			job := &model.Job{Action: model.ActionReindex}
-			jobData, _ := json.Marshal(job)
-			msgs <- &natsio.Msg{
-				Data: jobData,
-			}
-
+		mock.MatchedBy(func(msgs chan model.Job) bool {
+			msgs <- model.Job{Action: model.ActionReindex}
 			return true
 		}),
-	).Return(unsubscribe, nil)
+	).Return(nil)
 
 	defer nats.AssertExpectations(t)
 
@@ -115,46 +90,26 @@ func TestGetJobs(t *testing.T) {
 
 func TestGetJobsError(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	jobs := make(chan *model.Job, 1)
-
-	var unsubscribe nats.UnsubscribeFunc = func() error {
-		return nil
-	}
+	jobs := make(chan model.Job, 1)
+	testErr := errors.New("test error")
 
 	nats := &nats_mocks.Client{}
-	nats.On("JetStreamCreateStream",
-		mock.AnythingOfType("string"),
-	).Return(nil)
-
 	nats.On("JetStreamSubscribe",
 		ctx,
 		mock.AnythingOfType("string"),
 		mock.AnythingOfType("string"),
-		mock.MatchedBy(func(msgs chan *natsio.Msg) bool {
-			msgs <- &natsio.Msg{
-				Data: []byte(""),
-			}
-
+		mock.MatchedBy(func(msgs chan model.Job) bool {
 			return true
 		}),
-	).Return(unsubscribe, nil)
+	).Return(testErr)
 
 	defer nats.AssertExpectations(t)
 
 	indexer := NewIndexer(nil, nil, nats, nil, nil, nil)
 	err := indexer.GetJobs(ctx, jobs)
-	assert.Nil(t, err)
-
-	time.Sleep(500 * time.Millisecond)
-
-	select {
-	case <-jobs:
-		assert.Fail(t, "unexpected message")
-	default:
-	}
-
-	cancel()
+	assert.ErrorIs(t, err, testErr)
 }
 
 func strptr(s string) *string {
@@ -165,7 +120,7 @@ func TestProcessJobs(t *testing.T) {
 	const tenantID = "tenant"
 
 	testCases := map[string]struct {
-		jobs []*model.Job
+		jobs []model.Job
 
 		deviceauthDeviceIDs []string
 		deviceauthDevices   []deviceauth.DeviceAuthDevice
@@ -186,7 +141,7 @@ func TestProcessJobs(t *testing.T) {
 		bulkIndexErr           error
 	}{
 		"ok": {
-			jobs: []*model.Job{
+			jobs: []model.Job{
 				{
 					Action:   model.ActionReindex,
 					TenantID: tenantID,
@@ -294,7 +249,7 @@ func TestProcessJobs(t *testing.T) {
 			},
 		},
 		"ok with latest deployment": {
-			jobs: []*model.Job{
+			jobs: []model.Job{
 				{
 					Action:   model.ActionReindex,
 					TenantID: tenantID,
@@ -409,7 +364,7 @@ func TestProcessJobs(t *testing.T) {
 			},
 		},
 		"ko, failure in deviceauth": {
-			jobs: []*model.Job{
+			jobs: []model.Job{
 				{
 					Action:   model.ActionReindex,
 					TenantID: tenantID,
@@ -434,7 +389,7 @@ func TestProcessJobs(t *testing.T) {
 			deviceauthErr:       errors.New("abc"),
 		},
 		"ko, failure in inventory": {
-			jobs: []*model.Job{
+			jobs: []model.Job{
 				{
 					Action:   model.ActionReindex,
 					TenantID: tenantID,
@@ -477,7 +432,7 @@ func TestProcessJobs(t *testing.T) {
 			inventoryErr:       errors.New("abc"),
 		},
 		"ko, failure in BulkIndex": {
-			jobs: []*model.Job{
+			jobs: []model.Job{
 				{
 					Action:   model.ActionReindex,
 					TenantID: tenantID,
@@ -652,7 +607,7 @@ func TestProcessJobsDeployments(t *testing.T) {
 	five_seconds_ago := now.Add(-5 * time.Second)
 
 	testCases := map[string]struct {
-		jobs []*model.Job
+		jobs []model.Job
 
 		getDeploymentsIDs []string
 		getDeployments    []*deployments.DeviceDeployment
@@ -662,7 +617,7 @@ func TestProcessJobsDeployments(t *testing.T) {
 		bulkIndexErr         error
 	}{
 		"ok": {
-			jobs: []*model.Job{
+			jobs: []model.Job{
 				{
 					Action:   model.ActionReindexDeployment,
 					TenantID: tenantID,
