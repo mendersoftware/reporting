@@ -68,6 +68,13 @@ func InitAndRun(conf config.Reader, store store.Store, ds store.DataStore, nats 
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, unix.SIGINT, unix.SIGTERM)
+	go func() {
+		select {
+		case <-quit:
+			cancel()
+		case <-ctx.Done():
+		}
+	}()
 
 	batchSize := conf.GetInt(rconfig.SettingReindexBatchSize)
 	if batchSize <= 0 {
@@ -83,8 +90,6 @@ func InitAndRun(conf config.Reader, store store.Store, ds store.DataStore, nats 
 			rconfig.SettingWorkerConcurrency,
 		)
 	}
-	jobsListSize := 0
-
 	dispatch := make(chan []model.Job)
 	jobPool := make(chan []model.Job, workerConcurrency)
 	for i := 0; i < workerConcurrency; i++ {
@@ -96,33 +101,49 @@ func InitAndRun(conf config.Reader, store store.Store, ds store.DataStore, nats 
 	tickerTimeout := time.Duration(maxTimeMs) * time.Millisecond
 	ticker := time.NewTimer(tickerTimeout)
 	jobsList := <-jobPool
-	for {
+	done := ctx.Done()
+	for err == nil {
 		select {
 		case <-ticker.C:
 			ticker.Reset(tickerTimeout)
-			if jobsListSize > 0 {
-				dispatch <- jobsList[:jobsListSize]
-				jobsList = (<-jobPool)[:batchSize]
-				jobsListSize = 0
+			if len(jobsList) > 0 {
+				jobsList, err = dispatchJobs(ctx, jobsList, dispatch, jobPool)
 			}
 
 		case job, open := <-jobs:
 			if !open {
 				return errors.New("Jetstream closed")
 			}
-			jobsList[jobsListSize] = job
-			jobsListSize++
-			if jobsListSize == batchSize {
+			jobsList = append(jobsList, job)
+			if len(jobsList) >= cap(jobsList) {
 				ticker.Reset(tickerTimeout)
-				dispatch <- jobsList[:jobsListSize]
-				jobsList = (<-jobPool)[:]
-				jobsListSize = 0
+				jobsList, err = dispatchJobs(ctx, jobsList, dispatch, jobPool)
 			}
 
-		case <-quit:
-			return nil
+		case <-done:
+			err = ctx.Err()
 		}
 	}
+	return err
+}
+
+func dispatchJobs(ctx context.Context,
+	jobs []model.Job,
+	dispatch chan<- []model.Job,
+	jobPool <-chan []model.Job,
+) (next []model.Job, err error) {
+	done := ctx.Done()
+	select {
+	case <-done:
+		return nil, ctx.Err()
+	case dispatch <- jobs:
+	}
+	select {
+	case <-done:
+		return nil, ctx.Err()
+	case next = <-jobPool:
+	}
+	return next[:0], nil
 }
 
 func workerRoutine(
