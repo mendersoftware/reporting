@@ -93,7 +93,7 @@ func InitAndRun(conf config.Reader, store store.Store, ds store.DataStore, nats 
 	dispatch := make(chan []model.Job)
 	jobPool := make(chan []model.Job, workerConcurrency)
 	for i := 0; i < workerConcurrency; i++ {
-		jobPool <- make([]model.Job, batchSize)
+		jobPool <- make([]model.Job, 0, batchSize)
 		go workerRoutine(ctx, strconv.Itoa(i+1), indexer, dispatch, jobPool)
 	}
 
