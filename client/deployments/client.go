@@ -17,6 +17,7 @@ package deployments
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -33,7 +34,6 @@ const (
 	urlDeviceDeployments   = "/api/internal/v1/deployments/tenants/:tid/deployments/devices"
 	urlDeviceDeploymentsID = urlDeviceDeployments + "/:id"
 	defaultTimeout         = 10 * time.Second
-	maxPerPage             = 100
 )
 
 //go:generate ../../x/mockgen.sh
@@ -69,6 +69,7 @@ func (c *client) GetDeployments(
 	tenantID string,
 	IDs []string,
 ) ([]*DeviceDeployment, error) {
+	const maxDeploymentIDs = 20 // API constraint
 	l := log.FromContext(ctx)
 
 	url := utils.JoinURL(c.urlBase, urlDeviceDeployments)
@@ -82,42 +83,67 @@ func (c *client) GetDeployments(
 		return nil, errors.Wrapf(err, "failed to create request")
 	}
 
-	nIDs := len(IDs)
-	if nIDs > maxPerPage {
-		return nil, errors.New("too many IDs")
-	}
+	var (
+		i, j    int
+		body    io.ReadCloser
+		devDevs []*DeviceDeployment
+		rsp     *http.Response
+	)
+	defer func() {
+		if body != nil {
+			body.Close()
+		}
+	}()
 
-	q := req.URL.Query()
-	q.Add("page", "1")
-	q.Add("per_page", strconv.Itoa(nIDs))
-	for _, id := range IDs {
-		q.Add("id", id)
-	}
-	req.URL.RawQuery = q.Encode()
+	for i < len(IDs) && err == nil {
+		j += maxDeploymentIDs
+		if j > len(IDs) {
+			j = len(IDs)
+		}
+		q := req.URL.Query()
+		q.Set("page", "1")
+		q.Set("per_page", strconv.Itoa(j-i))
+		q.Del("id")
+		for k := i; k < j; k++ {
+			q.Add("id", IDs[k])
+		}
+		req.URL.RawQuery = q.Encode()
+		rsp, err = c.client.Do(req) //nolint:bodyclose
+		if err != nil {
+			err = errors.Wrapf(err, "failed to submit %s %s", req.Method, req.URL)
+			break
+		}
+		body = rsp.Body
 
-	rsp, err := c.client.Do(req)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to submit %s %s", req.Method, req.URL)
+		switch rsp.StatusCode {
+		case http.StatusNotFound:
+			// pass
+		case http.StatusOK:
+			dec := json.NewDecoder(rsp.Body)
+			var batch []*DeviceDeployment
+			if err = dec.Decode(&batch); err != nil {
+				err = errors.Wrap(err, "failed to parse request body")
+				break
+			}
+			if devDevs == nil {
+				devDevs = batch
+			} else {
+				devDevs = append(devDevs, batch...)
+			}
+		default:
+			err = errors.Errorf("%s %s request failed with status %v",
+				req.Method, req.URL, rsp.Status)
+			l.Errorf(err.Error())
+		}
+		body.Close()
+		body = nil
+		i = j
 	}
-	defer rsp.Body.Close()
-
-	if rsp.StatusCode == http.StatusNotFound {
-		return nil, nil
-	} else if rsp.StatusCode != http.StatusOK {
-		err := errors.Errorf("%s %s request failed with status %v",
-			req.Method, req.URL, rsp.Status)
-		l.Errorf(err.Error())
+	if len(devDevs) == 0 {
 		return nil, err
 	}
 
-	dec := json.NewDecoder(rsp.Body)
-	var devDevs []*DeviceDeployment
-	if err = dec.Decode(&devDevs); err != nil {
-		return nil, errors.Wrap(err, "failed to parse request body")
-	} else if len(devDevs) == 0 {
-		return nil, nil
-	}
-	return devDevs, nil
+	return devDevs, err
 }
 
 func (c *client) GetLatestFinishedDeployment(
