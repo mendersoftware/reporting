@@ -259,7 +259,7 @@ func (i *indexer) processJobDeployment(
 		DeploymentFilterID:          deployment.Deployment.FilterId,
 		DeploymentAllDevices:        deployment.Deployment.AllDevices,
 		DeploymentForceInstallation: deployment.Deployment.ForceInstallation,
-		DeploymentGroup:             deployment.Deployment.Group,
+		DeploymentGroups:            deployment.Deployment.Groups,
 		DeploymentPhased:            deployment.Deployment.PhaseId != "",
 		DeploymentPhaseId:           deployment.Deployment.PhaseId,
 		DeploymentRetries:           deployment.Deployment.Retries,
