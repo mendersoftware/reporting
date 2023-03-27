@@ -1,4 +1,4 @@
-// Copyright 2022 Northern.tech AS
+// Copyright 2023 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -68,6 +68,46 @@ func TestManagementAggregateDeployments(t *testing.T) {
 				Tenant:  "123456789012345678901234",
 			},
 		),
+		Params: &model.AggregateDeploymentsParams{
+			Aggregations: []model.DeploymentsAggregationTerm{
+				{
+					Name:      "mac",
+					Attribute: "mac",
+					Limit:     10,
+				},
+			},
+			Filters: []model.DeploymentsFilterPredicate{{
+				Attribute: "ip4",
+				Type:      "$exists",
+				Value:     true,
+			}},
+			TenantID: "123456789012345678901234",
+		},
+
+		Code:     http.StatusOK,
+		Response: []model.DeviceAggregation{},
+	}, {
+		Name: "ok, with scope",
+
+		App: func(t *testing.T, self testCase) *mapp.App {
+			app := new(mapp.App)
+
+			app.On("AggregateDeployments",
+				contextMatcher,
+				mock.MatchedBy(func(*model.AggregateDeploymentsParams) bool {
+					return true
+				})).
+				Return(self.Response, nil)
+			return app
+		},
+		CTX: rbac.WithContext(identity.WithContext(context.Background(),
+			&identity.Identity{
+				Subject: "851f90b3-cee5-425e-8f6e-b36de1993e7e",
+				Tenant:  "123456789012345678901234",
+			},
+		), &rbac.Scope{
+			DeviceGroups: []string{"group1", "group2"},
+		}),
 		Params: &model.AggregateDeploymentsParams{
 			Aggregations: []model.DeploymentsAggregationTerm{
 				{
@@ -343,7 +383,8 @@ func TestManagementSearchDeployments(t *testing.T) {
 			DeviceGroups: []string{"group1", "group2"},
 		}),
 		Params: &model.DeploymentsSearchParams{
-			TenantID: "123456789012345678901234",
+			DeploymentGroups: []string{"group1", "group2"},
+			TenantID:         "123456789012345678901234",
 		},
 
 		Code:     http.StatusOK,
