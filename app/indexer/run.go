@@ -38,13 +38,15 @@ import (
 )
 
 const (
-	jobsChanSize = 1000
+	jobsChanSize    = 1000
+	shutdownTimeout = time.Second * 30
 )
 
 // InitAndRun initializes the indexer and runs it
 func InitAndRun(conf config.Reader, store store.Store, ds store.DataStore, nats nats.Client) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+	l := log.FromContext(ctx)
 
 	invClient := inventory.NewClient(
 		conf.GetString(rconfig.SettingInventoryAddr),
@@ -66,15 +68,8 @@ func InitAndRun(conf config.Reader, store store.Store, ds store.DataStore, nats 
 		return err
 	}
 
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, unix.SIGINT, unix.SIGTERM)
-	go func() {
-		select {
-		case <-quit:
-			cancel()
-		case <-ctx.Done():
-		}
-	}()
+	intChan := make(chan os.Signal, 1)
+	signal.Notify(intChan, unix.SIGINT, unix.SIGTERM)
 
 	batchSize := conf.GetInt(rconfig.SettingReindexBatchSize)
 	if batchSize <= 0 {
@@ -104,6 +99,28 @@ func InitAndRun(conf config.Reader, store store.Store, ds store.DataStore, nats 
 	done := ctx.Done()
 	for err == nil {
 		select {
+		case sig := <-intChan:
+			var workersDone int
+			l.Warnf("Received signal %s: waiting for workers to finish", sig)
+			if len(jobsList) > 0 {
+				_, err = dispatchJobs(ctx, jobsList, dispatch, jobPool)
+				if err != nil {
+					break
+				}
+				workersDone++
+			}
+			close(dispatch)
+			timeout := time.After(shutdownTimeout)
+			for workersDone < workerConcurrency {
+				select {
+				case <-timeout:
+					return errors.New("timeout waiting for workers to finish")
+				case <-jobPool:
+					workersDone++
+				}
+			}
+			l.Info("workers finished processing jobs: terminating")
+			return nil
 		case <-ticker.C:
 			ticker.Reset(tickerTimeout)
 			if len(jobsList) > 0 {
