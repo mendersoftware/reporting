@@ -60,7 +60,7 @@ const indexDeploymentsTemplate = `{
 				"deployment_force_installation": {
 					"type": "boolean"
 				},
-				"deployment_group": {
+				"deployment_groups": {
 					"type": "keyword"
 				},
 				"deployment_phased": {

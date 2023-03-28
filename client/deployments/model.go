@@ -33,7 +33,6 @@ type Deployment struct {
 	PhaseId            string                   `json:"phase_id,omitempty"`
 	AllDevices         bool                     `json:"all_devices,omitempty"`
 	ForceInstallation  bool                     `json:"force_installation,omitempty"`
-	Group              string                   `json:"group"`
 	Created            *time.Time               `json:"created"`
 	Finished           *time.Time               `json:"finished,omitempty"`
 	Artifacts          []string                 `json:"artifacts,omitempty"`

@@ -29,7 +29,7 @@ type Deployment struct {
 	DeploymentFilterID          string                 `json:"deployment_filter_id,omitempty"`
 	DeploymentAllDevices        bool                   `json:"deployment_all_devices"`
 	DeploymentForceInstallation bool                   `json:"deployment_force_installation"`
-	DeploymentGroup             string                 `json:"deployment_group,omitempty"`
+	DeploymentGroups            []string               `json:"deployment_groups,omitempty"`
 	DeploymentPhased            bool                   `json:"deployment_phased"`
 	DeploymentPhaseId           string                 `json:"deployment_phase_id,omitempty"`
 	DeploymentRetries           uint                   `json:"deployment_retries"`
