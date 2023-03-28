@@ -1,4 +1,4 @@
-// Copyright 2022 Northern.tech AS
+// Copyright 2023 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/mendersoftware/go-lib-micro/identity"
+	"github.com/mendersoftware/go-lib-micro/rbac"
 	"github.com/mendersoftware/go-lib-micro/rest.utils"
 	"github.com/pkg/errors"
 
@@ -64,6 +65,10 @@ func parseAggregateDeploymentsParams(ctx context.Context, c *gin.Context) (
 		aggregateParams.TenantID = id.Tenant
 	} else {
 		return nil, errors.New("missing tenant ID from the context")
+	}
+
+	if scope := rbac.ExtractScopeFromHeader(c.Request); scope != nil {
+		aggregateParams.DeploymentGroups = scope.DeviceGroups
 	}
 
 	if err := aggregateParams.Validate(); err != nil {
@@ -119,6 +124,10 @@ func parseDeploymentsSearchParams(ctx context.Context, c *gin.Context) (
 	}
 	if searchParams.Page <= 0 {
 		searchParams.Page = ParamPageDefault
+	}
+
+	if scope := rbac.ExtractScopeFromHeader(c.Request); scope != nil {
+		searchParams.DeploymentGroups = scope.DeviceGroups
 	}
 
 	if err := searchParams.Validate(); err != nil {

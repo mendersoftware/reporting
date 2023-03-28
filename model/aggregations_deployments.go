@@ -20,9 +20,10 @@ import (
 )
 
 type AggregateDeploymentsParams struct {
-	Aggregations []DeploymentsAggregationTerm `json:"aggregations"`
-	Filters      []DeploymentsFilterPredicate `json:"filters"`
-	TenantID     string                       `json:"-"`
+	Aggregations     []DeploymentsAggregationTerm `json:"aggregations"`
+	Filters          []DeploymentsFilterPredicate `json:"filters"`
+	DeploymentGroups []string                     `json:"-"`
+	TenantID         string                       `json:"-"`
 }
 
 type DeploymentsAggregationTerm struct {
