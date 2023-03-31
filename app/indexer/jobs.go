@@ -178,19 +178,24 @@ func (i *indexer) processJobDevice(
 			l.Warn(err)
 		}
 	}
-	// latest deployment
-	deviceDeployment, err := i.deplClient.GetLatestFinishedDeployment(ctx, tenant,
-		string(inventoryDevice.ID))
-	if err != nil {
-		l.Error(errors.Wrap(err, "failed to get device deployments from deployments"))
-		return nil
-	} else if deviceDeployment != nil {
-		_ = device.AppendAttr(&model.InventoryAttribute{
-			Scope:  model.ScopeSystem,
-			Name:   model.AttrNameLatestDeploymentStatus,
-			String: []string{deviceDeployment.Device.Status},
-		})
-	}
+	// FIXME:
+	// this part of the code will be reintroduced in a different form
+	// see https://northerntech.atlassian.net/browse/MEN-6422 for details
+	/*
+		// latest deployment
+		deviceDeployment, err := i.deplClient.GetLatestFinishedDeployment(ctx, tenant,
+			string(inventoryDevice.ID))
+		if err != nil {
+			l.Error(errors.Wrap(err, "failed to get device deployments from deployments"))
+			return nil
+		} else if deviceDeployment != nil {
+			_ = device.AppendAttr(&model.InventoryAttribute{
+				Scope:  model.ScopeSystem,
+				Name:   model.AttrNameLatestDeploymentStatus,
+				String: []string{deviceDeployment.Device.Status},
+			})
+		}
+	*/
 	// return the device
 	return device
 }
