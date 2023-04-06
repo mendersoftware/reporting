@@ -1,4 +1,4 @@
-# Copyright 2022 Northern.tech AS
+# Copyright 2023 Northern.tech AS
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -413,45 +413,46 @@ class TestInternalSearch:
                     ),
                 ],
             ),
-            _TestCase(
-                tenant_id="123456789012345678901234",
-                search_terms=internal_api.models.DeviceSearchTerms(
-                    filters=[
-                        internal_api.models.DeviceFilterTerm(
-                            attribute="latest_deployment_status",
-                            value="success",
-                            type="$eq",
-                            scope="system",
-                        )
-                    ],
-                    sort=[
-                        internal_api.models.DeviceSortTerm(
-                            attribute="string", scope="inventory", order="asc"
-                        )
-                    ],
-                ),
-                http_code=200,
-                result=[
-                    internal_api.models.Device(
-                        id="463e12dd-1adb-4f62-965e-b0a9ba2c93ff",
-                        attributes=[
-                            internal_api.models.DeviceAttribute(
-                                name="string",
-                                value="Lorem ipsum dolor sit amet",
-                                scope="inventory",
-                            ),
-                            internal_api.models.DeviceAttribute(
-                                name="number", value=2 ** 47, scope="inventory"
-                            ),
-                            internal_api.models.DeviceAttribute(
-                                name="latest_deployment_status",
-                                value="success",
-                                scope="system",
-                            ),
-                        ],
-                    ),
-                ],
-            ),
+            # FIXME: uncomment after implementing MEN-6422
+            # _TestCase(
+            #     tenant_id="123456789012345678901234",
+            #     search_terms=internal_api.models.DeviceSearchTerms(
+            #         filters=[
+            #             internal_api.models.DeviceFilterTerm(
+            #                 attribute="latest_deployment_status",
+            #                 value="success",
+            #                 type="$eq",
+            #                 scope="system",
+            #             )
+            #         ],
+            #         sort=[
+            #             internal_api.models.DeviceSortTerm(
+            #                 attribute="string", scope="inventory", order="asc"
+            #             )
+            #         ],
+            #     ),
+            #     http_code=200,
+            #     result=[
+            #         internal_api.models.Device(
+            #             id="463e12dd-1adb-4f62-965e-b0a9ba2c93ff",
+            #             attributes=[
+            #                 internal_api.models.DeviceAttribute(
+            #                     name="string",
+            #                     value="Lorem ipsum dolor sit amet",
+            #                     scope="inventory",
+            #                 ),
+            #                 internal_api.models.DeviceAttribute(
+            #                     name="number", value=2 ** 47, scope="inventory"
+            #                 ),
+            #                 internal_api.models.DeviceAttribute(
+            #                     name="latest_deployment_status",
+            #                     value="success",
+            #                     scope="system",
+            #                 ),
+            #             ],
+            #         ),
+            #     ],
+            # ),
         ],
         ids=[
             "ok, $eq",
@@ -461,7 +462,8 @@ class TestInternalSearch:
             "ok, $ne + sort",
             "ok, $exists",
             "ok, $regex + sort",
-            "ok, latest_deployment_status",
+            # FIXME: uncomment after implementing MEN-6422
+            # "ok, latest_deployment_status",
         ],
     )
     def test_internal_search(self, test_case, setup_test_context):

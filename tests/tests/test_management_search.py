@@ -1,4 +1,4 @@
-# Copyright 2022 Northern.tech AS
+# Copyright 2023 Northern.tech AS
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -452,45 +452,46 @@ class TestManagementSearch:
                     ),
                 ],
             ),
-            _TestCase(
-                authorization=utils.generate_jwt(tenant_id="123456789012345678901234"),
-                search_terms=management_api.models.DeviceSearchTerms(
-                    filters=[
-                        management_api.models.DeviceFilterTerm(
-                            attribute="latest_deployment_status",
-                            value="success",
-                            type="$eq",
-                            scope="system",
-                        )
-                    ],
-                    sort=[
-                        management_api.models.DeviceSortTerm(
-                            attribute="string", scope="inventory", order="asc"
-                        )
-                    ],
-                ),
-                http_code=200,
-                result=[
-                    management_api.models.Device(
-                        id="463e12dd-1adb-4f62-965e-b0a9ba2c93ff",
-                        attributes=[
-                            management_api.models.DeviceAttribute(
-                                name="string",
-                                value="Lorem ipsum dolor sit amet",
-                                scope="inventory",
-                            ),
-                            management_api.models.DeviceAttribute(
-                                name="number", value=2 ** 47, scope="inventory"
-                            ),
-                            management_api.models.DeviceAttribute(
-                                name="latest_deployment_status",
-                                value="success",
-                                scope="system",
-                            ),
-                        ],
-                    ),
-                ],
-            ),
+            # FIXME: uncomment after implementing MEN-6422
+            # _TestCase(
+            #    authorization=utils.generate_jwt(tenant_id="123456789012345678901234"),
+            #    search_terms=management_api.models.DeviceSearchTerms(
+            #        filters=[
+            #            management_api.models.DeviceFilterTerm(
+            #                attribute="latest_deployment_status",
+            #                value="success",
+            #                type="$eq",
+            #                scope="system",
+            #            )
+            #        ],
+            #        sort=[
+            #            management_api.models.DeviceSortTerm(
+            #                attribute="string", scope="inventory", order="asc"
+            #            )
+            #        ],
+            #    ),
+            #    http_code=200,
+            #    result=[
+            #        management_api.models.Device(
+            #            id="463e12dd-1adb-4f62-965e-b0a9ba2c93ff",
+            #            attributes=[
+            #                management_api.models.DeviceAttribute(
+            #                    name="string",
+            #                    value="Lorem ipsum dolor sit amet",
+            #                    scope="inventory",
+            #                ),
+            #                management_api.models.DeviceAttribute(
+            #                    name="number", value=2 ** 47, scope="inventory"
+            #                ),
+            #                management_api.models.DeviceAttribute(
+            #                    name="latest_deployment_status",
+            #                    value="success",
+            #                    scope="system",
+            #                ),
+            #            ],
+            #        ),
+            #    ],
+            # ),
             _TestCase(
                 authorization=utils.generate_jwt(tenant_id="anIllegalTenantID"),
                 search_terms=management_api.models.DeviceSearchTerms(
@@ -523,7 +524,8 @@ class TestManagementSearch:
             "ok, $ne + sort",
             "ok, $exists",
             "ok, $regex + sort",
-            "ok, latest_deployment_status",
+            # FIXME: uncomment after implementing MEN-6422
+            # "ok, latest_deployment_status",
             "error, missing index for tenant",
             "error, unauthorized access",
         ],
