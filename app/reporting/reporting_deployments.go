@@ -29,8 +29,9 @@ func (app *app) AggregateDeployments(
 	aggregateParams *model.AggregateDeploymentsParams,
 ) ([]model.DeviceAggregation, error) {
 	searchParams := &model.DeploymentsSearchParams{
-		Filters:  aggregateParams.Filters,
-		TenantID: aggregateParams.TenantID,
+		Filters:          aggregateParams.Filters,
+		DeploymentGroups: aggregateParams.DeploymentGroups,
+		TenantID:         aggregateParams.TenantID,
 	}
 	query, err := model.BuildDeploymentsQuery(*searchParams)
 	if err != nil {

@@ -55,7 +55,8 @@ func TestAggregateDeployments(t *testing.T) {
 					Attribute: "attr",
 				},
 			},
-			TenantID: tenantID,
+			DeploymentGroups: []string{"foo", "bar"},
+			TenantID:         tenantID,
 		},
 		SearchParams: &model.DeploymentsSearchParams{
 			Filters: []model.DeploymentsFilterPredicate{{
@@ -63,6 +64,7 @@ func TestAggregateDeployments(t *testing.T) {
 				Value:     "bar",
 				Type:      "$eq",
 			}},
+			DeploymentGroups: []string{"foo", "bar"},
 		},
 		Store: func(t *testing.T, self testCase) *mstore.Store {
 			store := new(mstore.Store)

@@ -29,6 +29,18 @@ func BuildDeploymentsQuery(params DeploymentsSearchParams) (Query, error) {
 		query = fpart.AddTo(query)
 	}
 
+	if len(params.DeploymentGroups) > 0 {
+		fpart, err := getFilterPart(FilterPredicate{
+			Attribute: FieldNameDeploymentGroups,
+			Type:      "$in",
+			Value:     params.DeploymentGroups,
+		})
+		if err != nil {
+			return nil, err
+		}
+		query = fpart.AddTo(query)
+	}
+
 	for _, s := range params.Sort {
 		sort := NewDeploymentsSort(s)
 		query = sort.AddTo(query)
