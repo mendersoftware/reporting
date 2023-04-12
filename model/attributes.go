@@ -49,6 +49,7 @@ const (
 	FieldNameDeviceID         = "device_id"
 	FieldNameDeploymentGroups = "deployment_groups"
 	FieldNameTenantID         = "tenant_id"
+	FieldNameLocation         = "location"
 )
 
 // type enum/suffixes

@@ -162,6 +162,11 @@ func (i *indexer) processJobDevice(
 	device := model.NewDevice(tenant, string(inventoryDevice.ID))
 	// data from inventory
 	device.SetUpdatedAt(inventoryDevice.UpdatedTs)
+	// extract location from attributes
+	ok, location := extractLocation(inventoryDevice.Attributes)
+	if ok {
+		device.Location = &location
+	}
 	attributes, err := i.mapper.MapInventoryAttributes(ctx, tenant,
 		inventoryDevice.Attributes, true, false)
 	if err != nil {
@@ -211,6 +216,39 @@ func (i *indexer) processJobDevice(
 
 	// return the device
 	return device
+}
+
+func extractLocation(
+	attrs inventory.DeviceAttributes,
+) (bool, string) {
+	latIdx := -1
+	lonIdx := -1
+	check := false
+
+	for i, attr := range attrs {
+		if attr.Name == "geo-lat" {
+			latIdx = i
+			check = true
+		} else if attr.Name == "geo-lon" {
+			lonIdx = i
+			check = true
+		}
+		if check && latIdx >= 0 && lonIdx >= 0 {
+			break
+		}
+	}
+	if latIdx >= 0 && lonIdx >= 0 {
+		latStr, ok := attrs[latIdx].Value.(string)
+		if !ok {
+			return false, ""
+		}
+		lonStr, ok := attrs[lonIdx].Value.(string)
+		if !ok {
+			return false, ""
+		}
+		return true, latStr + "," + lonStr
+	}
+	return false, ""
 }
 
 func (i *indexer) processJobDeployments(
