@@ -1,4 +1,4 @@
-// Copyright 2021 Northern.tech AS
+// Copyright 2023 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -42,14 +42,16 @@ const (
 var validSortOrders = []interface{}{SortOrderAsc, SortOrderDesc}
 
 type SearchParams struct {
-	Page       int               `json:"page"`
-	PerPage    int               `json:"per_page"`
-	Filters    []FilterPredicate `json:"filters"`
-	Sort       []SortCriteria    `json:"sort"`
-	Attributes []SelectAttribute `json:"attributes"`
-	DeviceIDs  []string          `json:"device_ids"`
-	Groups     []string          `json:"-"`
-	TenantID   string            `json:"-"`
+	Page                 int                   `json:"page"`
+	PerPage              int                   `json:"per_page"`
+	Filters              []FilterPredicate     `json:"filters"`
+	GeoDistanceFilter    *GeoDistanceFilter    `json:"geo_distance_filter"`
+	GeoBoundingBoxFilter *GeoBoundingBoxFilter `json:"geo_bounding_box_filter"`
+	Sort                 []SortCriteria        `json:"sort"`
+	Attributes           []SelectAttribute     `json:"attributes"`
+	DeviceIDs            []string              `json:"device_ids"`
+	Groups               []string              `json:"-"`
+	TenantID             string                `json:"-"`
 }
 
 type FilterPredicate struct {
@@ -57,6 +59,33 @@ type FilterPredicate struct {
 	Attribute string      `json:"attribute" bson:"attribute"`
 	Type      string      `json:"type" bson:"type"`
 	Value     interface{} `json:"value" bson:"value"`
+}
+
+type GeoDistanceFilter struct {
+	GeoDistance GeoDistance `json:"geo_distance" bson:"geo_distance"`
+}
+
+type GeoDistance struct {
+	Distance string   `json:"distance" bson:"distance"`
+	Location GeoPoint `json:"location" bson:"location"`
+}
+
+type GeoBoundingBoxFilter struct {
+	GeoBoundingBox GeoBoundingBox `json:"geo_bounding_box" bson:"geo_bounding_box"`
+}
+
+type GeoBoundingBox struct {
+	Location BoundingBox `json:"location" bson:"location"`
+}
+
+type BoundingBox struct {
+	TopLeft     GeoPoint `json:"top_left" bson:"top_left"`
+	BottomRight GeoPoint `json:"bottom_right" bson:"bottom_right"`
+}
+
+type GeoPoint struct {
+	Lat float32 `json:"lat" bson:"lat"`
+	Lon float32 `json:"lon" bson:"lon"`
 }
 
 type SortCriteria struct {

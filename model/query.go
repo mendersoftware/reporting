@@ -1,4 +1,4 @@
-// Copyright 2022 Northern.tech AS
+// Copyright 2023 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -67,6 +67,7 @@ type Query interface {
 	WithSort(sort interface{}) Query
 	WithPage(page, per_page int) Query
 	With(parts map[string]interface{}) Query
+	WithGeoFilters(df *GeoDistanceFilter, bf *GeoBoundingBoxFilter) Query
 
 	MarshalJSON() ([]byte, error)
 }
@@ -78,11 +79,13 @@ type QueryPart interface {
 }
 
 type query struct {
-	must    []interface{}
-	mustNot []interface{}
-	sort    []interface{}
-	from    int
-	size    int
+	must                 []interface{}
+	mustNot              []interface{}
+	sort                 []interface{}
+	geoDistanceFilter    *GeoDistanceFilter
+	geoBoundingBoxFilter *GeoBoundingBoxFilter
+	from                 int
+	size                 int
 
 	extra map[string]interface{}
 }
@@ -133,6 +136,13 @@ func (q *query) With(parts map[string]interface{}) Query {
 	return q
 }
 
+func (q *query) WithGeoFilters(df *GeoDistanceFilter, bf *GeoBoundingBoxFilter) Query {
+	q.geoDistanceFilter = df
+	q.geoBoundingBoxFilter = bf
+
+	return q
+}
+
 func (q *query) MarshalJSON() ([]byte, error) {
 	qbool := M{}
 
@@ -142,6 +152,12 @@ func (q *query) MarshalJSON() ([]byte, error) {
 
 	if q.mustNot != nil {
 		qbool["must_not"] = q.mustNot
+	}
+
+	if q.geoDistanceFilter != nil {
+		qbool["filter"] = q.geoDistanceFilter
+	} else if q.geoBoundingBoxFilter != nil {
+		qbool["filter"] = q.geoBoundingBoxFilter
 	}
 
 	qjson := M{
@@ -502,6 +518,22 @@ func (s *sel) AddTo(q Query) Query {
 
 }
 
+type geoFilters struct {
+	df *GeoDistanceFilter
+	bf *GeoBoundingBoxFilter
+}
+
+func NewGeoFilters(df *GeoDistanceFilter, bf *GeoBoundingBoxFilter) *geoFilters {
+	return &geoFilters{
+		df: df,
+		bf: bf,
+	}
+}
+
+func (f *geoFilters) AddTo(q Query) Query {
+	return q.WithGeoFilters(f.df, f.bf)
+}
+
 type devIDsFilter struct {
 	devIDs []string
 }
@@ -560,6 +592,11 @@ func BuildQuery(params SearchParams) (Query, error) {
 	if len(params.DeviceIDs) > 0 {
 		devs := NewDevIDsFilter(params.DeviceIDs)
 		query = devs.AddTo(query)
+	}
+
+	if params.GeoDistanceFilter != nil || params.GeoBoundingBoxFilter != nil {
+		f := NewGeoFilters(params.GeoDistanceFilter, params.GeoBoundingBoxFilter)
+		query = f.AddTo(query)
 	}
 
 	return query, nil

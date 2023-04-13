@@ -26,10 +26,12 @@ const (
 )
 
 type AggregateParams struct {
-	Aggregations []AggregationTerm `json:"aggregations"`
-	Filters      []FilterPredicate `json:"filters"`
-	Groups       []string          `json:"-"`
-	TenantID     string            `json:"-"`
+	Aggregations         []AggregationTerm     `json:"aggregations"`
+	Filters              []FilterPredicate     `json:"filters"`
+	GeoDistanceFilter    *GeoDistanceFilter    `json:"geo_distance_filter"`
+	GeoBoundingBoxFilter *GeoBoundingBoxFilter `json:"geo_bounding_box_filter"`
+	Groups               []string              `json:"-"`
+	TenantID             string                `json:"-"`
 }
 
 type AggregationTerm struct {
