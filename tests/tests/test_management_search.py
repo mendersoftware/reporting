@@ -107,6 +107,12 @@ class TestManagementSearch:
                     management_api.models.DeviceAttribute(
                         name="number", value=0.0, scope="inventory"
                     ),
+                    management_api.models.DeviceAttribute(
+                        name="geo-lat", value="59.94", scope="inventory"
+                    ),
+                    management_api.models.DeviceAttribute(
+                        name="geo-lon", value="10.72", scope="inventory"
+                    ),
                 ],
             ),
         ),
@@ -168,6 +174,12 @@ class TestManagementSearch:
                             ),
                             management_api.models.DeviceAttribute(
                                 name="number", value=0.0, scope="inventory"
+                            ),
+                            management_api.models.DeviceAttribute(
+                                name="geo-lat", value="59.94", scope="inventory"
+                            ),
+                            management_api.models.DeviceAttribute(
+                                name="geo-lon", value="10.72", scope="inventory"
                             ),
                         ],
                     ),
@@ -248,6 +260,12 @@ class TestManagementSearch:
                             management_api.models.DeviceAttribute(
                                 name="number", value=0.0, scope="inventory"
                             ),
+                            management_api.models.DeviceAttribute(
+                                name="geo-lat", value="59.94", scope="inventory"
+                            ),
+                            management_api.models.DeviceAttribute(
+                                name="geo-lon", value="10.72", scope="inventory"
+                            ),
                         ],
                     ),
                     management_api.models.Device(
@@ -291,6 +309,12 @@ class TestManagementSearch:
                             ),
                             management_api.models.DeviceAttribute(
                                 name="number", value=0.0, scope="inventory"
+                            ),
+                            management_api.models.DeviceAttribute(
+                                name="geo-lat", value="59.94", scope="inventory"
+                            ),
+                            management_api.models.DeviceAttribute(
+                                name="geo-lon", value="10.72", scope="inventory"
                             ),
                         ],
                     ),
@@ -364,6 +388,12 @@ class TestManagementSearch:
                             ),
                             management_api.models.DeviceAttribute(
                                 name="number", value=0.0, scope="inventory"
+                            ),
+                            management_api.models.DeviceAttribute(
+                                name="geo-lat", value="59.94", scope="inventory"
+                            ),
+                            management_api.models.DeviceAttribute(
+                                name="geo-lon", value="10.72", scope="inventory"
                             ),
                         ],
                     ),
@@ -492,6 +522,114 @@ class TestManagementSearch:
                 ],
             ),
             _TestCase(
+                authorization=utils.generate_jwt(tenant_id="123456789012345678901234"),
+                search_terms=management_api.models.DeviceSearchTerms(
+                    geo_distance_filter=management_api.models.GeoDistanceFilter(
+                        geo_distance=management_api.models.GeoDistance(
+                            distance="100km",
+                            location=management_api.models.GeoPoint(
+                                lat=59.91, lon=10.55,
+                            ),
+                        ),
+                    ),
+                ),
+                http_code=200,
+                result=[
+                    management_api.models.Device(
+                        id="85388603-5852-437f-89c4-7549502893d5",
+                        attributes=[
+                            management_api.models.DeviceAttribute(
+                                name="string",
+                                value="incididunt ut labore",
+                                scope="inventory",
+                            ),
+                            management_api.models.DeviceAttribute(
+                                name="number", value=0.0, scope="inventory"
+                            ),
+                            management_api.models.DeviceAttribute(
+                                name="geo-lat", value="59.94", scope="inventory"
+                            ),
+                            management_api.models.DeviceAttribute(
+                                name="geo-lon", value="10.72", scope="inventory"
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+            _TestCase(
+                authorization=utils.generate_jwt(tenant_id="123456789012345678901234"),
+                search_terms=management_api.models.DeviceSearchTerms(
+                    geo_distance_filter=management_api.models.GeoDistanceFilter(
+                        geo_distance=management_api.models.GeoDistance(
+                            distance="10km",
+                            location=management_api.models.GeoPoint(
+                                lat=59.91, lon=10.55,
+                            ),
+                        ),
+                    ),
+                ),
+                http_code=200,
+                result=[],
+            ),
+            _TestCase(
+                authorization=utils.generate_jwt(tenant_id="123456789012345678901234"),
+                search_terms=management_api.models.DeviceSearchTerms(
+                    geo_bounding_box_filter=management_api.models.GeoBoundingBoxFilter(
+                        geo_bounding_box=management_api.models.GeoBoundingBox(
+                            location=management_api.models.BoundingBox(
+                                top_left=management_api.models.GeoPoint(
+                                    lat=59.94, lon=10.70,
+                                ),
+                                bottom_right=management_api.models.GeoPoint(
+                                    lat=59.93, lon=10.73,
+                                ),
+                            ),
+                        ),
+                    ),
+                ),
+                http_code=200,
+                result=[
+                    management_api.models.Device(
+                        id="85388603-5852-437f-89c4-7549502893d5",
+                        attributes=[
+                            management_api.models.DeviceAttribute(
+                                name="string",
+                                value="incididunt ut labore",
+                                scope="inventory",
+                            ),
+                            management_api.models.DeviceAttribute(
+                                name="number", value=0.0, scope="inventory"
+                            ),
+                            management_api.models.DeviceAttribute(
+                                name="geo-lat", value="59.94", scope="inventory"
+                            ),
+                            management_api.models.DeviceAttribute(
+                                name="geo-lon", value="10.72", scope="inventory"
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+            _TestCase(
+                authorization=utils.generate_jwt(tenant_id="123456789012345678901234"),
+                search_terms=management_api.models.DeviceSearchTerms(
+                    geo_bounding_box_filter=management_api.models.GeoBoundingBoxFilter(
+                        geo_bounding_box=management_api.models.GeoBoundingBox(
+                            location=management_api.models.BoundingBox(
+                                top_left=management_api.models.GeoPoint(
+                                    lat=59.93, lon=10.73,
+                                ),
+                                bottom_right=management_api.models.GeoPoint(
+                                    lat=59.92, lon=10.75,
+                                ),
+                            ),
+                        ),
+                    ),
+                ),
+                http_code=200,
+                result=[],
+            ),
+            _TestCase(
                 authorization=utils.generate_jwt(tenant_id="anIllegalTenantID"),
                 search_terms=management_api.models.DeviceSearchTerms(
                     filters=[
@@ -524,6 +662,10 @@ class TestManagementSearch:
             "ok, $exists",
             "ok, $regex + sort",
             "ok, latest_deployment_status",
+            "ok, geo distance",
+            "ok, geo distance, no results",
+            "ok, geo bounding box",
+            "ok, geo bounding box, no results",
             "error, missing index for tenant",
             "error, unauthorized access",
         ],
