@@ -16,6 +16,7 @@ package indexer
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/pkg/errors"
 
@@ -245,9 +246,29 @@ func extractLocation(
 		if !ok {
 			return false, ""
 		}
-		return true, latStr + "," + lonStr
+		if validLocation(latStr, lonStr) {
+			return true, latStr + "," + lonStr
+		}
 	}
 	return false, ""
+}
+
+func validLocation(latStr, lonStr string) bool {
+	lat, err := strconv.ParseFloat(latStr, 32)
+	if err != nil {
+		return false
+	}
+	if lat < -90 || lat > 90 {
+		return false
+	}
+	lon, err := strconv.ParseFloat(lonStr, 32)
+	if err != nil {
+		return false
+	}
+	if lon < -180 || lon > 180 {
+		return false
+	}
+	return true
 }
 
 func (i *indexer) processJobDeployments(

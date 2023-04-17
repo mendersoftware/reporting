@@ -65,27 +65,97 @@ type GeoDistanceFilter struct {
 	GeoDistance GeoDistance `json:"geo_distance" bson:"geo_distance"`
 }
 
+func (gdf GeoDistanceFilter) Validate() error {
+	return validation.ValidateStruct(&gdf,
+		validation.Field(
+			&gdf.GeoDistance,
+			validation.Required,
+		),
+	)
+}
+
 type GeoDistance struct {
-	Distance string   `json:"distance" bson:"distance"`
-	Location GeoPoint `json:"location" bson:"location"`
+	Distance string    `json:"distance" bson:"distance"`
+	Location *GeoPoint `json:"location" bson:"location"`
+}
+
+func (gd GeoDistance) Validate() error {
+	return validation.ValidateStruct(&gd,
+		validation.Field(
+			&gd.Distance,
+			validation.Required,
+		),
+		validation.Field(
+			&gd.Location,
+			validation.Required,
+		),
+	)
 }
 
 type GeoBoundingBoxFilter struct {
 	GeoBoundingBox GeoBoundingBox `json:"geo_bounding_box" bson:"geo_bounding_box"`
 }
 
+func (gbbf GeoBoundingBoxFilter) Validate() error {
+	return validation.ValidateStruct(&gbbf,
+		validation.Field(
+			&gbbf.GeoBoundingBox,
+			validation.Required,
+		),
+	)
+}
+
 type GeoBoundingBox struct {
 	Location BoundingBox `json:"location" bson:"location"`
 }
 
+func (gbb GeoBoundingBox) Validate() error {
+	return validation.ValidateStruct(&gbb,
+		validation.Field(
+			&gbb.Location,
+			validation.Required,
+		),
+	)
+}
+
 type BoundingBox struct {
-	TopLeft     GeoPoint `json:"top_left" bson:"top_left"`
-	BottomRight GeoPoint `json:"bottom_right" bson:"bottom_right"`
+	TopLeft     *GeoPoint `json:"top_left" bson:"top_left"`
+	BottomRight *GeoPoint `json:"bottom_right" bson:"bottom_right"`
+}
+
+func (bb BoundingBox) Validate() error {
+	return validation.ValidateStruct(&bb,
+		validation.Field(
+			&bb.TopLeft,
+			validation.Required,
+		),
+		validation.Field(
+			&bb.BottomRight,
+			validation.Required,
+		),
+	)
 }
 
 type GeoPoint struct {
-	Lat float32 `json:"lat" bson:"lat"`
-	Lon float32 `json:"lon" bson:"lon"`
+	Latitude  *float32 `json:"lat" bson:"lat"`
+	Longitude *float32 `json:"lon" bson:"lon"`
+}
+
+func (gp GeoPoint) Validate() error {
+	return validation.ValidateStruct(&gp,
+		validation.Field(
+			&gp.Latitude,
+			validation.NotNil,
+			validation.Min(float32(-90)),
+			validation.Max(float32(90)),
+		),
+		validation.Field(
+			&gp.Longitude,
+			validation.NotNil,
+			validation.Min(float32(-180)),
+			validation.Max(float32(180)),
+		),
+	)
 }
 
 type SortCriteria struct {
@@ -100,6 +170,13 @@ type SelectAttribute struct {
 }
 
 func (sp SearchParams) Validate() error {
+	if err := validation.ValidateStruct(&sp,
+		validation.Field(&sp.GeoDistanceFilter),
+		validation.Field(&sp.GeoBoundingBoxFilter),
+	); err != nil {
+		return err
+	}
+
 	for _, f := range sp.Filters {
 		err := f.Validate()
 		if err != nil {
