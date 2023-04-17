@@ -41,6 +41,8 @@ const (
 	AttrNameCreatedAt              = "created_ts"
 	AttrNameUpdatedAt              = "updated_ts"
 	AttrNameLatestDeploymentStatus = "latest_deployment_status"
+	AttrNameGeoLatitude            = "geo-lat"
+	AttrNameGeoLongitude           = "geo-lon"
 )
 
 const (

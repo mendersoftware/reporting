@@ -29,6 +29,8 @@ import (
 	"github.com/mendersoftware/reporting/model"
 )
 
+const undefinedCoordinateIdx = -1
+
 type IDs map[string]bool
 type ActionIDs map[string]IDs
 type TenantActionIDs map[string]ActionIDs
@@ -221,23 +223,20 @@ func (i *indexer) processJobDevice(
 func extractLocation(
 	attrs inventory.DeviceAttributes,
 ) (bool, string) {
-	latIdx := -1
-	lonIdx := -1
-	check := false
+	latIdx := undefinedCoordinateIdx
+	lonIdx := undefinedCoordinateIdx
 
 	for i, attr := range attrs {
-		if attr.Name == "geo-lat" {
+		if attr.Name == model.AttrNameGeoLatitude {
 			latIdx = i
-			check = true
-		} else if attr.Name == "geo-lon" {
+		} else if attr.Name == model.AttrNameGeoLongitude {
 			lonIdx = i
-			check = true
 		}
-		if check && latIdx >= 0 && lonIdx >= 0 {
+		if latIdx != undefinedCoordinateIdx && lonIdx != undefinedCoordinateIdx {
 			break
 		}
 	}
-	if latIdx >= 0 && lonIdx >= 0 {
+	if latIdx != undefinedCoordinateIdx && lonIdx != undefinedCoordinateIdx {
 		latStr, ok := attrs[latIdx].Value.(string)
 		if !ok {
 			return false, ""
