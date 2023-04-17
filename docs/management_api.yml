@@ -813,7 +813,11 @@ components:
       properties:
         distance:
           type: string
-          description: Distance from given geo point.
+          description: |
+            Distance from given geo point. Supported units are:
+            mi or miles, yd or yards, ft or feet, in or inch, km or kilometers,
+            m or meters, cm or centimeters, mm or millimeters, NM, nmi, or nauticalmiles.
+            The default unit is meters if none is specified.
         location:
           $ref: '#/components/schemas/GeoPoint'
       required:
@@ -852,9 +856,17 @@ components:
         lat:
           type: number
           format: float
+          minimum: -90
+          maximum: 90
+          description: |
+            Latitude is a coordinate given as an angle that ranges from –90° at the south pole to 90° at the north pole.
         lon:
           type: number
           format: float
+          minimum: -180
+          maximum: 180
+          description: |
+            Longitude is a coordinate given as an angle that ranges from 0° at the Prime Meridian to +180° eastward and −180° westward.
       required:
         - lat
         - lon
