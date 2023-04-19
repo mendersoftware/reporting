@@ -38,7 +38,6 @@ import (
 )
 
 const (
-	jobsChanSize    = 1000
 	shutdownTimeout = time.Second * 30
 )
 
@@ -61,12 +60,6 @@ func InitAndRun(conf config.Reader, store store.Store, ds store.DataStore, nats 
 	)
 
 	indexer := NewIndexer(store, ds, nats, devClient, invClient, deplClient)
-	jobs := make(chan model.Job, jobsChanSize)
-
-	err := indexer.GetJobs(ctx, jobs)
-	if err != nil {
-		return err
-	}
 
 	intChan := make(chan os.Signal, 1)
 	signal.Notify(intChan, unix.SIGINT, unix.SIGTERM)
@@ -84,6 +77,11 @@ func InitAndRun(conf config.Reader, store store.Store, ds store.DataStore, nats 
 			"%s: must be a positive integer",
 			rconfig.SettingWorkerConcurrency,
 		)
+	}
+	jobs := make(chan model.Job, batchSize)
+	err := indexer.GetJobs(ctx, jobs)
+	if err != nil {
+		return err
 	}
 	dispatch := make(chan []model.Job)
 	jobPool := make(chan []model.Job, workerConcurrency)

@@ -33,9 +33,8 @@ const (
 	reconnectWaitTimeSeconds = 1 * time.Second
 	// Set the number of redeliveries for a message
 	maxRedeliverCount = 3
-	// Set the number of inflight messages; setting it to 1 we explicitly
-	// tell the NATS server that we want to process jobs serially, one by one
-	maxAckPending = 10
+	// Set the number of inflight messages
+	maxAckPending = 100
 	// Set the ACK wait
 	ackWaitSeconds = 30 * time.Second
 
@@ -164,11 +163,23 @@ func (c *client) JetStreamSubscribe(
 				l.Error(err)
 			}
 		}()
+		info, err := sub.ConsumerInfo()
+		if err != nil {
+			return err
+		}
+		maxBatch := info.Config.MaxAckPending
+		if cap(q) < maxBatch || maxBatch == 0 {
+			maxBatch = cap(q)
+		}
 		opt := nats.Context(ctx)
 		done := ctx.Done()
 		var msgs []*nats.Msg
 		for {
-			msgs, err = sub.Fetch(1, opt)
+			batchSize := cap(q) - len(q)
+			if batchSize > maxBatch {
+				batchSize = maxBatch
+			}
+			msgs, err = sub.Fetch(batchSize, opt)
 			if err != nil {
 				if err == context.DeadlineExceeded {
 					continue
