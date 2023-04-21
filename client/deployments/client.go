@@ -15,6 +15,7 @@
 package deployments
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io"
@@ -31,9 +32,9 @@ import (
 )
 
 const (
-	urlDeviceDeployments   = "/api/internal/v1/deployments/tenants/:tid/deployments/devices"
-	urlDeviceDeploymentsID = urlDeviceDeployments + "/:id"
-	defaultTimeout         = 10 * time.Second
+	urlDeviceDeployments    = "/api/internal/v1/deployments/tenants/:tid/deployments/devices"
+	urlLastDeviceDeployment = "/api/internal/v1/deployments/tenants/:tid/devices/deployments/last"
+	defaultTimeout          = 10 * time.Second
 )
 
 //go:generate ../../x/mockgen.sh
@@ -44,12 +45,12 @@ type Client interface {
 		tenantID string,
 		IDs []string,
 	) ([]*DeviceDeployment, error)
-	// GetLatestDeployment retrieves the latest deployment for a given device
+	// GetLatestDeployment retrieves the latest deployment for a given devices
 	GetLatestFinishedDeployment(
 		ctx context.Context,
 		tenantID string,
-		deviceID string,
-	) (*DeviceDeployment, error)
+		deviceIDs []string,
+	) ([]LastDeviceDeployment, error)
 }
 
 type client struct {
@@ -149,26 +150,33 @@ func (c *client) GetDeployments(
 func (c *client) GetLatestFinishedDeployment(
 	ctx context.Context,
 	tenantID string,
-	deviceID string,
-) (*DeviceDeployment, error) {
+	deviceIDs []string,
+) ([]LastDeviceDeployment, error) {
 	l := log.FromContext(ctx)
 
-	url := utils.JoinURL(c.urlBase, urlDeviceDeploymentsID)
+	url := utils.JoinURL(c.urlBase, urlLastDeviceDeployment)
 	url = strings.Replace(url, ":tid", tenantID, 1)
-	url = strings.Replace(url, ":id", deviceID, 1)
 
 	ctx, cancel := context.WithTimeout(ctx, defaultTimeout)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	getReq := &GetLastDeviceDeploymentReq{
+		DeviceIDs: deviceIDs,
+	}
+
+	body, err := json.Marshal(getReq)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to serialize get last device deployment request")
+	}
+
+	rd := bytes.NewReader(body)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, rd)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to create request")
 	}
 
-	q := req.URL.Query()
-	q.Add("page", "1")
-	q.Add("per_page", "1")
-	req.URL.RawQuery = q.Encode()
+	req.Header.Set("Content-Type", "application/json")
 
 	rsp, err := c.client.Do(req)
 	if err != nil {
@@ -186,11 +194,11 @@ func (c *client) GetLatestFinishedDeployment(
 	}
 
 	dec := json.NewDecoder(rsp.Body)
-	var devDevs []*DeviceDeployment
-	if err = dec.Decode(&devDevs); err != nil {
+	var lastDeployments GetLastDeviceDeploymentRsp
+	if err = dec.Decode(&lastDeployments); err != nil {
 		return nil, errors.Wrap(err, "failed to parse request body")
-	} else if len(devDevs) == 0 {
+	} else if len(lastDeployments.DeviceDeploymentLastStatuses) == 0 {
 		return nil, nil
 	}
-	return devDevs[0], nil
+	return lastDeployments.DeviceDeploymentLastStatuses, nil
 }

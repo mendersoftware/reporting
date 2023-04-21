@@ -89,3 +89,19 @@ type InstalledDeviceDeployment struct {
 	DeviceType   string            `json:"device_type"`
 	Provides     map[string]string `json:"artifact_provides,omitempty"`
 }
+
+type GetLastDeviceDeploymentRsp struct {
+	DeviceDeploymentLastStatuses []LastDeviceDeployment `json:"device_deployment_last_statuses"`
+}
+
+// LastDeviceDeployment stores short information about last device deployment
+type LastDeviceDeployment struct {
+	// Device id
+	DeviceID string `json:"device_id"`
+	// Status
+	DeviceDeploymentStatus string `json:"device_deployment_status"`
+}
+
+type GetLastDeviceDeploymentReq struct {
+	DeviceIDs []string `json:"device_ids"`
+}
