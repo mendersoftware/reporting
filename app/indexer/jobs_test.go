@@ -130,8 +130,8 @@ func TestProcessJobs(t *testing.T) {
 		inventoryDevices   []inventory.Device
 		inventoryErr       error
 
-		deploymentsDevice *deployments.DeviceDeployment
-		deploymentsErr    error
+		deploymentsDevices []deployments.LastDeviceDeployment
+		deploymentsErr     error
 
 		updateMapping       []string
 		updateMappingResult []string
@@ -248,124 +248,125 @@ func TestProcessJobs(t *testing.T) {
 				},
 			},
 		},
-		//FIXME: uncomment after implementing MEN-6422
-		/*
-			"ok with latest deployment": {
-				jobs: []model.Job{
-					{
-						Action:   model.ActionReindex,
-						TenantID: tenantID,
-						DeviceID: "1",
-						Service:  model.ServiceInventory,
-					},
-					{
-						Action:   model.ActionReindex,
-						TenantID: tenantID,
-						DeviceID: "2",
-						Service:  model.ServiceInventory,
-					},
-					{
-						Action:   model.ActionReindex,
-						TenantID: tenantID,
-						DeviceID: "3",
-						Service:  model.ServiceInventory,
+		"ok with latest deployment": {
+			jobs: []model.Job{
+				{
+					Action:   model.ActionReindex,
+					TenantID: tenantID,
+					DeviceID: "1",
+					Service:  model.ServiceInventory,
+				},
+				{
+					Action:   model.ActionReindex,
+					TenantID: tenantID,
+					DeviceID: "2",
+					Service:  model.ServiceInventory,
+				},
+				{
+					Action:   model.ActionReindex,
+					TenantID: tenantID,
+					DeviceID: "3",
+					Service:  model.ServiceInventory,
+				},
+			},
+
+			deviceauthDeviceIDs: []string{"1", "2", "3"},
+			deviceauthDevices: []deviceauth.DeviceAuthDevice{
+				{
+					ID:     "1",
+					Status: "active",
+					IdDataStruct: map[string]string{
+						"mac": "00:11:22:33:44",
 					},
 				},
-
-				deviceauthDeviceIDs: []string{"1", "2", "3"},
-				deviceauthDevices: []deviceauth.DeviceAuthDevice{
-					{
-						ID:     "1",
-						Status: "active",
-						IdDataStruct: map[string]string{
-							"mac": "00:11:22:33:44",
-						},
-					},
-					{
-						ID:     "2",
-						Status: "pending",
-						IdDataStruct: map[string]string{
-							"mac": "00:11:22:33:55",
-						},
-					},
-				},
-
-				inventoryDeviceIDs: []string{"1", "2"},
-				inventoryDevices: []inventory.Device{
-					{
-						ID: "1",
-					},
-					{
-						ID: "2",
-					},
-				},
-
-				deploymentsDevice: &deployments.DeviceDeployment{
-					Device: &deployments.Device{
-						Status: "success",
-					},
-				},
-				deploymentsErr: nil,
-
-				updateMapping:       []string{},
-				updateMappingResult: []string{},
-
-				bulkIndexDevices: []*model.Device{
-					{
-						ID:       strptr("1"),
-						TenantID: strptr(tenantID),
-						IdentityAttributes: model.InventoryAttributes{
-							{
-								Scope:  model.ScopeIdentity,
-								Name:   model.AttrNameStatus,
-								String: []string{"active"},
-							},
-							{
-								Scope:  model.ScopeIdentity,
-								Name:   "mac",
-								String: []string{"00:11:22:33:44"},
-							},
-						},
-						SystemAttributes: model.InventoryAttributes{
-							{
-								Scope:  model.ScopeSystem,
-								Name:   model.AttrNameLatestDeploymentStatus,
-								String: []string{"success"},
-							},
-						},
-					},
-					{
-						ID:       strptr("2"),
-						TenantID: strptr(tenantID),
-						IdentityAttributes: model.InventoryAttributes{
-							{
-								Scope:  model.ScopeIdentity,
-								Name:   model.AttrNameStatus,
-								String: []string{"pending"},
-							},
-							{
-								Scope:  model.ScopeIdentity,
-								Name:   "mac",
-								String: []string{"00:11:22:33:55"},
-							},
-						},
-						SystemAttributes: model.InventoryAttributes{
-							{
-								Scope:  model.ScopeSystem,
-								Name:   model.AttrNameLatestDeploymentStatus,
-								String: []string{"success"},
-							},
-						},
-					},
-				},
-				bulkIndexRemoveDevices: []*model.Device{
-					{
-						ID:       strptr("3"),
-						TenantID: strptr(tenantID),
+				{
+					ID:     "2",
+					Status: "pending",
+					IdDataStruct: map[string]string{
+						"mac": "00:11:22:33:55",
 					},
 				},
 			},
-		*/
+
+			inventoryDeviceIDs: []string{"1", "2"},
+			inventoryDevices: []inventory.Device{
+				{
+					ID: "1",
+				},
+				{
+					ID: "2",
+				},
+			},
+			deploymentsDevices: []deployments.LastDeviceDeployment{
+				{
+					DeviceID:               "1",
+					DeviceDeploymentStatus: "success",
+				},
+				{
+					DeviceID:               "2",
+					DeviceDeploymentStatus: "failure",
+				},
+			},
+			deploymentsErr: nil,
+
+			updateMapping:       []string{},
+			updateMappingResult: []string{},
+
+			bulkIndexDevices: []*model.Device{
+				{
+					ID:       strptr("1"),
+					TenantID: strptr(tenantID),
+					IdentityAttributes: model.InventoryAttributes{
+						{
+							Scope:  model.ScopeIdentity,
+							Name:   model.AttrNameStatus,
+							String: []string{"active"},
+						},
+						{
+							Scope:  model.ScopeIdentity,
+							Name:   "mac",
+							String: []string{"00:11:22:33:44"},
+						},
+					},
+					SystemAttributes: model.InventoryAttributes{
+						{
+							Scope:  model.ScopeSystem,
+							Name:   model.AttrNameLatestDeploymentStatus,
+							String: []string{"success"},
+						},
+					},
+				},
+				{
+					ID:       strptr("2"),
+					TenantID: strptr(tenantID),
+					IdentityAttributes: model.InventoryAttributes{
+						{
+							Scope:  model.ScopeIdentity,
+							Name:   model.AttrNameStatus,
+							String: []string{"pending"},
+						},
+						{
+							Scope:  model.ScopeIdentity,
+							Name:   "mac",
+							String: []string{"00:11:22:33:55"},
+						},
+					},
+					SystemAttributes: model.InventoryAttributes{
+						{
+							Scope:  model.ScopeSystem,
+							Name:   model.AttrNameLatestDeploymentStatus,
+							String: []string{"failure"},
+						},
+					},
+				},
+			},
+			bulkIndexRemoveDevices: []*model.Device{
+				{
+					ID:       strptr("3"),
+					TenantID: strptr(tenantID),
+				},
+			},
+		},
 		"ko, failure in deviceauth": {
 			jobs: []model.Job{
 				{
@@ -578,16 +579,13 @@ func TestProcessJobs(t *testing.T) {
 
 			deplClient := &deployments_mocks.Client{}
 			defer deplClient.AssertExpectations(t)
-			//FIXME: uncomment after implementing MEN-6422
-			/*
-				if tc.deviceauthErr == nil && tc.inventoryErr == nil {
-					deplClient.On("GetLatestFinishedDeployment",
-						ctx,
-						tenantID,
-						mock.AnythingOfType("string"),
-					).Return(tc.deploymentsDevice, tc.deploymentsErr)
-				}
-			*/
+			if tc.deviceauthErr == nil && tc.inventoryErr == nil {
+				deplClient.On("GetLatestFinishedDeployment",
+					ctx,
+					tenantID,
+					mock.AnythingOfType("[]string"),
+				).Return(tc.deploymentsDevices, tc.deploymentsErr)
+			}
 
 			ds := &store_mocks.DataStore{}
 			ds.On("UpdateAndGetMapping",

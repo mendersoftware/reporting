@@ -1,18 +1,17 @@
-
 {
 	"control": {
 		"priority": 20
 	},
-	"description": "deployments: GET devices",
+	"description": "deployments: POST last devices deployments",
 	"request": {
-		"method": "GET",
-		"path": "/api/internal/v1/deployments/tenants/*/deployments/devices/463e12dd-1adb-4f62-965e-b0a9ba2c93ff"
+		"method": "POST",
+		"path": "/api/internal/v1/deployments/tenants/*/devices/deployments/last"
 	},
 	"response": {
 		"statusCode": 200,
 		"headers": {
 			"Content-Type":["application/json"]
 		},
-        "body": "[{\"id\":\"98efdb94-26c2-42eb-828d-12a5d6eb698c\",\"device\":{\"status\":\"success\"}}]"
+        "body": "{\"device_deployment_last_statuses\":[{\"device_id\":\"463e12dd-1adb-4f62-965e-b0a9ba2c93ff\", \"device_deployment_status\":\"success\"}]}"
 	}
 }
