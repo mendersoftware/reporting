@@ -26,10 +26,12 @@ const (
 )
 
 type AggregateParams struct {
-	Aggregations []AggregationTerm `json:"aggregations"`
-	Filters      []FilterPredicate `json:"filters"`
-	Groups       []string          `json:"-"`
-	TenantID     string            `json:"-"`
+	Aggregations         []AggregationTerm     `json:"aggregations"`
+	Filters              []FilterPredicate     `json:"filters"`
+	GeoDistanceFilter    *GeoDistanceFilter    `json:"geo_distance_filter"`
+	GeoBoundingBoxFilter *GeoBoundingBoxFilter `json:"geo_bounding_box_filter"`
+	Groups               []string              `json:"-"`
+	TenantID             string                `json:"-"`
 }
 
 type AggregationTerm struct {
@@ -58,15 +60,20 @@ func checkMaxNestedAggregations(value interface{}) error {
 	return checkMaxNestedAggregationsWithLimit(value, maxNestedAggregations)
 }
 
-func (sp AggregateParams) Validate() error {
-	err := validation.ValidateStruct(&sp,
-		validation.Field(&sp.Aggregations, validation.Required,
-			validation.Length(1, maxAggregationTerms)))
+func (ap AggregateParams) Validate() error {
+	err := validation.ValidateStruct(&ap,
+		validation.Field(&ap.Aggregations,
+			validation.Required,
+			validation.Length(1, maxAggregationTerms),
+		),
+		validation.Field(&ap.GeoDistanceFilter),
+		validation.Field(&ap.GeoBoundingBoxFilter),
+	)
 	if err != nil {
 		return err
 	}
 
-	for _, f := range sp.Filters {
+	for _, f := range ap.Filters {
 		err := f.Validate()
 		if err != nil {
 			return err

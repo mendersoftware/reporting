@@ -1,4 +1,4 @@
-// Copyright 2021 Northern.tech AS
+// Copyright 2023 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -42,14 +42,16 @@ const (
 var validSortOrders = []interface{}{SortOrderAsc, SortOrderDesc}
 
 type SearchParams struct {
-	Page       int               `json:"page"`
-	PerPage    int               `json:"per_page"`
-	Filters    []FilterPredicate `json:"filters"`
-	Sort       []SortCriteria    `json:"sort"`
-	Attributes []SelectAttribute `json:"attributes"`
-	DeviceIDs  []string          `json:"device_ids"`
-	Groups     []string          `json:"-"`
-	TenantID   string            `json:"-"`
+	Page                 int                   `json:"page"`
+	PerPage              int                   `json:"per_page"`
+	Filters              []FilterPredicate     `json:"filters"`
+	GeoDistanceFilter    *GeoDistanceFilter    `json:"geo_distance_filter"`
+	GeoBoundingBoxFilter *GeoBoundingBoxFilter `json:"geo_bounding_box_filter"`
+	Sort                 []SortCriteria        `json:"sort"`
+	Attributes           []SelectAttribute     `json:"attributes"`
+	DeviceIDs            []string              `json:"device_ids"`
+	Groups               []string              `json:"-"`
+	TenantID             string                `json:"-"`
 }
 
 type FilterPredicate struct {
@@ -57,6 +59,103 @@ type FilterPredicate struct {
 	Attribute string      `json:"attribute" bson:"attribute"`
 	Type      string      `json:"type" bson:"type"`
 	Value     interface{} `json:"value" bson:"value"`
+}
+
+type GeoDistanceFilter struct {
+	GeoDistance GeoDistance `json:"geo_distance" bson:"geo_distance"`
+}
+
+func (gdf GeoDistanceFilter) Validate() error {
+	return validation.ValidateStruct(&gdf,
+		validation.Field(
+			&gdf.GeoDistance,
+			validation.Required,
+		),
+	)
+}
+
+type GeoDistance struct {
+	Distance string    `json:"distance" bson:"distance"`
+	Location *GeoPoint `json:"location" bson:"location"`
+}
+
+func (gd GeoDistance) Validate() error {
+	return validation.ValidateStruct(&gd,
+		validation.Field(
+			&gd.Distance,
+			validation.Required,
+		),
+		validation.Field(
+			&gd.Location,
+			validation.Required,
+		),
+	)
+}
+
+type GeoBoundingBoxFilter struct {
+	GeoBoundingBox GeoBoundingBox `json:"geo_bounding_box" bson:"geo_bounding_box"`
+}
+
+func (gbbf GeoBoundingBoxFilter) Validate() error {
+	return validation.ValidateStruct(&gbbf,
+		validation.Field(
+			&gbbf.GeoBoundingBox,
+			validation.Required,
+		),
+	)
+}
+
+type GeoBoundingBox struct {
+	Location BoundingBox `json:"location" bson:"location"`
+}
+
+func (gbb GeoBoundingBox) Validate() error {
+	return validation.ValidateStruct(&gbb,
+		validation.Field(
+			&gbb.Location,
+			validation.Required,
+		),
+	)
+}
+
+type BoundingBox struct {
+	TopLeft     *GeoPoint `json:"top_left" bson:"top_left"`
+	BottomRight *GeoPoint `json:"bottom_right" bson:"bottom_right"`
+}
+
+func (bb BoundingBox) Validate() error {
+	return validation.ValidateStruct(&bb,
+		validation.Field(
+			&bb.TopLeft,
+			validation.Required,
+		),
+		validation.Field(
+			&bb.BottomRight,
+			validation.Required,
+		),
+	)
+}
+
+type GeoPoint struct {
+	Latitude  *float32 `json:"lat" bson:"lat"`
+	Longitude *float32 `json:"lon" bson:"lon"`
+}
+
+func (gp GeoPoint) Validate() error {
+	return validation.ValidateStruct(&gp,
+		validation.Field(
+			&gp.Latitude,
+			validation.NotNil,
+			validation.Min(float32(-90)),
+			validation.Max(float32(90)),
+		),
+		validation.Field(
+			&gp.Longitude,
+			validation.NotNil,
+			validation.Min(float32(-180)),
+			validation.Max(float32(180)),
+		),
+	)
 }
 
 type SortCriteria struct {
@@ -71,6 +170,13 @@ type SelectAttribute struct {
 }
 
 func (sp SearchParams) Validate() error {
+	if err := validation.ValidateStruct(&sp,
+		validation.Field(&sp.GeoDistanceFilter),
+		validation.Field(&sp.GeoBoundingBoxFilter),
+	); err != nil {
+		return err
+	}
+
 	for _, f := range sp.Filters {
 		err := f.Validate()
 		if err != nil {

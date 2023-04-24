@@ -41,6 +41,8 @@ const (
 	AttrNameCreatedAt              = "created_ts"
 	AttrNameUpdatedAt              = "updated_ts"
 	AttrNameLatestDeploymentStatus = "latest_deployment_status"
+	AttrNameGeoLatitude            = "geo-lat"
+	AttrNameGeoLongitude           = "geo-lon"
 )
 
 const (
@@ -49,6 +51,7 @@ const (
 	FieldNameDeviceID         = "device_id"
 	FieldNameDeploymentGroups = "deployment_groups"
 	FieldNameTenantID         = "tenant_id"
+	FieldNameLocation         = "location"
 )
 
 // type enum/suffixes

@@ -614,6 +614,10 @@ components:
           items:
             $ref: '#/components/schemas/DeviceFilterTerm'
           description: Filtering terms.
+        geo_distance_filter:
+          $ref: '#/components/schemas/GeoDistanceFilter'
+        geo_bounding_box_filter:
+          $ref: '#/components/schemas/GeoBoundingBoxFilter'
 
     DeviceAggregation:
       type: object
@@ -776,6 +780,10 @@ components:
           items:
             $ref: '#/components/schemas/DeviceFilterTerm'
           description: Filtering terms.
+        geo_distance_filter:
+          $ref: '#/components/schemas/GeoDistanceFilter'
+        geo_bounding_box_filter:
+          $ref: '#/components/schemas/GeoBoundingBoxFilter'
         sort:
           type: array
           items:
@@ -791,6 +799,77 @@ components:
           items:
             type: string
           description: Restrict the result to the given device IDs.
+
+    GeoDistanceFilter:
+      type: object
+      properties:
+        geo_distance:
+          $ref: '#/components/schemas/GeoDistance'
+      required:
+        - geo_distance
+
+    GeoDistance:
+      type: object
+      properties:
+        distance:
+          type: string
+          description: |
+            Distance from given geo point. Supported units are:
+            mi or miles, yd or yards, ft or feet, in or inch, km or kilometers,
+            m or meters, cm or centimeters, mm or millimeters, NM, nmi, or nauticalmiles.
+            The default unit is meters if none is specified.
+        location:
+          $ref: '#/components/schemas/GeoPoint'
+      required:
+        - distance
+        - location
+
+    GeoBoundingBoxFilter:
+      properties:
+        geo_bounding_box:
+          $ref: '#/components/schemas/GeoBoundingBox'
+      required:
+        - geo_bounding_box
+
+    GeoBoundingBox:
+      type: object
+      properties:
+        location:
+          $ref: '#/components/schemas/BoundingBox'
+      required:
+        - Location
+
+    BoundingBox:
+      type: object
+      properties:
+        top_left:
+          $ref: '#/components/schemas/GeoPoint'
+        bottom_right:
+          $ref: '#/components/schemas/GeoPoint'
+      required:
+        - top_left
+        - bottom_right
+
+    GeoPoint:
+      type: object
+      properties:
+        lat:
+          type: number
+          format: float
+          minimum: -90
+          maximum: 90
+          description: |
+            Latitude is a coordinate given as an angle that ranges from –90° at the south pole to 90° at the north pole.
+        lon:
+          type: number
+          format: float
+          minimum: -180
+          maximum: 180
+          description: |
+            Longitude is a coordinate given as an angle that ranges from 0° at the Prime Meridian to +180° eastward and −180° westward.
+      required:
+        - lat
+        - lon
 
   responses:
     InternalServerError:
