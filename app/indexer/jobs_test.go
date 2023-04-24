@@ -130,8 +130,8 @@ func TestProcessJobs(t *testing.T) {
 		inventoryDevices   []inventory.Device
 		inventoryErr       error
 
-		deploymentsDevice *deployments.DeviceDeployment
-		deploymentsErr    error
+		deploymentsDevices []deployments.LastDeviceDeployment
+		deploymentsErr     error
 
 		updateMapping       []string
 		updateMappingResult []string
@@ -297,10 +297,14 @@ func TestProcessJobs(t *testing.T) {
 					ID: "2",
 				},
 			},
-
-			deploymentsDevice: &deployments.DeviceDeployment{
-				Device: &deployments.Device{
-					Status: "success",
+			deploymentsDevices: []deployments.LastDeviceDeployment{
+				{
+					DeviceID:               "1",
+					DeviceDeploymentStatus: "success",
+				},
+				{
+					DeviceID:               "2",
+					DeviceDeploymentStatus: "failure",
 				},
 			},
 			deploymentsErr: nil,
@@ -351,7 +355,7 @@ func TestProcessJobs(t *testing.T) {
 						{
 							Scope:  model.ScopeSystem,
 							Name:   model.AttrNameLatestDeploymentStatus,
-							String: []string{"success"},
+							String: []string{"failure"},
 						},
 					},
 				},
@@ -579,8 +583,8 @@ func TestProcessJobs(t *testing.T) {
 				deplClient.On("GetLatestFinishedDeployment",
 					ctx,
 					tenantID,
-					mock.AnythingOfType("string"),
-				).Return(tc.deploymentsDevice, tc.deploymentsErr)
+					mock.AnythingOfType("[]string"),
+				).Return(tc.deploymentsDevices, tc.deploymentsErr)
 			}
 
 			ds := &store_mocks.DataStore{}

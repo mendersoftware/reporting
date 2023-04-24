@@ -1,4 +1,4 @@
-// Copyright 2022 Northern.tech AS
+// Copyright 2023 Northern.tech AS
 //
 //	Licensed under the Apache License, Version 2.0 (the "License");
 //	you may not use this file except in compliance with the License.
@@ -51,22 +51,22 @@ func (_m *Client) GetDeployments(ctx context.Context, tenantID string, IDs []str
 	return r0, r1
 }
 
-// GetLatestFinishedDeployment provides a mock function with given fields: ctx, tenantID, deviceID
-func (_m *Client) GetLatestFinishedDeployment(ctx context.Context, tenantID string, deviceID string) (*deployments.DeviceDeployment, error) {
-	ret := _m.Called(ctx, tenantID, deviceID)
+// GetLatestFinishedDeployment provides a mock function with given fields: ctx, tenantID, deviceIDs
+func (_m *Client) GetLatestFinishedDeployment(ctx context.Context, tenantID string, deviceIDs []string) ([]deployments.LastDeviceDeployment, error) {
+	ret := _m.Called(ctx, tenantID, deviceIDs)
 
-	var r0 *deployments.DeviceDeployment
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *deployments.DeviceDeployment); ok {
-		r0 = rf(ctx, tenantID, deviceID)
+	var r0 []deployments.LastDeviceDeployment
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string) []deployments.LastDeviceDeployment); ok {
+		r0 = rf(ctx, tenantID, deviceIDs)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*deployments.DeviceDeployment)
+			r0 = ret.Get(0).([]deployments.LastDeviceDeployment)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, tenantID, deviceID)
+	if rf, ok := ret.Get(1).(func(context.Context, string, []string) error); ok {
+		r1 = rf(ctx, tenantID, deviceIDs)
 	} else {
 		r1 = ret.Error(1)
 	}

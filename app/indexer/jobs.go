@@ -90,12 +90,20 @@ func (i *indexer) processJobDevices(
 		l.Error(errors.Wrap(err, "failed to get devices from inventory"))
 		return
 	}
+	// get last deployment statuses from deployment
+	deploymentsDevices, err := i.deplClient.GetLatestFinishedDeployment(ctx, tenant, deviceIDs)
+	if err != nil {
+		l.Error(errors.Wrap(err, "failed to get last device deployments from deployments"))
+		return
+	}
+
 	// process the results
 	devices = devices[:0]
 	removedDevices = removedDevices[:0]
 	for _, deviceID := range deviceIDs {
 		var deviceAuthDevice *deviceauth.DeviceAuthDevice
 		var inventoryDevice *inventory.Device
+		var deploymentsDevice *deployments.LastDeviceDeployment
 		for _, d := range deviceAuthDevices {
 			if d.ID == deviceID {
 				deviceAuthDevice = &d
@@ -108,6 +116,12 @@ func (i *indexer) processJobDevices(
 				break
 			}
 		}
+		for _, d := range deploymentsDevices {
+			if d.DeviceID == deviceID {
+				deploymentsDevice = &d
+				break
+			}
+		}
 		if deviceAuthDevice == nil || inventoryDevice == nil {
 			removedDevices = append(removedDevices, &model.Device{
 				ID:       &deviceID,
@@ -115,7 +129,13 @@ func (i *indexer) processJobDevices(
 			})
 			continue
 		}
-		device := i.processJobDevice(ctx, tenant, deviceAuthDevice, inventoryDevice)
+		device := i.processJobDevice(
+			ctx,
+			tenant,
+			deviceAuthDevice,
+			inventoryDevice,
+			deploymentsDevice,
+		)
 		if device != nil {
 			devices = append(devices, device)
 		}
@@ -135,6 +155,7 @@ func (i *indexer) processJobDevice(
 	tenant string,
 	deviceAuthDevice *deviceauth.DeviceAuthDevice,
 	inventoryDevice *inventory.Device,
+	deploymentsDevice *deployments.LastDeviceDeployment,
 ) *model.Device {
 	l := log.FromContext(ctx)
 	//
@@ -178,19 +199,16 @@ func (i *indexer) processJobDevice(
 			l.Warn(err)
 		}
 	}
-	// latest deployment
-	deviceDeployment, err := i.deplClient.GetLatestFinishedDeployment(ctx, tenant,
-		string(inventoryDevice.ID))
-	if err != nil {
-		l.Error(errors.Wrap(err, "failed to get device deployments from deployments"))
-		return nil
-	} else if deviceDeployment != nil {
+
+	// data from deployments
+	if deploymentsDevice != nil {
 		_ = device.AppendAttr(&model.InventoryAttribute{
 			Scope:  model.ScopeSystem,
 			Name:   model.AttrNameLatestDeploymentStatus,
-			String: []string{deviceDeployment.Device.Status},
+			String: []string{deploymentsDevice.DeviceDeploymentStatus},
 		})
 	}
+
 	// return the device
 	return device
 }
