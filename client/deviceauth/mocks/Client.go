@@ -1,4 +1,4 @@
-// Copyright 2021 Northern.tech AS
+// Copyright 2023 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -29,15 +29,15 @@ type Client struct {
 }
 
 // GetDevices provides a mock function with given fields: ctx, tid, deviceIDs
-func (_m *Client) GetDevices(ctx context.Context, tid string, deviceIDs []string) ([]deviceauth.DeviceAuthDevice, error) {
+func (_m *Client) GetDevices(ctx context.Context, tid string, deviceIDs []string) (map[string]deviceauth.DeviceAuthDevice, error) {
 	ret := _m.Called(ctx, tid, deviceIDs)
 
-	var r0 []deviceauth.DeviceAuthDevice
-	if rf, ok := ret.Get(0).(func(context.Context, string, []string) []deviceauth.DeviceAuthDevice); ok {
+	var r0 map[string]deviceauth.DeviceAuthDevice
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string) map[string]deviceauth.DeviceAuthDevice); ok {
 		r0 = rf(ctx, tid, deviceIDs)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]deviceauth.DeviceAuthDevice)
+			r0 = ret.Get(0).(map[string]deviceauth.DeviceAuthDevice)
 		}
 	}
 

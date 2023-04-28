@@ -54,6 +54,9 @@ type Device struct {
 	// UpdatedTs contains the timestamp of the latest attribute update
 	UpdatedTs time.Time `json:"updated_ts,omitempty" bson:"updated_ts,omitempty"`
 
+	// LastCheckinDate contains the date of the latest device call to backend
+	LastCheckinDate time.Time `json:"check_in_time,omitempty" bson:"check_in_time,omitempty"`
+
 	// Revision is the device object revision
 	Revision uint `json:"-" bson:"revision,omitempty"`
 }

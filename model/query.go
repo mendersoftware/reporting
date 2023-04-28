@@ -511,6 +511,9 @@ func (s *sel) AddTo(q Query) Query {
 	//always include a device id
 	fields = append(fields, "id")
 
+	//always include a check-in time
+	fields = append(fields, FieldNameCheckIn)
+
 	return q.With(map[string]interface{}{
 		"fields":  fields,
 		"_source": false,
