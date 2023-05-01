@@ -10,7 +10,7 @@ require (
 	github.com/opensearch-project/opensearch-go v1.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.2
-	github.com/urfave/cli v1.22.12
+	github.com/urfave/cli v1.22.13
 	go.mongodb.org/mongo-driver v1.11.2
 	golang.org/x/net v0.8.0
 	golang.org/x/sys v0.6.0
