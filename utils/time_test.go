@@ -11,27 +11,24 @@
 //	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //	See the License for the specific language governing permissions and
 //	limitations under the License.
-package model
+package utils
 
 import (
-	"strings"
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
-const (
-	runeDot = '\uFF0E'
-)
+func TestTruncateToDay(t *testing.T) {
+	now := time.Now()
+	nowTruncated := TruncateToDay(now)
 
-var (
-	dedotter = strings.NewReplacer(".", string(runeDot))
-	redotter = strings.NewReplacer(string(runeDot), ".")
-)
+	assert.Equal(t, nowTruncated.Hour(), 0)
+	assert.Equal(t, nowTruncated.Minute(), 0)
+	assert.Equal(t, nowTruncated.Second(), 0)
 
-// Dedot replaces '.' in a name to make it digestible by ES
-func Dedot(name string) string {
-	return dedotter.Replace(name)
-}
-
-// Redot reverses dedotting
-func Redot(name string) string {
-	return redotter.Replace(name)
+	assert.Equal(t, now.Year(), nowTruncated.Year())
+	assert.Equal(t, now.Month(), nowTruncated.Month())
+	assert.Equal(t, now.Day(), nowTruncated.Day())
 }

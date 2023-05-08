@@ -1,4 +1,4 @@
-// Copyright 2021 Northern.tech AS
+// Copyright 2023 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -81,69 +81,76 @@ func TestGetDevices(t *testing.T) {
 		ResponseBody interface{}
 
 		Error error
-	}{{
-		Name: "ok, no devices",
+	}{
+		{
+			Name: "ok, no devices",
 
-		CTX:      context.Background(),
-		TenantID: "123456789012345678901234",
-		DeviceID: []string{"9acfe595-78ff-456a-843a-0fa08bfd7c7a"},
+			CTX:      context.Background(),
+			TenantID: "123456789012345678901234",
+			DeviceID: []string{"9acfe595-78ff-456a-843a-0fa08bfd7c7a"},
 
-		ResponseCode: http.StatusOK,
-		ResponseBody: []DeviceAuthDevice{},
-	}, {
-		Name: "ok",
-
-		CTX:      context.Background(),
-		TenantID: "123456789012345678901234",
-		DeviceID: []string{
-			"9acfe595-78ff-456a-843a-0fa08bfd7c7a",
-			"c5e37ef5-160e-401a-aec3-9dbef94855c0",
+			ResponseCode: http.StatusOK,
+			ResponseBody: []DeviceAuthDevice{},
 		},
+		{
+			Name: "ok",
 
-		ResponseCode: http.StatusOK,
-		ResponseBody: []DeviceAuthDevice{{
-			ID:        "9acfe595-78ff-456a-843a-0fa08bfd7c7a",
-			UpdatedTs: time.Now().Add(-time.Minute).UTC().Round(0),
-		}, {
-			ID:        "c5e37ef5-160e-401a-aec3-9dbef94855c0",
-			UpdatedTs: time.Now().Add(-time.Minute * 5).UTC().Round(0),
-		}},
-	}, {
-		Name: "error, context canceled",
+			CTX:      context.Background(),
+			TenantID: "123456789012345678901234",
+			DeviceID: []string{
+				"9acfe595-78ff-456a-843a-0fa08bfd7c7a",
+				"c5e37ef5-160e-401a-aec3-9dbef94855c0",
+			},
 
-		CTX: func() context.Context {
-			ctx, cancel := context.WithCancel(context.Background())
-			cancel()
-			return ctx
-		}(),
-		Error: context.Canceled,
-	}, {
-		Name:     "error, nil context",
-		CTX:      context.Background(),
-		URLNoise: "#%%%",
+			ResponseCode: http.StatusOK,
+			ResponseBody: []DeviceAuthDevice{{
+				ID:        "9acfe595-78ff-456a-843a-0fa08bfd7c7a",
+				UpdatedTs: time.Now().Add(-time.Minute).UTC().Round(0),
+			}, {
+				ID:        "c5e37ef5-160e-401a-aec3-9dbef94855c0",
+				UpdatedTs: time.Now().Add(-time.Minute * 5).UTC().Round(0),
+			}},
+		},
+		{
+			Name: "error, context canceled",
 
-		Error: errors.New("failed to create request"),
-	}, {
-		Name: "error, invalid response schema",
+			CTX: func() context.Context {
+				ctx, cancel := context.WithCancel(context.Background())
+				cancel()
+				return ctx
+			}(),
+			Error: context.Canceled,
+		},
+		{
+			Name:     "error, nil context",
+			CTX:      context.Background(),
+			URLNoise: "#%%%",
 
-		CTX:      context.Background(),
-		TenantID: "123456789012345678901234",
-		DeviceID: []string{"9acfe595-78ff-456a-843a-0fa08bfd7c7a"},
+			Error: errors.New("failed to create request"),
+		},
+		{
+			Name: "error, invalid response schema",
 
-		ResponseCode: http.StatusOK,
-		ResponseBody: []byte("bad response"),
-		Error:        errors.New("failed to parse request body"),
-	}, {
-		Name: "error, unexpected status code",
+			CTX:      context.Background(),
+			TenantID: "123456789012345678901234",
+			DeviceID: []string{"9acfe595-78ff-456a-843a-0fa08bfd7c7a"},
 
-		CTX:      context.Background(),
-		TenantID: "123456789012345678901234",
-		DeviceID: []string{"9acfe595-78ff-456a-843a-0fa08bfd7c7a"},
+			ResponseCode: http.StatusOK,
+			ResponseBody: []byte("bad response"),
+			Error:        errors.New("failed to parse request body"),
+		},
+		{
+			Name: "error, unexpected status code",
 
-		ResponseCode: http.StatusInternalServerError,
-		ResponseBody: rest.Error{Err: "something went wrong..."},
-		Error:        errors.New(`^GET .+ request failed with status 500`),
-	}}
+			CTX:      context.Background(),
+			TenantID: "123456789012345678901234",
+			DeviceID: []string{"9acfe595-78ff-456a-843a-0fa08bfd7c7a"},
+
+			ResponseCode: http.StatusInternalServerError,
+			ResponseBody: rest.Error{Err: "something went wrong..."},
+			Error:        errors.New(`^GET .+ request failed with status 500`),
+		},
+	}
 	for i := range testCases {
 		tc := testCases[i]
 		t.Run(tc.Name, func(t *testing.T) {
@@ -190,7 +197,15 @@ func TestGetDevices(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				if typ, ok := tc.ResponseBody.([]DeviceAuthDevice); ok {
-					assert.Equal(t, typ, devs)
+					assert.Equal(t, len(typ), len(devs))
+					for _, d := range typ {
+						if v, ok := devs[d.ID]; ok {
+							assert.Equal(t, v, d)
+						} else {
+							t.Fatal("expecting device to be present")
+							t.Fail()
+						}
+					}
 				} else {
 					panic("[PROG ERR] bad test case: " +
 						"expected no error but response " +

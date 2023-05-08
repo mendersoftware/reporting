@@ -1,4 +1,4 @@
-// Copyright 2021 Northern.tech AS
+// Copyright 2023 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -20,14 +20,15 @@ import (
 
 // DeviceAuthDevice is a wrapper for device auth devices
 type DeviceAuthDevice struct {
-	ID           string                    `json:"id"`
-	IdDataStruct map[string]string         `bson:"id_data_struct,omitempty"`
-	Status       string                    `json:"status"`
-	CreatedTs    time.Time                 `json:"created_ts"`
-	UpdatedTs    time.Time                 `json:"updated_ts"`
-	AuthSets     []DeviceAuthAuthSet       `json:"auth_sets"`
-	External     *DeviceAuthExternalDevice `json:"external,omitempty"`
-	Revision     uint                      `json:"revision"`
+	ID              string                    `json:"id"`
+	IdDataStruct    map[string]string         `bson:"id_data_struct,omitempty"`
+	Status          string                    `json:"status"`
+	CreatedTs       time.Time                 `json:"created_ts"`
+	UpdatedTs       time.Time                 `json:"updated_ts"`
+	LastCheckinDate time.Time                 `json:"check_in_time,omitempty"`
+	AuthSets        []DeviceAuthAuthSet       `json:"auth_sets"`
+	External        *DeviceAuthExternalDevice `json:"external,omitempty"`
+	Revision        uint                      `json:"revision"`
 }
 
 // DeviceAuthExternalDevice stores the external ID for the device

@@ -107,11 +107,8 @@ func (i *indexer) processJobDevices(
 		var deviceAuthDevice *deviceauth.DeviceAuthDevice
 		var inventoryDevice *inventory.Device
 		var deploymentsDevice *deployments.LastDeviceDeployment
-		for _, d := range deviceAuthDevices {
-			if d.ID == deviceID {
-				deviceAuthDevice = &d
-				break
-			}
+		if d, ok := deviceAuthDevices[deviceID]; ok {
+			deviceAuthDevice = &d
 		}
 		for _, d := range inventoryDevices {
 			if d.ID == inventory.DeviceID(deviceID) {
@@ -165,6 +162,10 @@ func (i *indexer) processJobDevice(
 	device := model.NewDevice(tenant, string(inventoryDevice.ID))
 	// data from inventory
 	device.SetUpdatedAt(inventoryDevice.UpdatedTs)
+	// last checkin date
+	if deviceAuthDevice != nil {
+		device.SetLastCheckIn(deviceAuthDevice.LastCheckinDate)
+	}
 	// extract location from attributes
 	ok, location := extractLocation(inventoryDevice.Attributes)
 	if ok {
