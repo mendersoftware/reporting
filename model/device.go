@@ -225,7 +225,9 @@ func (d *Device) MarshalJSON() ([]byte, error) {
 	m[FieldNameID] = d.ID
 	m[FieldNameTenantID] = d.TenantID
 	m[FieldNameLocation] = d.Location
-	m[FieldNameCheckIn] = d.LastCheckInDate
+	if d.LastCheckInDate != nil {
+		m[FieldNameCheckIn] = d.LastCheckInDate
+	}
 
 	attributes := append(d.IdentityAttributes, d.InventoryAttributes...)
 	attributes = append(attributes, d.MonitorAttributes...)

@@ -396,8 +396,8 @@ func (a *app) storeToInventoryDev(ctx context.Context, tenantID string,
 		ID: inventory.DeviceID(id),
 	}
 	t := getTime(sourceM, model.FieldNameCheckIn)
-	if t != nil {
-		ret.LastCheckinDate = *t
+	if t != nil && !t.IsZero() {
+		ret.LastCheckinDate = t
 	}
 	attrs := []inventory.DeviceAttribute{}
 
