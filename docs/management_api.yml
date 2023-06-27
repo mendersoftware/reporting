@@ -673,6 +673,10 @@ components:
         id:
           type: string
           description: Device ID.
+        check_in_time:
+          type: string
+          format: date-time
+          description: Last device check-in itme.
         attributes:
           type: array
           items:
