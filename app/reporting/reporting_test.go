@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -720,6 +721,76 @@ func TestGetSearchableInvAttrs(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, tc.Result, res)
+			}
+		})
+	}
+}
+
+func TestGetTime(t *testing.T) {
+	const tenantID = "tenant_id"
+
+	t.Parallel()
+	now := time.Now().UTC()
+	now = now.Truncate(time.Second).UTC()
+	notNow := now.AddDate(-1, 0, 0)
+	notNow = notNow.Truncate(time.Second)
+	type testCase struct {
+		Name string
+
+		InputData      map[string]interface{}
+		ExpectedResult *time.Time
+		FieldName      string
+	}
+	testCases := []testCase{
+		{
+			Name: "field found",
+
+			InputData: map[string]interface{}{
+				"now": []interface{}{
+					now.Format(time.RFC3339),
+				},
+				"not-now": []interface{}{
+					&notNow,
+				},
+			},
+			FieldName:      "now",
+			ExpectedResult: &now,
+		},
+		{
+			Name: "field not present",
+
+			InputData: map[string]interface{}{
+				"now2": []interface{}{
+					now.Format(time.RFC3339),
+				},
+				"not-now2": []interface{}{
+					&notNow,
+				},
+			},
+			FieldName: "now",
+		},
+		{
+			Name:      "unexpected element types",
+			FieldName: "some-other",
+			InputData: map[string]interface{}{
+				"now":     &now,
+				"not-now": &notNow,
+			},
+		},
+		{
+			Name:      "empty map",
+			FieldName: "some-other",
+		},
+	}
+	for i := range testCases {
+		tc := testCases[i]
+		t.Run(tc.Name, func(t *testing.T) {
+			t.Parallel()
+			v := getTime(tc.InputData, tc.FieldName)
+			assert.Equal(t, tc.ExpectedResult, v)
+			if tc.ExpectedResult != nil {
+				assert.NotNil(t, v)
+				assert.Equal(t, *tc.ExpectedResult, *v)
 			}
 		})
 	}

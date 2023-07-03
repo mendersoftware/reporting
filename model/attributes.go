@@ -52,6 +52,7 @@ const (
 	FieldNameDeploymentGroups = "deployment_groups"
 	FieldNameTenantID         = "tenant_id"
 	FieldNameLocation         = "location"
+	FieldNameCheckIn          = "check_in_time"
 )
 
 // type enum/suffixes

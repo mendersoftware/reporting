@@ -31,6 +31,7 @@ type Device struct {
 	SystemAttributes    InventoryAttributes `json:"system_attributes,omitempty"`
 	TagsAttributes      InventoryAttributes `json:"tags_attributes,omitempty"`
 	UpdatedAt           *time.Time          `json:"updated_at,omitempty"`
+	LastCheckInDate     *time.Time          `json:"check_in_time,omitempty"`
 }
 
 func NewDevice(tenantID, id string) *Device {
@@ -96,6 +97,13 @@ func (a *Device) GetUpdatedAt() time.Time {
 func (a *Device) SetUpdatedAt(val time.Time) *Device {
 	if !val.IsZero() {
 		a.UpdatedAt = &val
+	}
+	return a
+}
+
+func (a *Device) SetLastCheckIn(val time.Time) *Device {
+	if !val.IsZero() {
+		a.LastCheckInDate = &val
 	}
 	return a
 }
@@ -217,6 +225,9 @@ func (d *Device) MarshalJSON() ([]byte, error) {
 	m[FieldNameID] = d.ID
 	m[FieldNameTenantID] = d.TenantID
 	m[FieldNameLocation] = d.Location
+	if d.LastCheckInDate != nil {
+		m[FieldNameCheckIn] = d.LastCheckInDate
+	}
 
 	attributes := append(d.IdentityAttributes, d.InventoryAttributes...)
 	attributes = append(attributes, d.MonitorAttributes...)
