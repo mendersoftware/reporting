@@ -9,8 +9,8 @@ require (
 	github.com/nats-io/nats.go v1.26.0
 	github.com/opensearch-project/opensearch-go v1.1.0
 	github.com/pkg/errors v0.9.1
-	github.com/stretchr/testify v1.8.2
-	github.com/urfave/cli v1.22.12
+	github.com/stretchr/testify v1.8.4
+	github.com/urfave/cli v1.22.14
 	go.mongodb.org/mongo-driver v1.11.6
 	golang.org/x/net v0.8.0
 	golang.org/x/sys v0.8.0
