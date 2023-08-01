@@ -6,7 +6,7 @@ require (
 	github.com/gin-gonic/gin v1.9.0
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/mendersoftware/go-lib-micro v0.0.0-20221025103319-e1f941fb3145
-	github.com/nats-io/nats.go v1.26.0
+	github.com/nats-io/nats.go v1.28.0
 	github.com/opensearch-project/opensearch-go v1.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.2
