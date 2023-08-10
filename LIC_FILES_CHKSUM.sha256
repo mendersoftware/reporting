@@ -50,6 +50,7 @@ e35cc791b3c8e48b4a42a0d2719f9cdd51677fcffab0bb5dae1e63f0a53c9ee0  vendor/github.
 2fda1715b6df26e5973b522722279b5e322ae2f65343243606bac265c8fede00  vendor/github.com/montanaflynn/stats/LICENSE
 a707cd425201945d57500566c47c74dc9fb8cd02ef91b9a761abddeb2401e6a7  vendor/github.com/goccy/go-json/LICENSE
 5d966570d7a442d4e969892860a914e542c97f262c873baee8f0aa48e1f40212  vendor/github.com/klauspost/cpuid/v2/LICENSE
+4335e2ceb33d8d7e75125192466ae8604617b0a67492b919604fe52dc56018d9  vendor/github.com/gabriel-vasile/mimetype/LICENSE
 #
 # BSD-3-Clause
 2d36597f7117c38b006835ae7f537487207d8ec407aa9d9980794b2030cbc067  vendor/golang.org/x/crypto/LICENSE
