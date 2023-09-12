@@ -123,7 +123,7 @@ func TestProcessJobs(t *testing.T) {
 		jobs []model.Job
 
 		deviceauthDeviceIDs []string
-		deviceauthDevices   []deviceauth.DeviceAuthDevice
+		deviceauthDevices   map[string]deviceauth.DeviceAuthDevice
 		deviceauthErr       error
 
 		inventoryDeviceIDs []string
@@ -163,15 +163,15 @@ func TestProcessJobs(t *testing.T) {
 			},
 
 			deviceauthDeviceIDs: []string{"1", "2", "3"},
-			deviceauthDevices: []deviceauth.DeviceAuthDevice{
-				{
+			deviceauthDevices: map[string]deviceauth.DeviceAuthDevice{
+				"1": {
 					ID:     "1",
 					Status: "active",
 					IdDataStruct: map[string]string{
 						"mac": "00:11:22:33:44",
 					},
 				},
-				{
+				"2": {
 					ID:     "2",
 					Status: "pending",
 					IdDataStruct: map[string]string{
@@ -271,15 +271,15 @@ func TestProcessJobs(t *testing.T) {
 			},
 
 			deviceauthDeviceIDs: []string{"1", "2", "3"},
-			deviceauthDevices: []deviceauth.DeviceAuthDevice{
-				{
+			deviceauthDevices: map[string]deviceauth.DeviceAuthDevice{
+				"1": {
 					ID:     "1",
 					Status: "active",
 					IdDataStruct: map[string]string{
 						"mac": "00:11:22:33:44",
 					},
 				},
-				{
+				"2": {
 					ID:     "2",
 					Status: "pending",
 					IdDataStruct: map[string]string{
@@ -415,15 +415,15 @@ func TestProcessJobs(t *testing.T) {
 			},
 
 			deviceauthDeviceIDs: []string{"1", "2", "3"},
-			deviceauthDevices: []deviceauth.DeviceAuthDevice{
-				{
+			deviceauthDevices: map[string]deviceauth.DeviceAuthDevice{
+				"1": {
 					ID:     "1",
 					Status: "active",
 					IdDataStruct: map[string]string{
 						"mac": "00:11:22:33:44",
 					},
 				},
-				{
+				"2": {
 					ID:     "2",
 					Status: "pending",
 					IdDataStruct: map[string]string{
@@ -458,15 +458,15 @@ func TestProcessJobs(t *testing.T) {
 			},
 
 			deviceauthDeviceIDs: []string{"1", "2", "3"},
-			deviceauthDevices: []deviceauth.DeviceAuthDevice{
-				{
+			deviceauthDevices: map[string]deviceauth.DeviceAuthDevice{
+				"1": {
 					ID:     "1",
 					Status: "active",
 					IdDataStruct: map[string]string{
 						"mac": "00:11:22:33:44",
 					},
 				},
-				{
+				"2": {
 					ID:     "2",
 					Status: "pending",
 					IdDataStruct: map[string]string{

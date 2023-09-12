@@ -16,6 +16,7 @@ package indexer
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/pkg/errors"
 
@@ -28,6 +29,8 @@ import (
 	rconfig "github.com/mendersoftware/reporting/config"
 	"github.com/mendersoftware/reporting/model"
 )
+
+const undefinedCoordinateIdx = -1
 
 type IDs map[string]bool
 type ActionIDs map[string]IDs
@@ -104,11 +107,8 @@ func (i *indexer) processJobDevices(
 		var deviceAuthDevice *deviceauth.DeviceAuthDevice
 		var inventoryDevice *inventory.Device
 		var deploymentsDevice *deployments.LastDeviceDeployment
-		for _, d := range deviceAuthDevices {
-			if d.ID == deviceID {
-				deviceAuthDevice = &d
-				break
-			}
+		if d, ok := deviceAuthDevices[deviceID]; ok {
+			deviceAuthDevice = &d
 		}
 		for _, d := range inventoryDevices {
 			if d.ID == inventory.DeviceID(deviceID) {
@@ -162,6 +162,15 @@ func (i *indexer) processJobDevice(
 	device := model.NewDevice(tenant, string(inventoryDevice.ID))
 	// data from inventory
 	device.SetUpdatedAt(inventoryDevice.UpdatedTs)
+	// last checkin date
+	if deviceAuthDevice != nil {
+		device.SetLastCheckIn(deviceAuthDevice.LastCheckinDate)
+	}
+	// extract location from attributes
+	ok, location := extractLocation(inventoryDevice.Attributes)
+	if ok {
+		device.Location = &location
+	}
 	attributes, err := i.mapper.MapInventoryAttributes(ctx, tenant,
 		inventoryDevice.Attributes, true, false)
 	if err != nil {
@@ -211,6 +220,56 @@ func (i *indexer) processJobDevice(
 
 	// return the device
 	return device
+}
+
+func extractLocation(
+	attrs inventory.DeviceAttributes,
+) (bool, string) {
+	latIdx := undefinedCoordinateIdx
+	lonIdx := undefinedCoordinateIdx
+
+	for i, attr := range attrs {
+		if attr.Name == model.AttrNameGeoLatitude {
+			latIdx = i
+		} else if attr.Name == model.AttrNameGeoLongitude {
+			lonIdx = i
+		}
+		if latIdx != undefinedCoordinateIdx && lonIdx != undefinedCoordinateIdx {
+			break
+		}
+	}
+	if latIdx != undefinedCoordinateIdx && lonIdx != undefinedCoordinateIdx {
+		latStr, ok := attrs[latIdx].Value.(string)
+		if !ok {
+			return false, ""
+		}
+		lonStr, ok := attrs[lonIdx].Value.(string)
+		if !ok {
+			return false, ""
+		}
+		if validLocation(latStr, lonStr) {
+			return true, latStr + "," + lonStr
+		}
+	}
+	return false, ""
+}
+
+func validLocation(latStr, lonStr string) bool {
+	lat, err := strconv.ParseFloat(latStr, 32)
+	if err != nil {
+		return false
+	}
+	if lat < -90 || lat > 90 {
+		return false
+	}
+	lon, err := strconv.ParseFloat(lonStr, 32)
+	if err != nil {
+		return false
+	}
+	if lon < -180 || lon > 180 {
+		return false
+	}
+	return true
 }
 
 func (i *indexer) processJobDeployments(

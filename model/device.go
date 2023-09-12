@@ -24,12 +24,14 @@ import (
 type Device struct {
 	ID                  *string             `json:"id"`
 	TenantID            *string             `json:"tenant_id,omitempty"`
+	Location            *string             `json:"location,omitempty"`
 	IdentityAttributes  InventoryAttributes `json:"identity_attributes,omitempty"`
 	InventoryAttributes InventoryAttributes `json:"inventory_attributes,omitempty"`
 	MonitorAttributes   InventoryAttributes `json:"monitor_attributes,omitempty"`
 	SystemAttributes    InventoryAttributes `json:"system_attributes,omitempty"`
 	TagsAttributes      InventoryAttributes `json:"tags_attributes,omitempty"`
 	UpdatedAt           *time.Time          `json:"updated_at,omitempty"`
+	LastCheckInDate     *time.Time          `json:"check_in_time,omitempty"`
 }
 
 func NewDevice(tenantID, id string) *Device {
@@ -95,6 +97,13 @@ func (a *Device) GetUpdatedAt() time.Time {
 func (a *Device) SetUpdatedAt(val time.Time) *Device {
 	if !val.IsZero() {
 		a.UpdatedAt = &val
+	}
+	return a
+}
+
+func (a *Device) SetLastCheckIn(val time.Time) *Device {
+	if !val.IsZero() {
+		a.LastCheckInDate = &val
 	}
 	return a
 }
@@ -215,6 +224,10 @@ func (d *Device) MarshalJSON() ([]byte, error) {
 	m := make(map[string]interface{})
 	m[FieldNameID] = d.ID
 	m[FieldNameTenantID] = d.TenantID
+	m[FieldNameLocation] = d.Location
+	if d.LastCheckInDate != nil {
+		m[FieldNameCheckIn] = d.LastCheckInDate
+	}
 
 	attributes := append(d.IdentityAttributes, d.InventoryAttributes...)
 	attributes = append(attributes, d.MonitorAttributes...)
