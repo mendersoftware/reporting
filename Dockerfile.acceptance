@@ -1,4 +1,4 @@
-FROM golang:1.19.3-alpine3.15 as builder
+FROM golang:1.21.7-alpine3.19 as builder
 WORKDIR /go/src/github.com/mendersoftware/reporting
 RUN mkdir -p /etc_extra
 RUN echo "nobody:x:65534:" > /etc_extra/group
@@ -23,6 +23,7 @@ WORKDIR /etc/reporting
 COPY --from=builder --chown=nobody /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --chown=nobody ./config.yaml .
 COPY --from=builder --chown=nobody /go/src/github.com/mendersoftware/reporting/bin/reporting.test /usr/bin/reporting
+ENV GOCOVERDIR=/tmp/gocovedir
 
 STOPSIGNAL SIGINT
 
