@@ -1,4 +1,4 @@
-// Copyright 2022 Northern.tech AS
+// Copyright 2024 Northern.tech AS
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package mongo
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"os/exec"
@@ -44,7 +43,7 @@ var (
 
 func TestMain(m *testing.M) {
 	status := func() int {
-		name, err := ioutil.TempDir("", "mongod-test")
+		name, err := os.MkdirTemp("", "mongod-test")
 		if err != nil {
 			panic(err)
 		}
