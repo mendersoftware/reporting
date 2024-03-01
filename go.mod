@@ -9,7 +9,7 @@ require (
 	github.com/nats-io/nats.go v1.31.0
 	github.com/opensearch-project/opensearch-go v1.1.0
 	github.com/pkg/errors v0.9.1
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	github.com/urfave/cli v1.22.14
 	go.mongodb.org/mongo-driver v1.13.1
 	golang.org/x/net v0.20.0
@@ -53,7 +53,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.15.0 // indirect
-	github.com/stretchr/objx v0.5.0 // indirect
+	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.11 // indirect
